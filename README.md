@@ -1,0 +1,2 @@
+# flanabot
+Simple discord bot.
