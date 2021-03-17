@@ -3,6 +3,7 @@ from discord.ext.commands import command, BadArgument
 
 from utilidades import imprimir_evento
 
+
 # ID_ROL = {
 #     'administrador': 387344390030360587,
 #     'colono': 493523298429435905,

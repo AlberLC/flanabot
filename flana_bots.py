@@ -1,8 +1,8 @@
+import os
 import random
 import time
 
 from discord.ext.commands import Bot
-from discord import TextChannel
 
 from flana_commands import clear
 from utilidades import get_fecha_hoy, imprimir_evento
@@ -22,7 +22,7 @@ ID = {
 
 
 class FlanaBot(Bot):
-    TOKEN = 'NTg4NDM0MDMyMzcxNjk1NjE3.XQFFLQ.gy_s0rLG8UCNR4Duua9oeI5A1ek'
+    TOKEN = os.getenv('TOKEN')
     PREFIJO_COMANDOS = '!'
 
     def __init__(self):
