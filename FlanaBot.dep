@@ -1,0 +1,131 @@
+import time
+import random
+
+from discord.errors import ClientException
+from discord.ext import commands
+from discord.ext.commands import BadArgument
+
+TOKEN = 'NTg4NDM0MDMyMzcxNjk1NjE3.XQFFLQ.gy_s0rLG8UCNR4Duua9oeI5A1ek'
+ID_MENSAJE_ROLES = 588465566172315657
+PREFIJO_COMANDOS = '!'
+
+puede_contestar = True
+client = commands.Bot(command_prefix=PREFIJO_COMANDOS)
+
+id_ = {
+    'amir': 225353238822649856,
+    'flanagan': 359060940848758794,
+    'gorrino': 276680217479741440,
+    'jose': 225963293515317248,
+    'ale': 360475067009728517,
+    'fernando': 234335032062246913,
+    'repu': 252458980062789632
+}
+
+insultos_generales = (
+    'Cállate ya anda.',
+    '¿Quién te ha preguntado?',
+    '¿Tú eres así o te dan apagones cerebrales?',
+    'Ante la duda mi dedo corazón te saluda.',
+    'Enjoy cancer brain.',
+    'Calla noob.',
+    'Hablas tanta mierda que tu culo tiene envidia de tu boca.',
+    'jAJjajAJjajAJjajAJajJAJajJA',
+    'enjoy xd',
+    'Reported.',
+    'Baneito pa ti en breve.',
+    'Despídete de tu cuenta.',
+    'Flanagan es más guapo que tú.',
+    'jajaj',
+    'xd',
+    'Hay un concurso de hostias y tienes todas las papeletas.',
+    '¿Por qué no te callas?',
+    'Das penilla.'
+)
+
+insultos_hombre = (
+    *insultos_generales,
+    'Te voy romper las pelotas.',
+    'Más tonto y no naces.',
+    'Eres más tonto que peinar bombillas.',
+    'Eres más tonto que pellizar cristales.',
+    'Eres más malo que pegarle a un padre.'
+)
+
+insultos_mujer = (
+    *insultos_generales,
+    'Más tonta y no naces.',
+    'Eres más tonta que peinar bombillas.',
+    'Eres más tonta que pellizar cristales.',
+    'Eres más mala que pegarle a un padre.',
+    'Podemita asquerosa'
+)
+
+insultos_gorrino = (
+    *insultos_hombre,
+    'Pues me trincas el pepino.',
+    'Te pasas gorrino.'
+)
+
+
+@client.event
+async def on_ready():
+    print()
+    print(f'BOT ACTIVADO - Logeado como {client.user.name} {client.user.id}')
+    print('------')
+    print()
+
+
+@client.event
+async def on_message(message):
+    global puede_contestar
+
+    if not message.content or message.author == client.user:
+        return
+    if message.content[0] == PREFIJO_COMANDOS:
+        await client.process_commands(message)
+        return
+
+    respuesta = None
+    print(f'{message.author.name} id: {message.author.id}')
+    print(f'Mensaje: {message.content}')
+    print(f'Id del mensaje: {message.id}')
+    print()
+
+    if not random.randint(0, 50):
+        if message.author.id in (id_['amir'], id_['jose'], id_['fernando'], id_['ale']):
+            respuesta = random.choice(insultos_hombre)
+        elif message.author.id == id_['repu']:
+            respuesta = random.choice(insultos_mujer)
+        elif message.author.id == id_['gorrino']:
+            respuesta = random.choice(insultos_gorrino)
+
+    if respuesta and puede_contestar:
+        puede_contestar = False
+        time.sleep(random.randint(1, 3))
+        await message.channel.send(respuesta)
+        puede_contestar = True
+
+
+# @client.event
+# async def on_reaction_add(reaction, user):
+#     print(1)
+#     if reaction.message.id == ID_MENSAJE_ROLES:
+#         print(reaction, reaction.emoji)
+
+
+@client.command()
+async def clear(contexto, arg):
+    try:
+        cantidad = int(arg)
+        if cantidad < 0:
+            raise ValueError
+        mensajes = await contexto.message.channel.history(limit=cantidad + 1).flatten()
+        await contexto.message.channel.delete_messages(mensajes)
+    except (ValueError, BadArgument):
+        await contexto.message.delete()
+    except ClientException:
+        await contexto.send('El máximo es 100 primo')
+
+
+client.run(TOKEN)
