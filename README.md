@@ -18,7 +18,7 @@ A simple discord bot.
 4. Add the environment variable "TOKEN" with your discord bot token.
 
 ## Run the bot
-Run main.py
+Run `main.py`.
 
 ## Discord usage
 1. Delete the last `n` messages with the command `!clear n`.
