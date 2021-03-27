@@ -7,7 +7,7 @@ A simple discord bot.
 
 ## Installation
 1. Install Python.
-2. Clone the repo.
+2. Clone the repository.
     ```
     git clone https://github.com/AlberLC/flanabot.git
     ```
