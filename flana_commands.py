@@ -14,7 +14,6 @@ from utilidades import imprimir_evento
 
 
 @command()
-
 async def clear(ctx, arg):
     try:
         cantidad = int(arg)
