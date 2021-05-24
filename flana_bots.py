@@ -78,7 +78,7 @@ class FlanaBot(Bot):
     async def on_message(self, message):
         if not message.content or message.author.bot:
             return
-        if message.content[0] == self.PREFIJO_COMANDOS:
+        if message.content.startswith(self.PREFIJO_COMANDOS):
             await self.process_commands(message)
             return
 
