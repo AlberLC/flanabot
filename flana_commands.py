@@ -17,7 +17,6 @@ from utilidades import imprimir_evento
 
 async def clear(ctx, arg):
     try:
-        print(arg)
         cantidad = int(arg)
 
         if not ctx.author.guild_permissions.administrator or cantidad <= 0:
