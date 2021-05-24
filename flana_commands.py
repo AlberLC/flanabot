@@ -25,9 +25,9 @@ async def clear(ctx, arg):
         await ctx.message.channel.delete_messages(mensajes)
 
         if cantidad > 1:
-            texto = '!clear: Se han borrado {} mensajes en "{}" ({})'
+            texto = 'clear: Se han borrado {} mensajes en "{}" ({})'
         else:
-            texto = '!clear: Se ha borrado {} mensaje en "{}" ({})'
+            texto = 'clear: Se ha borrado {} mensaje en "{}" ({})'
         imprimir_evento(texto, cantidad, ctx.channel, ctx.channel.category)
 
     except (ValueError, BadArgument):

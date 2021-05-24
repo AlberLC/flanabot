@@ -23,7 +23,7 @@ ID = {
 
 class FlanaBot(Bot):
     TOKEN = os.getenv('TOKEN')
-    PREFIJO_COMANDOS = '!'
+    PREFIJO_COMANDOS = '/f'
 
     def __init__(self):
         super().__init__(command_prefix=self.PREFIJO_COMANDOS)
@@ -54,7 +54,7 @@ class FlanaBot(Bot):
             'Te voy romper las pelotas.',
             'Más tonto y no naces.',
             'Eres más tonto que peinar bombillas.',
-            'Eres más tonto que pellizar cristales.',
+            'Eres más tonto que pellizcar cristales.',
             'Eres más malo que pegarle a un padre.'
         )
         self.insultos_mujer = (
@@ -63,17 +63,6 @@ class FlanaBot(Bot):
             'Eres más tonta que peinar bombillas.',
             'Eres más tonta que pellizar cristales.',
             'Eres más mala que pegarle a un padre.',
-        )
-        self.insultos_repu = (
-            *self.insultos_mujer,
-            'Podemita asquerosa',
-            '¿Estás más gorda hoy?',
-            'Repu, mata a ese.'
-        )
-        self.insultos_gorrino = (
-            *self.insultos_hombre,
-            'Pues me trincas el pepino.',
-            'Te pasas gorrino.'
         )
 
         self.add_command(clear)
@@ -99,14 +88,10 @@ class FlanaBot(Bot):
 
         channel = message.channel
         respuesta = None
-        if self.user.id in [mention.id for mention in message.mentions] or not random.randint(0, 50):
+        if self.user.id in [mention.id for mention in message.mentions] or not random.randint(0, 800):
             # if message.author.id in (ID['amir'], ID['jose'], ID['fernando'], ID['ale'], ID['silex']):
             #     respuesta = random.choice(self.insultos_hombre)
-            if message.author.id == ID['repu']:
-                respuesta = random.choice(self.insultos_repu)
-            elif message.author.id == ID['gorrino']:
-                respuesta = random.choice(self.insultos_gorrino)
-            elif message.author.id != ID['flanagan']:
+            if message.author.id != ID['flanagan']:
                 if random.randint(0, 20):
                     respuesta = random.choice(self.insultos_hombre)
                 else:
