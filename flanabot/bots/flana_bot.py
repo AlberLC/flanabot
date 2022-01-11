@@ -213,6 +213,9 @@ class FlanaBot(MultiBot, ABC):
                 last_punishment.is_active = False
                 last_punishment.save()
 
+    async def _create_empty_message(self) -> Message:
+        return Message()
+
     @staticmethod
     def _get_grouped_punishments(PunishmentClass: Type[PunishmentBase]) -> tuple[tuple[tuple[int, int], list[PunishmentBase]]]:
         sorted_punishments = PunishmentClass.find(sort_keys=('user_id', 'group_id', 'until'))

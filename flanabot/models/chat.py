@@ -1,21 +1,18 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from multibot import Chat as MultiBotChat, EventComponent, T
-
-DEFAULT_CONFIG = {'auto_clear': False,
-                  'auto_covid_chart': True,
-                  'auto_currency_chart': True,
-                  'auto_delete_original': True,
-                  'auto_scraping': True,
-                  'auto_weather_chart': True}
+from multibot import Chat as MultiBotChat
 
 
 @dataclass(eq=False)
 class Chat(MultiBotChat):
-    config: dict[str, bool] = field(default_factory=lambda: DEFAULT_CONFIG)
+    DEFAULT_CONFIG = {'auto_clear': False,
+                      'auto_covid_chart': True,
+                      'auto_currency_chart': True,
+                      'auto_delete_original': True,
+                      'auto_scraping': True,
+                      'auto_weather_chart': True}
 
-    @classmethod
-    def from_event_component(cls, event_component: EventComponent) -> T:
-        chat = super().from_event_component(event_component)
-        chat.config = DEFAULT_CONFIG
-        return chat
+    def __post_init__(self):
+        super().__post_init__()
+        if not self.config:
+            self.config = self.DEFAULT_CONFIG

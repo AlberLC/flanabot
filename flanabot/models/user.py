@@ -1,20 +1,12 @@
 from dataclasses import dataclass
 
-from multibot import User as MultiBotUser, constants as multibot_constants, db
+from multibot import User as MultiBotUser
 
 from flanabot.models.punishments import Mute, Punishment
 
 
 @dataclass(eq=False)
 class User(MultiBotUser):
-    collection = db.user
-    _unique_keys = 'id'
-
-    id: int = None
-    name: str = None
-    is_admin: bool = None
-    original_object: multibot_constants.ORIGINAL_USER = None
-
     def is_muted_on(self, group_id: int):
         return group_id in self.muted_on
 

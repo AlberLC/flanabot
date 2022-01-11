@@ -1,12 +1,12 @@
 import datetime
 from dataclasses import dataclass
 
-from flanautils import FlanaBase, MongoBase
+from flanautils import DCMongoBase, FlanaBase
 from multibot.models.database import db
 
 
 @dataclass(eq=False)
-class PunishmentBase(MongoBase, FlanaBase):
+class PunishmentBase(DCMongoBase, FlanaBase):
     user_id: int = None
     group_id: int = None
     until: datetime.datetime = None

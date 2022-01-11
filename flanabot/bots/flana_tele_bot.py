@@ -2,7 +2,7 @@ from __future__ import annotations  # todo0 remove in 3.11
 
 import functools
 import os
-from typing import Any, Callable
+from typing import Callable
 
 import telethon.tl.functions
 from flanaapis.weather.constants import WeatherEmoji
@@ -54,15 +54,13 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
 
     @return_if_first_empty(exclude_self_types='FlanaTeleBot', globals_=globals())
     async def _create_chat_from_telegram_chat(self, telegram_chat: multibot_constants.TELEGRAM_CHAT) -> Chat | None:
-        return Chat.from_event_component(await super()._create_chat_from_telegram_chat(telegram_chat))
-
-    @return_if_first_empty(exclude_self_types='FlanaTeleBot', globals_=globals())
-    async def _create_bot_message_from_telegram_bot_message(self, original_message: multibot_constants.TELEGRAM_MESSAGE, message: Message, content: Any = None) -> Message | None:
-        return Message.from_event_component(await super()._create_bot_message_from_telegram_bot_message(original_message, message))
+        chat = await super()._create_chat_from_telegram_chat(telegram_chat)
+        chat.config = Chat.DEFAULT_CONFIG
+        return Chat.from_dict(chat.to_dict())
 
     @return_if_first_empty(exclude_self_types='FlanaTeleBot', globals_=globals())
     async def _create_user_from_telegram_user(self, original_user: multibot_constants.TELEGRAM_USER, group_id: int = None) -> User | None:
-        return User.from_event_component(await super()._create_user_from_telegram_user(original_user, group_id))
+        return User.from_dict((await super()._create_user_from_telegram_user(original_user, group_id)).to_dict())
 
     @user_client
     async def _get_contacts_ids(self) -> list[int]:
