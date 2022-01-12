@@ -98,3 +98,6 @@ KEYWORDS = {
                       'solano', 'storm', 'sun', 'temperatura', 'tempo', 'tiempo', 'tormenta', 've', 'ventisca',
                       'weather', 'wetter')
 }
+
+SCRAPING_PHRASES = ('Analizando...', 'Buscando...', 'Hackeando internet... 👀', 'Rebuscando en la web...',
+                    'Robando cosas...', 'Scrapeando...', 'Scraping...')

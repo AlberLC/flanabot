@@ -252,7 +252,8 @@ class FlanaBot(MultiBot, ABC):
             Source.TWITTER: {MediaType.IMAGE: 0, MediaType.AUDIO: 0, MediaType.GIF: 0, MediaType.VIDEO: 0, None: 0, MediaType.ERROR: 0},
             Source.INSTAGRAM: {MediaType.IMAGE: 0, MediaType.AUDIO: 0, MediaType.GIF: 0, MediaType.VIDEO: 0, None: 0, MediaType.ERROR: 0},
             Source.TIKTOK: {MediaType.IMAGE: 0, MediaType.AUDIO: 0, MediaType.GIF: 0, MediaType.VIDEO: 0, None: 0, MediaType.ERROR: 0},
-            Source.REDDIT: {MediaType.IMAGE: 0, MediaType.AUDIO: 0, MediaType.GIF: 0, MediaType.VIDEO: 0, None: 0, MediaType.ERROR: 0}
+            Source.REDDIT: {MediaType.IMAGE: 0, MediaType.AUDIO: 0, MediaType.GIF: 0, MediaType.VIDEO: 0, None: 0, MediaType.ERROR: 0},
+            None: {MediaType.IMAGE: 0, MediaType.AUDIO: 0, MediaType.GIF: 0, MediaType.VIDEO: 0, None: 0, MediaType.ERROR: 0}
         }
         for media in medias:
             medias_count[media.source][media.type_] += 1
@@ -278,7 +279,7 @@ class FlanaBot(MultiBot, ABC):
                                      MediaType.ERROR: 'errores'}[media_type]
                     source_medias_sended_info.append(f'{count} {type_text}')
             if source_medias_sended_info:
-                medias_sended_info.append(f"{flanautils.join_last_separator(source_medias_sended_info, ', ', ' y ')} de {source.name}")
+                medias_sended_info.append(f"{flanautils.join_last_separator(source_medias_sended_info, ', ', ' y ')} de {source.name if source else 'algún sitio'}")
 
         medias_sended_info_joined = flanautils.join_last_separator(medias_sended_info, ',\n', ' y\n')
         new_line = ' ' if len(medias_sended_info) == 1 else '\n'
@@ -292,7 +293,15 @@ class FlanaBot(MultiBot, ABC):
 
     async def _search_and_send_medias(self, message: Message, send_song_info=False) -> list[Message]:
         sended_media_messages = []
-        if medias := await self._search_medias(message):
+        bot_state_message: Message | None = None
+
+        if self.is_bot_mentioned(message) or not message.chat.is_group:
+            bot_state_message = await self.send(random.choice(constants.SCRAPING_PHRASES), message)
+
+        medias = await self._search_medias(message)
+        if bot_state_message:
+            await self.delete_message(bot_state_message)
+        if medias:
             sended_media_messages, _ = await self.send_medias(medias, message, send_song_info)
 
         return sended_media_messages
@@ -758,6 +767,10 @@ class FlanaBot(MultiBot, ABC):
             sended_info_message = await self.send(f'{message.author.name} compartió{self._medias_sended_info(medias)}', message)
 
         for media in medias:
+            if not media.content:
+                fails += 1
+                continue
+
             if media.song_info:
                 message.song_infos.add(media.song_info)
                 message.save()

@@ -1,6 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from multibot import Chat as MultiBotChat
+
+from flanabot.models.user import User
 
 
 @dataclass(eq=False)
@@ -11,6 +13,7 @@ class Chat(MultiBotChat):
                       'auto_delete_original': True,
                       'auto_scraping': True,
                       'auto_weather_chart': True}
+    users: list[User] = field(default_factory=list)
 
     def __post_init__(self):
         super().__post_init__()
