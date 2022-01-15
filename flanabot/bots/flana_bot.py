@@ -312,7 +312,7 @@ class FlanaBot(MultiBot, ABC):
             return_exceptions=True
         )
 
-        if self.is_bot_mentioned(message) or not message.chat.is_group:
+        if not message.is_inline and (self.is_bot_mentioned(message) or not message.chat.is_group):
             while not results.done():
                 if constants.SCRAPING_MESSAGE_WAITING_TIME <= time.perf_counter() - start_time:
                     bot_state_message = await self.send(random.choice(constants.SCRAPING_PHRASES), message)
