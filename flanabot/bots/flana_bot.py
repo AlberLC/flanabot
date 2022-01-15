@@ -3,7 +3,9 @@ import datetime
 import itertools
 import pprint
 import random
+import time
 from abc import ABC
+from asyncio import Future
 from typing import Iterable, Iterator, Type
 
 import flanaapis.geolocation.functions
@@ -293,27 +295,35 @@ class FlanaBot(MultiBot, ABC):
 
     async def _search_and_send_medias(self, message: Message, send_song_info=False) -> list[Message]:
         sended_media_messages = []
-        bot_state_message: Message | None = None
 
-        if self.is_bot_mentioned(message) or not message.chat.is_group:
-            bot_state_message = await self.send(random.choice(constants.SCRAPING_PHRASES), message)
-
-        medias = await self._search_medias(message)
-        if bot_state_message:
-            await self.delete_message(bot_state_message)
-        if medias:
+        if medias := await self._search_medias(message):
             sended_media_messages, _ = await self.send_medias(medias, message, send_song_info)
 
         return sended_media_messages
 
     async def _search_medias(self, message: Message) -> OrderedSet[Media]:
-        results: tuple[OrderedSet[Media] | BaseException, ...] = await asyncio.gather(
+        bot_state_message: Message | None = None
+        start_time = time.perf_counter()
+
+        results: Future = asyncio.gather(
             twitter.get_medias(message.text),
             instagram.get_medias(message.text),
             tiktok.get_medias(message.text),
             return_exceptions=True
         )
-        results, exceptions = flanautils.filter_exceptions(results)
+
+        if self.is_bot_mentioned(message) or not message.chat.is_group:
+            while not results.done():
+                if constants.SCRAPING_MESSAGE_WAITING_TIME <= time.perf_counter() - start_time:
+                    bot_state_message = await self.send(random.choice(constants.SCRAPING_PHRASES), message)
+                    break
+                await asyncio.sleep(0.1)
+
+        await results
+        if bot_state_message:
+            await self.delete_message(bot_state_message)
+
+        results, exceptions = flanautils.filter_exceptions(results.result())
 
         await self._manage_exceptions(exceptions, message)
 
@@ -454,12 +464,15 @@ class FlanaBot(MultiBot, ABC):
             return
 
         if not message_deleted_bot_action:
+            await self.send_error(random.choice(constants.RECOVER_PHRASES), message)
             return
 
         affected_object_ids = [affected_message_object_id for affected_message_object_id in message_deleted_bot_action.affected_objects]
         deleted_messages: list[Message] = [affected_message for affected_object_id in affected_object_ids if (affected_message := Message.find_one({'_id': affected_object_id})).author.id != self.bot_id]
         for deleted_message in deleted_messages:
             await self.send(deleted_message.text, message)
+
+        message_deleted_bot_action.delete()
 
     async def _on_scraping(self, message: Message, delete_original: bool = None) -> OrderedSet[Media]:
         sended_media_messages = await self._search_and_send_medias(message.replied_message) if message.replied_message else OrderedSet()

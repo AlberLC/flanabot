@@ -13,6 +13,7 @@ PUNISHMENTS_RESET = datetime.timedelta(weeks=6 * flanautils.WEEKS_IN_A_MONTH)
 RECOVERY_DELETED_MESSAGE_BEFORE = datetime.timedelta(hours=1)
 TIME_THRESHOLD_TO_MANUAL_UNMUTE = datetime.timedelta(days=3)
 TIME_THRESHOLD_TO_MANUAL_UNPUNISH = datetime.timedelta(days=3)
+SCRAPING_MESSAGE_WAITING_TIME = 0.1
 
 BAD_PHRASES = (
     'Cállate ya anda.',
@@ -83,7 +84,7 @@ KEYWORDS = {
     'scraping': ('api', 'aqui', 'busca', 'contenido', 'content', 'descarga', 'descargar', 'download', 'envia', 'habia',
                  'media', 'redes', 'scrap', 'scraping', 'search', 'send', 'social', 'sociales', 'tenia', 'video',
                  'videos'),
-    'show': ('actual', 'enseña', 'estado', 'how', 'is', 'muestra', 'show', 'como'),
+    'show': ('actual', 'enseña', 'estado', 'how', 'muestra', 'show', 'como'),
     'song_info': ('aqui', 'cancion', 'data', 'datos', 'info', 'informacion', 'information', 'llama', 'media', 'name',
                   'nombre', 'sonaba', 'sonando', 'song', 'sono', 'sound', 'suena', 'title', 'titulo',
                   'video'),
@@ -98,6 +99,15 @@ KEYWORDS = {
                       'solano', 'storm', 'sun', 'temperatura', 'tempo', 'tiempo', 'tormenta', 've', 'ventisca',
                       'weather', 'wetter')
 }
+
+RECOVER_PHRASES = (
+    'No hay nada que recuperar.',
+    'Ya lo he recuperado y enviado, así que callate ya.',
+    'Ya lo he recuperado y enviado, así que mejor estás antento antes de dar por culo.',
+    'Ya lo he recuperado y enviado, no lo voy a hacer dos veces.',
+    'Ya lo he recuperado y enviado. A ver si leemos más y jodemos menos.',
+    'Ya lo he reenviado.'
+)
 
 SCRAPING_PHRASES = ('Analizando...', 'Buscando...', 'Hackeando internet... 👀', 'Rebuscando en la web...',
                     'Robando cosas...', 'Scrapeando...', 'Scraping...')
