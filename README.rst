@@ -10,7 +10,7 @@ Installation
 
 Python 3.10 or higher is required.
 
-.. code-block:: python
+.. code-block::
 
     pip install flanabot
 
