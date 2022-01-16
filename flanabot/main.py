@@ -1,14 +1,15 @@
-import asyncio
 import os
 
 import flanautils
+
+os.environ |= flanautils.find_environment_variables('../.env')
+
+import asyncio
 
 from flanabot.bots.flana_tele_bot import FlanaTeleBot
 
 
 async def main():
-    os.environ |= flanautils.find_environment_variables('../.env')
-
     flana_tele_bot = FlanaTeleBot()
 
     await asyncio.gather(
