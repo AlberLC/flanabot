@@ -96,8 +96,8 @@ KEYWORDS = {
                       'cloudless', 'cloudy', 'cold', 'congelar', 'congelado', 'denbora', 'despejado', 'diluvio', 'frio',
                       'frost', 'hielo', 'humedad', 'llover', 'llueva', 'llueve', 'lluvia', 'nevada', 'nieva', 'nieve',
                       'nube', 'nubes', 'nublado', 'meteorologia', 'rain', 'snow', 'snowfall', 'snowstorm', 'sol',
-                      'solano', 'storm', 'sun', 'temperatura', 'tempo', 'tiempo', 'tormenta', 've', 'ventisca',
-                      'weather', 'wetter')
+                      'solano', 'storm', 'sun', 'temperatura', 'tempo', 'tiempo', 'tormenta', 'ventisca', 'weather',
+                      'wetter')
 }
 
 RECOVER_PHRASES = (
