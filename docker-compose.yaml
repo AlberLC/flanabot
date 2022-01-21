@@ -1,0 +1,17 @@
+services:
+  flanabot:
+    image: flanaganvaquero/flanabot
+    build: .
+    env_file:
+      - .env
+
+  mongodb:
+    image: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    volumes:
+      - mongodata:/data/db
+
+volumes:
+  mongodata:
