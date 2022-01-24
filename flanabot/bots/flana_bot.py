@@ -3,7 +3,7 @@ import datetime
 import itertools
 import pprint
 import random
-import time
+import time as time_module
 from abc import ABC
 from asyncio import Future
 from typing import Iterable, Iterator, Type
@@ -36,7 +36,7 @@ class FlanaBot(MultiBot, ABC):
     def _add_handlers(self):
         super()._add_handlers()
 
-        self.register(self._on_bye, constants.KEYWORDS['bye'], min_ratio=1)
+        self.register(self._on_bye, constants.KEYWORDS['bye'])
 
         self.register(self._on_config_list_show, constants.KEYWORDS['config'])
         self.register(self._on_config_list_show, constants.KEYWORDS['help'])
@@ -87,6 +87,7 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_hello, constants.KEYWORDS['hello'])
 
         self.register(self._on_mute, constants.KEYWORDS['mute'])
+        self.register(self._on_mute, (('haz', 'se'), constants.KEYWORDS['mute']))
         self.register(self._on_mute, (constants.KEYWORDS['deactivate'], constants.KEYWORDS['unmute']))
         self.register(self._on_mute, (constants.KEYWORDS['deactivate'], constants.KEYWORDS['sound']))
 
@@ -303,7 +304,7 @@ class FlanaBot(MultiBot, ABC):
 
     async def _search_medias(self, message: Message) -> OrderedSet[Media]:
         bot_state_message: Message | None = None
-        start_time = time.perf_counter()
+        start_time = time_module.perf_counter()
 
         results: Future = asyncio.gather(
             twitter.get_medias(message.text),
@@ -314,7 +315,7 @@ class FlanaBot(MultiBot, ABC):
 
         if not message.is_inline and (self.is_bot_mentioned(message) or not message.chat.is_group):
             while not results.done():
-                if constants.SCRAPING_MESSAGE_WAITING_TIME <= time.perf_counter() - start_time:
+                if constants.SCRAPING_MESSAGE_WAITING_TIME <= time_module.perf_counter() - start_time:
                     bot_state_message = await self.send(random.choice(constants.SCRAPING_PHRASES), message)
                     break
                 await asyncio.sleep(0.1)
@@ -573,10 +574,10 @@ class FlanaBot(MultiBot, ABC):
         ).split()
         place_words = (
                 OrderedSet(original_text_words)
-                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['show'], min_ratio=0.8).keys()
-                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['weather_chart'], min_ratio=0.8).keys()
-                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['date'], min_ratio=0.8).keys()
-                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['thanks'], min_ratio=0.8).keys()
+                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['show'], min_ratio=0.85).keys()
+                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['weather_chart'], min_ratio=0.85).keys()
+                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['date'], min_ratio=0.85).keys()
+                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['thanks'], min_ratio=0.85).keys()
                 - user_names_with_at_sign
                 - user_names_without_at_sign
                 - flanautils.CommonWords.words

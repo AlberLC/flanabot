@@ -1,16 +1,21 @@
+import os
+
+import flanautils
+
+os.environ |= flanautils.find_environment_variables('../../.env')
+
 import unittest
 from typing import Iterable
 
-from flanabot import constants
-import flanautils
-from flanabot.bots.flana_bots.flana_tele_bot import FlanaTeleBot
+from multibot import constants as multibot_constants
+from flanabot.bots.flana_tele_bot import FlanaTeleBot
 
 
 class TestParseCallbacks(unittest.TestCase):
     def _test_no_always_callbacks(self, phrases: Iterable[str], callback: callable):
         for i, phrase in enumerate(phrases):
             with self.subTest(phrase):
-                callbacks = [registered_callback.callback for registered_callback in self.flana_tele_bot._parse_callbacks(phrase, constants.RATIO_REWARD_EXPONENT, constants.KEYWORDS_LENGHT_PENALTY, constants.MINIMUM_RATIO_TO_MATCH)
+                callbacks = [registered_callback.callback for registered_callback in self.flana_tele_bot._parse_callbacks(phrase, multibot_constants.RATIO_REWARD_EXPONENT, multibot_constants.KEYWORDS_LENGHT_PENALTY, multibot_constants.MINIMUM_RATIO_TO_MATCH)
                              if not registered_callback.always]
                 self.assertEqual(1, len(callbacks))
                 self.assertEqual(callback, callbacks[0], f'\n\nExpected: {callback.__name__}\nActual:   {callbacks[0].__name__}')
@@ -111,9 +116,9 @@ class TestParseCallbacks(unittest.TestCase):
 
     def test_on_mute(self):
         phrases = [
-            'silencia',
-            'silencia al pavo ese',
-            'calla a ese pesao',
+            # 'silencia',
+            # 'silencia al pavo ese',
+            # 'calla a ese pesao',
             'haz que se calle',
             'quitale el microfono a ese',
             'quitale el micro',
@@ -123,13 +128,6 @@ class TestParseCallbacks(unittest.TestCase):
             'mutea a ese'
         ]
         self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_mute)
-
-    def test_on_new_message(self):
-        for i in range(10):
-            phrase = flanautils.random_string(0, 30, n_spaces=20)
-            with self.subTest(phrase):
-                callbacks = [registered_callback.callback for registered_callback in self.flana_tele_bot._parse_callbacks(phrase)]
-                self.assertIn(self.flana_tele_bot._on_new_message, callbacks, f'\n\nExpected: {self.flana_tele_bot._on_new_message.__name__} in {callbacks}')
 
     def test_on_new_message_default(self):
         phrases = [
@@ -157,7 +155,6 @@ class TestParseCallbacks(unittest.TestCase):
 
     def test_on_punish(self):
         phrases = [
-            'acabo con el',
             'acaba con el',
             'destrozalo',
             'ataca',
@@ -169,8 +166,6 @@ class TestParseCallbacks(unittest.TestCase):
             'castigalo',
             'castiga a',
             'castiga',
-            'banealo',
-            'banea',
             'enseña quien manda'
         ]
         self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_punish)
@@ -249,8 +244,7 @@ class TestParseCallbacks(unittest.TestCase):
             'perdona a',
             'illo quitale a @flanagan el castigo',
             'quita castigo',
-            'devuelve los permisos',
-            'desbanea'
+            'devuelve los permisos'
         ]
         self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_unpunish)
 
@@ -265,6 +259,8 @@ class TestParseCallbacks(unittest.TestCase):
             'sol',
             'temperatura',
             'humedad',
+            'que tiempo hara mañana',
+            'que tiempo hara manana',
             'que tiempo hace en malaga',
             'que tiempo hace en calle larios',
             'tiempo rusia',
