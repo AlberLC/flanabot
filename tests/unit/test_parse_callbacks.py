@@ -2,7 +2,7 @@ import os
 
 import flanautils
 
-os.environ |= flanautils.find_environment_variables('../../.env')
+os.environ |= flanautils.find_environment_variables('../.env')
 
 import unittest
 from typing import Iterable
