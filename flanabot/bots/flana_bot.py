@@ -583,14 +583,16 @@ class FlanaBot(MultiBot, ABC):
                 - flanautils.CommonWords.words
         )
         if not place_words:
-            await self.send_error(random.choice(('¿Tiempo dónde?', 'Indica el sitio.', 'Y el sitio?', 'y el sitio? me lo invento?')), message)
+            if not message.is_inline:
+                await self.send_error(random.choice(('¿Tiempo dónde?', 'Indica el sitio.', 'Y el sitio?', 'y el sitio? me lo invento?')), message)
             return
 
         if 'calle' in original_text_words:
             place_words.insert(0, 'calle')
         place_query = ' '.join(place_words)
         if len(place_query) >= constants.MAX_PLACE_QUERY_LENGTH:
-            await self.send_error(Media('resources/mucho_texto.png'), message)
+            if not message.is_inline:
+                await self.send_error(Media('resources/mucho_texto.png'), message)
             return
         if show_progress_state:
             bot_state_message = await self.send(f'Buscando "{place_query}" en el mapa 🧐...', message)
