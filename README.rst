@@ -3,7 +3,7 @@ FlanaBot
 
 |license| |project_version| |python_version|
 
-Bot based on `github.com/AlberLC/multibot`_ to manage Discord groups, Telegram and Twitch chats, moderate them and add functionalities.
+Bot based on `github.com/AlberLC/multibot`_ to manage Discord, Telegram and Twitch chats, moderate them and add functionalities.
 
 |
 
