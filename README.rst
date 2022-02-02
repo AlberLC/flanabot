@@ -21,7 +21,7 @@ Python 3.10 or higher is required.
 Features
 --------
 
-- Talk to users.
+- Talks to users.
 - Delete batch messages.
 - It works both in groups and in private chats.
 - Understands numbers and amounts of time textually expressed (useful for deleting a message batch or saying "flanabot ban john for one hour and 20 minutes").
