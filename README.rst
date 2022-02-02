@@ -22,7 +22,7 @@ Features
 --------
 
 - Talks to users.
-- Delete batch messages.
+- Delete message batches.
 - It works both in groups and in private chats.
 - Understands numbers and amounts of time textually expressed (useful for deleting a message batch or saying "flanabot ban john for one hour and 20 minutes").
 - Shows interactive via buttons charts of past, current and forecast weather.
