@@ -580,7 +580,7 @@ class FlanaBot(MultiBot, ABC):
                 - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['thanks'], min_ratio=0.85).keys()
                 - user_names_with_at_sign
                 - user_names_without_at_sign
-                - flanautils.CommonWords.words
+                - flanautils.CommonWords.all_words
         )
         if not place_words:
             if not message.is_inline:
