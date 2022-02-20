@@ -568,6 +568,7 @@ class FlanaBot(MultiBot, ABC):
         user_names_with_at_sign = {user.name.lower() for user in message.chat.users}
         user_names_without_at_sign = {user.name.lower().replace('@', '') for user in message.chat.users}
         original_text_words = flanautils.remove_accents(message.text.lower())
+        original_text_words = original_text_words.replace(',', ' ').replace(';', ' ').replace('-', ' -')
         original_text_words = flanautils.translate(
             original_text_words,
             {symbol: None for symbol in set(flanautils.SYMBOLS) - {'-', '.'}}
