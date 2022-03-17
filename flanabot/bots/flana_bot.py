@@ -593,7 +593,7 @@ class FlanaBot(MultiBot, ABC):
         place_query = ' '.join(place_words)
         if len(place_query) >= constants.MAX_PLACE_QUERY_LENGTH:
             if not message.is_inline:
-                await self.send_error(Media('resources/mucho_texto.png'), message)
+                await self.send_error(Media(str(flanautils.resolve_path('resources/mucho_texto.png'))), message, send_as_file=False)
             return
         if show_progress_state:
             bot_state_message = await self.send(f'Buscando "{place_query}" en el mapa 🧐...', message)
