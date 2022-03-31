@@ -592,7 +592,7 @@ class FlanaBot(MultiBot, ABC):
             place_words.insert(0, 'calle')
         place_query = ' '.join(place_words)
         if len(place_query) >= constants.MAX_PLACE_QUERY_LENGTH:
-            if not message.is_inline:
+            if not show_progress_state:
                 await self.send_error(Media(str(flanautils.resolve_path('resources/mucho_texto.png'))), message, send_as_file=False)
             return
         if show_progress_state:
