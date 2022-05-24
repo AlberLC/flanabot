@@ -32,7 +32,10 @@ class TestParseCallbacks(unittest.TestCase):
             'flanabot ajustes',
             'Flanabot ajustes',
             'Flanabot qué puedo ajustar?',
-            'flanabot ayuda'
+            'config',
+            'configuracion',
+            'configuración',
+            'configuration'
         ]
         self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_config_list_show)
 

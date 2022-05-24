@@ -1,12 +1,10 @@
 import asyncio
 import datetime
-import itertools
-import pprint
 import random
 import time as time_module
 from abc import ABC
 from asyncio import Future
-from typing import Iterable, Iterator, Type
+from typing import Iterable
 
 import flanaapis.geolocation.functions
 import flanaapis.weather.functions
@@ -14,136 +12,123 @@ import flanautils
 import plotly.graph_objects
 from flanaapis import InstagramLoginError, MediaNotFoundError, Place, PlaceNotFoundError, WeatherEmoji, instagram, tiktok, twitter
 from flanautils import Media, MediaType, NotFoundError, OrderedSet, Source, TimeUnits, TraceMetadata, return_if_first_empty
-from multibot import Action, BotAction, MultiBot, SendError, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, reply
+from multibot import Action, BadRoleError, BotAction, MultiBot, SendError, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, reply
 
 from flanabot import constants
-from flanabot.exceptions import BadRoleError, UserDisconnectedError
-from flanabot.models.chat import Chat
-from flanabot.models.message import Message
-from flanabot.models.punishments import Mute, Punishment, PunishmentBase
-from flanabot.models.weather_chart import WeatherChart
+from flanabot.models import ButtonsMessageType, Chat, Message, Punishment, WeatherChart
 
 
 # ----------------------------------------------------------------------------------------------------- #
 # --------------------------------------------- FLANA_BOT --------------------------------------------- #
 # ----------------------------------------------------------------------------------------------------- #
-
-
 class FlanaBot(MultiBot, ABC):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lock = asyncio.Lock()
+
     # ----------------------------------------------------------- #
     # -------------------- PROTECTED METHODS -------------------- #
     # ----------------------------------------------------------- #
     def _add_handlers(self):
         super()._add_handlers()
 
-        self.register(self._on_bye, constants.KEYWORDS['bye'])
+        self.register(self._on_bye, multibot_constants.KEYWORDS['bye'])
 
-        self.register(self._on_config_list_show, constants.KEYWORDS['config'])
-        self.register(self._on_config_list_show, constants.KEYWORDS['help'])
-        self.register(self._on_config_list_show, (constants.KEYWORDS['show'], constants.KEYWORDS['config']))
-        self.register(self._on_config_list_show, (constants.KEYWORDS['help'], constants.KEYWORDS['config']))
-        self.register(self._on_config_list_show, (constants.KEYWORDS['show'], constants.KEYWORDS['help']))
-        self.register(self._on_config_list_show, (constants.KEYWORDS['show'], constants.KEYWORDS['help'], constants.KEYWORDS['config']))
+        self.register(self._on_config_list_show, multibot_constants.KEYWORDS['config'])
+        self.register(self._on_config_list_show, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['config']))
 
         self.register(self._on_covid_chart, constants.KEYWORDS['covid_chart'])
 
         self.register(self._on_currency_chart, constants.KEYWORDS['currency_chart'])
-        self.register(self._on_currency_chart, (constants.KEYWORDS['show'], constants.KEYWORDS['currency_chart']))
+        self.register(self._on_currency_chart, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['currency_chart']))
 
-        self.register(self._on_currency_chart_config_activate, (constants.KEYWORDS['activate'], constants.KEYWORDS['currency_chart']))
-        self.register(self._on_currency_chart_config_activate, (constants.KEYWORDS['activate'], constants.KEYWORDS['currency_chart'], constants.KEYWORDS['config']))
+        self.register(self._on_currency_chart_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['currency_chart']))
+        self.register(self._on_currency_chart_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['currency_chart'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_currency_chart_config_change, (constants.KEYWORDS['change'], constants.KEYWORDS['currency_chart']))
-        self.register(self._on_currency_chart_config_change, (constants.KEYWORDS['change'], constants.KEYWORDS['currency_chart'], constants.KEYWORDS['config']))
+        self.register(self._on_currency_chart_config_change, (multibot_constants.KEYWORDS['change'], constants.KEYWORDS['currency_chart']))
+        self.register(self._on_currency_chart_config_change, (multibot_constants.KEYWORDS['change'], constants.KEYWORDS['currency_chart'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_currency_chart_config_deactivate, (constants.KEYWORDS['deactivate'], constants.KEYWORDS['currency_chart']))
-        self.register(self._on_currency_chart_config_deactivate, (constants.KEYWORDS['deactivate'], constants.KEYWORDS['currency_chart'], constants.KEYWORDS['config']))
+        self.register(self._on_currency_chart_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['currency_chart']))
+        self.register(self._on_currency_chart_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['currency_chart'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_currency_chart_config_show, (constants.KEYWORDS['currency_chart'], constants.KEYWORDS['config']))
-        self.register(self._on_currency_chart_config_show, (constants.KEYWORDS['show'], constants.KEYWORDS['currency_chart'], constants.KEYWORDS['config']))
+        self.register(self._on_currency_chart_config_show, (constants.KEYWORDS['currency_chart'], multibot_constants.KEYWORDS['config']))
+        self.register(self._on_currency_chart_config_show, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['currency_chart'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_delete_original_config_activate, (constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['delete']))
-        self.register(self._on_delete_original_config_activate, (constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
-        self.register(self._on_delete_original_config_activate, (constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['config']))
-        self.register(self._on_delete_original_config_activate, (constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], constants.KEYWORDS['config']))
+        self.register(self._on_delete_original_config_activate, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['delete']))
+        self.register(self._on_delete_original_config_activate, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_delete_original_config_activate, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['config']))
+        self.register(self._on_delete_original_config_activate, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_delete_original_config_change, (constants.KEYWORDS['change'], multibot_constants.KEYWORDS['delete']))
-        self.register(self._on_delete_original_config_change, (constants.KEYWORDS['change'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
-        self.register(self._on_delete_original_config_change, (constants.KEYWORDS['change'], multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['config']))
-        self.register(self._on_delete_original_config_change, (constants.KEYWORDS['change'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], constants.KEYWORDS['config']))
+        self.register(self._on_delete_original_config_change, (multibot_constants.KEYWORDS['change'], multibot_constants.KEYWORDS['delete']))
+        self.register(self._on_delete_original_config_change, (multibot_constants.KEYWORDS['change'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_delete_original_config_change, (multibot_constants.KEYWORDS['change'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['config']))
+        self.register(self._on_delete_original_config_change, (multibot_constants.KEYWORDS['change'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_delete_original_config_deactivate, (constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete']))
-        self.register(self._on_delete_original_config_deactivate, (constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
-        self.register(self._on_delete_original_config_deactivate, (constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['config']))
-        self.register(self._on_delete_original_config_deactivate, (constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], constants.KEYWORDS['config']))
+        self.register(self._on_delete_original_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete']))
+        self.register(self._on_delete_original_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_delete_original_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['config']))
+        self.register(self._on_delete_original_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_delete_original_config_show, (constants.KEYWORDS['show'], multibot_constants.KEYWORDS['delete']))
-        self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['config']))
-        self.register(self._on_delete_original_config_show, (constants.KEYWORDS['show'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
-        self.register(self._on_delete_original_config_show, (constants.KEYWORDS['show'], multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['config']))
-        self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], constants.KEYWORDS['config']))
-        self.register(self._on_delete_original_config_show, (constants.KEYWORDS['show'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], constants.KEYWORDS['config']))
+        self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['delete']))
+        self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['config']))
+        self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['config']))
+        self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['config']))
+        self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_hello, constants.KEYWORDS['hello'])
-
-        self.register(self._on_mute, constants.KEYWORDS['mute'])
-        self.register(self._on_mute, (('haz', 'se'), constants.KEYWORDS['mute']))
-        self.register(self._on_mute, (constants.KEYWORDS['deactivate'], constants.KEYWORDS['unmute']))
-        self.register(self._on_mute, (constants.KEYWORDS['deactivate'], constants.KEYWORDS['sound']))
+        self.register(self._on_hello, multibot_constants.KEYWORDS['hello'])
 
         self.register(self._on_new_message_default, default=True)
 
-        self.register(self._on_no_delete_original, (constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete']))
-        self.register(self._on_no_delete_original, (constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['message']))
-        self.register(self._on_no_delete_original, (constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
-        self.register(self._on_no_delete_original, (constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete']))
+        self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
 
         self.register(self._on_punish, constants.KEYWORDS['punish'])
-        self.register(self._on_punish, (constants.KEYWORDS['deactivate'], constants.KEYWORDS['unpunish']))
-        self.register(self._on_punish, (constants.KEYWORDS['deactivate'], constants.KEYWORDS['permission']))
+        self.register(self._on_punish, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['unpunish']))
+        self.register(self._on_punish, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['permission']))
 
-        self.register(self._on_recover_message, (constants.KEYWORDS['reset'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_recover_message, (multibot_constants.KEYWORDS['reset'], multibot_constants.KEYWORDS['message']))
 
         self.register(self._on_scraping, constants.KEYWORDS['scraping'])
 
-        self.register(self._on_scraping_config_activate, (constants.KEYWORDS['activate'], constants.KEYWORDS['scraping']))
-        self.register(self._on_scraping_config_activate, (constants.KEYWORDS['activate'], constants.KEYWORDS['scraping'], constants.KEYWORDS['config']))
+        self.register(self._on_scraping_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['scraping']))
+        self.register(self._on_scraping_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['scraping'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_scraping_config_change, (constants.KEYWORDS['change'], constants.KEYWORDS['scraping']))
-        self.register(self._on_scraping_config_change, (constants.KEYWORDS['change'], constants.KEYWORDS['scraping'], constants.KEYWORDS['config']))
+        self.register(self._on_scraping_config_change, (multibot_constants.KEYWORDS['change'], constants.KEYWORDS['scraping']))
+        self.register(self._on_scraping_config_change, (multibot_constants.KEYWORDS['change'], constants.KEYWORDS['scraping'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_scraping_config_deactivate, (constants.KEYWORDS['deactivate'], constants.KEYWORDS['scraping']))
-        self.register(self._on_scraping_config_deactivate, (constants.KEYWORDS['deactivate'], constants.KEYWORDS['scraping'], constants.KEYWORDS['config']))
+        self.register(self._on_scraping_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['scraping']))
+        self.register(self._on_scraping_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['scraping'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_scraping_config_show, (constants.KEYWORDS['show'], constants.KEYWORDS['scraping']))
-        self.register(self._on_scraping_config_show, (constants.KEYWORDS['scraping'], constants.KEYWORDS['config']))
-        self.register(self._on_scraping_config_show, (constants.KEYWORDS['show'], constants.KEYWORDS['scraping'], constants.KEYWORDS['config']))
+        self.register(self._on_scraping_config_show, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['scraping']))
+        self.register(self._on_scraping_config_show, (constants.KEYWORDS['scraping'], multibot_constants.KEYWORDS['config']))
+        self.register(self._on_scraping_config_show, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['scraping'], multibot_constants.KEYWORDS['config']))
 
         self.register(self._on_song_info, constants.KEYWORDS['song_info'])
 
-        self.register(self._on_unmute, constants.KEYWORDS['unmute'])
-        self.register(self._on_unmute, (constants.KEYWORDS['deactivate'], constants.KEYWORDS['mute']))
-        self.register(self._on_unmute, (constants.KEYWORDS['activate'], constants.KEYWORDS['sound']))
-
         self.register(self._on_unpunish, constants.KEYWORDS['unpunish'])
 
-        self.register(self._on_unpunish, (constants.KEYWORDS['deactivate'], constants.KEYWORDS['punish']))
-        self.register(self._on_unpunish, (constants.KEYWORDS['activate'], constants.KEYWORDS['permission']))
+        self.register(self._on_unpunish, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['punish']))
+        self.register(self._on_unpunish, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['permission']))
 
         self.register(self._on_weather_chart, constants.KEYWORDS['weather_chart'])
-        self.register(self._on_weather_chart, (constants.KEYWORDS['show'], constants.KEYWORDS['weather_chart']))
+        self.register(self._on_weather_chart, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['weather_chart']))
 
-        self.register(self._on_weather_chart_config_activate, (constants.KEYWORDS['activate'], constants.KEYWORDS['weather_chart']))
-        self.register(self._on_weather_chart_config_activate, (constants.KEYWORDS['activate'], constants.KEYWORDS['weather_chart'], constants.KEYWORDS['config']))
+        self.register(self._on_weather_chart_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['weather_chart']))
+        self.register(self._on_weather_chart_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_weather_chart_config_change, (constants.KEYWORDS['change'], constants.KEYWORDS['weather_chart']))
-        self.register(self._on_weather_chart_config_change, (constants.KEYWORDS['change'], constants.KEYWORDS['weather_chart'], constants.KEYWORDS['config']))
+        self.register(self._on_weather_chart_config_change, (multibot_constants.KEYWORDS['change'], constants.KEYWORDS['weather_chart']))
+        self.register(self._on_weather_chart_config_change, (multibot_constants.KEYWORDS['change'], constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_weather_chart_config_deactivate, (constants.KEYWORDS['deactivate'], constants.KEYWORDS['weather_chart']))
-        self.register(self._on_weather_chart_config_deactivate, (constants.KEYWORDS['deactivate'], constants.KEYWORDS['weather_chart'], constants.KEYWORDS['config']))
+        self.register(self._on_weather_chart_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['weather_chart']))
+        self.register(self._on_weather_chart_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_weather_chart_config_show, (constants.KEYWORDS['weather_chart'], constants.KEYWORDS['config']))
-        self.register(self._on_weather_chart_config_show, (constants.KEYWORDS['show'], constants.KEYWORDS['weather_chart'], constants.KEYWORDS['config']))
+        self.register(self._on_weather_chart_config_show, (constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
+        self.register(self._on_weather_chart_config_show, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
+
+        self.register_button(self._on_button_press)
 
     async def _change_config(self, config_name: str, message: Message, value: bool = None):
         if value is None:
@@ -157,52 +142,43 @@ class FlanaBot(MultiBot, ABC):
     @admin(False)
     @group
     async def _check_message_flood(self, message: Message):
-        if message.author.is_punished:
+        if await self.is_punished(message.author, message.chat):
             return
 
         last_2s_messages = Message.find({
+            'platform': self.bot_platform.value,
             'author': message.author.object_id,
             'last_update': {
-                '$gte': datetime.datetime.now() - datetime.timedelta(seconds=2)
+                '$gte': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=2)
             }
         })
         last_7s_messages = Message.find({
+            'platform': self.bot_platform.value,
             'author': message.author.object_id,
             'last_update': {
-                '$gte': datetime.datetime.now() - datetime.timedelta(seconds=7),
-                '$lt': datetime.datetime.now() - datetime.timedelta(seconds=2)
+                '$gte': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=7),
+                '$lt': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=2)
             }
         })
 
         if len(last_2s_messages) >= 5 or len(last_7s_messages) >= 7:
-            n_punishments = len(Punishment.find({'user_id': message.author.id, 'group_id': message.chat.group_id}))
+            n_punishments = len(Punishment.find({
+                'platform': self.bot_platform.value,
+                'user_id': message.author.id,
+                'group_id': message.chat.group_id
+            }))
             punishment_seconds = (n_punishments + 2) ** constants.PUNISHMENT_INCREMENT_EXPONENT
             try:
                 await self.punish(message.author.id, message.chat.group_id, punishment_seconds, message)
             except BadRoleError as e:
                 await self._manage_exceptions(e, message)
             else:
-                # noinspection PyTypeChecker
-                Punishment(message.author.id, message.author.group_id, datetime.datetime.now() + datetime.timedelta(punishment_seconds)).save()
-                await self.send(f'Castigado durante {TimeUnits(punishment_seconds).to_words()}.', message)
-
-    @staticmethod
-    async def _check_messages():
-        Message.collection.delete_many({'last_update': {'$lte': datetime.datetime.now() - multibot_constants.MESSAGE_EXPIRATION_TIME}})
-
-    async def _check_mutes(self):
-        mute_groups = self._get_grouped_punishments(Mute)
-
-        now = datetime.datetime.now()
-        for (user_id, group_id), sorted_mutes in mute_groups:
-            if (last_mute := sorted_mutes[-1]).until <= now:
-                await self.unmute(user_id, group_id)
-                last_mute.delete()
+                await self.send(f'Castigado durante {TimeUnits(seconds=punishment_seconds).to_words()}.', message)
 
     async def _check_punishments(self):
         punishment_groups = self._get_grouped_punishments(Punishment)
 
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.timezone.utc)
         for (user_id, group_id), sorted_punishments in punishment_groups:
             if now < (last_punishment := sorted_punishments[-1]).until:
                 continue
@@ -216,19 +192,16 @@ class FlanaBot(MultiBot, ABC):
                 last_punishment.is_active = False
                 last_punishment.save()
 
-    async def _create_empty_message(self) -> Message:
-        return Message()
-
     @staticmethod
-    def _get_grouped_punishments(PunishmentClass: Type[PunishmentBase]) -> tuple[tuple[tuple[int, int], list[PunishmentBase]]]:
-        sorted_punishments = PunishmentClass.find(sort_keys=('user_id', 'group_id', 'until'))
-        group_iterator: Iterator[
-            tuple[
-                tuple[int, int],
-                Iterator[PunishmentClass]
-            ]
-        ] = itertools.groupby(sorted_punishments, key=lambda punishment: (punishment.user_id, punishment.group_id))
-        return tuple(((user_id, group_id), list(group_)) for (user_id, group_id), group_ in group_iterator)
+    def _get_config_buttons(config: dict | Chat | Message) -> list[list[str]]:
+        match config:
+            case Chat() as chat:
+                config = chat.config
+            case Message() as message:
+                config = message.chat.config
+
+        buttons_texts = [f"{'✔' if v else '❌'}  {k}" for k, v in config.items()]
+        return flanautils.chunks(buttons_texts, 3)
 
     @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
     async def _manage_exceptions(self, exceptions: BaseException | Iterable[BaseException], message: Message):
@@ -288,10 +261,7 @@ class FlanaBot(MultiBot, ABC):
         new_line = ' ' if len(medias_sended_info) == 1 else '\n'
         return f'{new_line}{medias_sended_info_joined}:'
 
-    async def _mute(self, user_id: int, group_id: int):
-        pass
-
-    async def _punish(self, user_id: int, group_id: int):
+    async def _punish(self, user: int | str | User, group_: int | str | Chat):
         pass
 
     async def _search_and_send_medias(self, message: Message, send_song_info=False) -> list[Message]:
@@ -333,15 +303,54 @@ class FlanaBot(MultiBot, ABC):
     async def _show_config(self, config_name: str, message: Message):
         await self.send(f"{config_name} está {'activado ✔' if message.chat.config.get(config_name) else 'desactivado ❌'}", message)
 
-    async def _unmute(self, user_id: int, group_id: int):
-        pass
-
-    async def _unpunish(self, user_id: int, group_id: int):
+    async def _unpunish(self, user: int | str | User, group_: int | str | Chat):
         pass
 
     # ---------------------------------------------- #
     #                    HANDLERS                    #
     # ---------------------------------------------- #
+    async def _on_button_press(self, message: Message):
+        await self._accept_button_event(message)
+        if message.author.is_admin is False:
+            return
+
+        match message.last_button_pressed:
+            case WeatherEmoji.ZOOM_IN.value:
+                buttons_message_type = ButtonsMessageType.WEATHER
+                message.weather_chart.zoom_in()
+            case WeatherEmoji.ZOOM_OUT.value:
+                buttons_message_type = ButtonsMessageType.WEATHER
+                message.weather_chart.zoom_out()
+            case WeatherEmoji.LEFT.value:
+                buttons_message_type = ButtonsMessageType.WEATHER
+                message.weather_chart.move_left()
+            case WeatherEmoji.RIGHT.value:
+                buttons_message_type = ButtonsMessageType.WEATHER
+                message.weather_chart.move_right()
+            case WeatherEmoji.PRECIPITATION_VOLUME.value:
+                buttons_message_type = ButtonsMessageType.WEATHER
+                message.weather_chart.trace_metadatas['rain_volume'].show = not message.weather_chart.trace_metadatas['rain_volume'].show
+                message.weather_chart.trace_metadatas['snow_volume'].show = not message.weather_chart.trace_metadatas['snow_volume'].show
+            case emoji if emoji in WeatherEmoji.values:
+                buttons_message_type = ButtonsMessageType.WEATHER
+                trace_metadata_name = WeatherEmoji(emoji).name.lower()
+                message.weather_chart.trace_metadatas[trace_metadata_name].show = not message.weather_chart.trace_metadatas[trace_metadata_name].show
+            case _ if 'auto_' in (config := message.last_button_pressed.split()[1]):
+                buttons_message_type = ButtonsMessageType.CONFIG
+                message.chat.config[config] = not message.chat.config[config]
+                message.save()
+                await self.edit('<b>Estos son los ajustes del grupo:</b>\n\n', self._get_config_buttons(message), message)
+            case _:
+                buttons_message_type = None
+
+        if buttons_message_type is ButtonsMessageType.WEATHER:
+            message.weather_chart.apply_zoom()
+            message.weather_chart.draw()
+            message.save()
+
+            image_bytes = message.weather_chart.to_image()
+            await self.edit(Media(image_bytes, MediaType.IMAGE), message)
+
     async def _on_bye(self, message: Message):
         if not message.chat.is_group or self.is_bot_mentioned(message):
             await self.send_bye(message)
@@ -349,11 +358,13 @@ class FlanaBot(MultiBot, ABC):
     @group
     @bot_mentioned
     async def _on_config_list_show(self, message: Message):
-        config_info = pprint.pformat(message.chat.config)
-        config_info = flanautils.translate(config_info, {'{': None, '}': None, ',': None, 'True': '✔', "'": None, 'False': '❌'})
-        config_info = config_info.splitlines()
-        config_info = '\n'.join(config_info_.strip() for config_info_ in config_info)
-        await self.send(f'<b>Estos son los ajustes del grupo:</b>\n\n<code>{config_info}</code>', message)
+        # config_info = pprint.pformat(message.chat.config)
+        # config_info = flanautils.translate(config_info, {'{': None, '}': None, ',': None, 'True': '', "'": None, 'False': '❌'})
+        # config_info = config_info.splitlines()
+        # config_info = '\n'.join(config_info_.strip() for config_info_ in config_info)
+        # await self.send(f'<b>Estos son los ajustes del grupo:</b>\n\n<code>{config_info}</code>', message)
+
+        await self.send('<b>Estos son los ajustes del grupo:</b>\n\n', self._get_config_buttons(message), message)
 
     async def _on_covid_chart(self, message: Message):  # todo2
         pass
@@ -413,31 +424,42 @@ class FlanaBot(MultiBot, ABC):
         if not message.chat.is_group or self.is_bot_mentioned(message):
             await self.send_hello(message)
 
-    @group
-    @bot_mentioned
-    @admin(send_negative=True)
-    async def _on_mute(self, message: Message):
-        await self._update_punishment(self.mute, message, time=flanautils.words_to_time(message.text))
-
     async def _on_new_message_default(self, message: Message):
         if message.is_inline:
             await self._on_scraping(message)
         elif (
-                message.chat.is_group
+                (
+                        message.chat.is_group
+                        and
+                        not self.is_bot_mentioned(message)
+                        and
+                        not message.chat.config['auto_scraping']
+                        or
+                        not await self._on_scraping(message)
+                )
                 and
-                not self.is_bot_mentioned(message)
-                and
-                not message.chat.config['auto_scraping']
-                or
-                not await self._on_scraping(message)
+                (
+                        message.author.id != self.owner_id
+                        and
+                        (
+                                self.is_bot_mentioned(message)
+                                or
+                                (
+                                        message.chat.config['auto_insult']
+                                        and
+                                        random.random() < 0.5
+                                )
+                        )
+                )
         ):
-            await self.send_bad_phrase(message)
+            await self.send_insult(message)
 
     @ignore_self_message
     async def _on_new_message_raw(self, message: Message):
         await super()._on_new_message_raw(message)
         if not message.is_inline:
-            await self._check_message_flood(message)
+            async with self.lock:
+                await self._check_message_flood(message)
 
     async def _on_no_delete_original(self, message: Message):
         if not await self._on_scraping(message, delete_original=False):
@@ -451,8 +473,6 @@ class FlanaBot(MultiBot, ABC):
 
     async def _on_ready(self):
         await super()._on_ready()
-        await flanautils.do_every(constants.CHECK_MUTES_EVERY_SECONDS, self._check_mutes)
-        await flanautils.do_every(constants.CHECK_MESSAGE_EVERY_SECONDS, self._check_messages)
         await flanautils.do_every(constants.CHECK_PUNISHMENTS_EVERY_SECONDS, self._check_punishments)
 
     @inline(False)
@@ -460,7 +480,7 @@ class FlanaBot(MultiBot, ABC):
         if message.replied_message:
             message_deleted_bot_action = BotAction.find_one({'action': bytes(Action.MESSAGE_DELETED), 'chat': message.chat.object_id, 'affected_objects': message.replied_message.object_id})
         elif self.is_bot_mentioned(message):
-            message_deleted_bot_action = BotAction.find_one({'action': bytes(Action.MESSAGE_DELETED), 'chat': message.chat.object_id, 'date': {'$gt': datetime.datetime.now() - constants.RECOVERY_DELETED_MESSAGE_BEFORE}})
+            message_deleted_bot_action = BotAction.find_one({'action': bytes(Action.MESSAGE_DELETED), 'chat': message.chat.object_id, 'date': {'$gt': datetime.datetime.now(datetime.timezone.utc) - constants.RECOVERY_DELETED_MESSAGE_BEFORE}})
         else:
             return
 
@@ -469,7 +489,7 @@ class FlanaBot(MultiBot, ABC):
             return
 
         affected_object_ids = [affected_message_object_id for affected_message_object_id in message_deleted_bot_action.affected_objects]
-        deleted_messages: list[Message] = [affected_message for affected_object_id in affected_object_ids if (affected_message := Message.find_one({'_id': affected_object_id})).author.id != self.bot_id]
+        deleted_messages: list[Message] = [affected_message for affected_object_id in affected_object_ids if (affected_message := Message.find_one({'platform': self.bot_platform.value, '_id': affected_object_id})).author.id != self.bot_id]
         for deleted_message in deleted_messages:
             await self.send(deleted_message.text, message)
 
@@ -542,12 +562,6 @@ class FlanaBot(MultiBot, ABC):
     @group
     @bot_mentioned
     @admin(send_negative=True)
-    async def _on_unmute(self, message: Message):
-        await self._update_punishment(self.unmute, message)
-
-    @group
-    @bot_mentioned
-    @admin(send_negative=True)
     async def _on_unpunish(self, message: Message):
         await self._update_punishment(self.unpunish, message)
 
@@ -557,7 +571,7 @@ class FlanaBot(MultiBot, ABC):
             show_progress_state = False
         elif message.chat.is_group and not self.is_bot_mentioned(message):
             if message.chat.config['auto_weather_chart']:
-                if BotAction.find_one({'action': bytes(Action.AUTO_WEATHER_CHART), 'chat': message.chat.object_id, 'date': {'$gt': datetime.datetime.now() - constants.AUTO_WEATHER_EVERY}}):
+                if BotAction.find_one({'action': bytes(Action.AUTO_WEATHER_CHART), 'chat': message.chat.object_id, 'date': {'$gt': datetime.datetime.now(datetime.timezone.utc) - constants.AUTO_WEATHER_EVERY}}):
                     return
                 show_progress_state = False
             else:
@@ -565,8 +579,14 @@ class FlanaBot(MultiBot, ABC):
         else:
             show_progress_state = True
 
-        user_names_with_at_sign = {user.name.lower() for user in message.chat.users}
-        user_names_without_at_sign = {user.name.lower().replace('@', '') for user in message.chat.users}
+        possible_mentioned_ids = []
+        for user in message.mentions:
+            possible_mentioned_ids.append(user.name.lower())
+            possible_mentioned_ids.append(user.name.split('#')[0].lower())
+            possible_mentioned_ids.append(f'@{user.id}')
+        for role in message.chat.roles:
+            possible_mentioned_ids.append(f'@{role.id}')
+
         original_text_words = flanautils.remove_accents(message.text.lower())
         original_text_words = original_text_words.replace(',', ' ').replace(';', ' ').replace('-', ' -')
         original_text_words = flanautils.translate(
@@ -575,12 +595,11 @@ class FlanaBot(MultiBot, ABC):
         ).split()
         place_words = (
                 OrderedSet(original_text_words)
-                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['show'], min_ratio=0.85).keys()
+                - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['show'], min_ratio=0.85).keys()
                 - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['weather_chart'], min_ratio=0.85).keys()
-                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['date'], min_ratio=0.85).keys()
-                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['thanks'], min_ratio=0.85).keys()
-                - user_names_with_at_sign
-                - user_names_without_at_sign
+                - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['date'], min_ratio=0.85).keys()
+                - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['thanks'], min_ratio=0.85).keys()
+                - possible_mentioned_ids
                 - flanautils.CommonWords.all_words
         )
         if not place_words:
@@ -592,8 +611,8 @@ class FlanaBot(MultiBot, ABC):
             place_words.insert(0, 'calle')
         place_query = ' '.join(place_words)
         if len(place_query) >= constants.MAX_PLACE_QUERY_LENGTH:
-            if not show_progress_state:
-                await self.send_error(Media(str(flanautils.resolve_path('resources/mucho_texto.png'))), message, send_as_file=False)
+            if show_progress_state:
+                await self.send_error(Media(str(flanautils.resolve_path('resources/mucho_texto.png')), MediaType.IMAGE, Source.LOCAL), message, send_as_file=False)
             return
         if show_progress_state:
             bot_state_message = await self.send(f'Buscando "{place_query}" en el mapa 🧐...', message)
@@ -714,61 +733,41 @@ class FlanaBot(MultiBot, ABC):
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
     # -------------------------------------------------------- #
-    async def is_deaf(self, user_id: int, group_id: int) -> bool:
+    async def is_punished(self, user: int | str | User, group_: int | str | Chat) -> bool:
         pass
 
-    async def is_muted(self, user_id: int, group_id: int) -> bool:
-        pass
-
-    async def mute(self, user_id: int, group_id: int, time: int | datetime.timedelta, message: Message = None):
-        if isinstance(time, int):
-            time = datetime.timedelta(seconds=time)
-
-        try:
-            await self._mute(user_id, group_id)
-        except UserDisconnectedError as e:
-            await self._manage_exceptions(e, message if message else Message(chat=Chat(group_id=group_id)))
-        else:
-            if time:
-                # noinspection PyTypeChecker
-                Mute(user_id, group_id, until=datetime.datetime.now() + time).save()
-                if datetime.timedelta() < time <= constants.TIME_THRESHOLD_TO_MANUAL_UNMUTE:
-                    await flanautils.do_later(time, self._check_mutes)
-            else:
-                # noinspection PyTypeChecker
-                Mute(user_id, group_id).save()
-
-    async def punish(self, user_id: int, group_id: int, time: int | datetime.timedelta, message: Message = None):
+    async def punish(self, user: int | str | User, group_: int | str | Chat, time: int | datetime.timedelta, message: Message = None):
+        user_id = self._get_user_id(user)
+        group_id = self._get_group_id(group_)
         if isinstance(time, int):
             time = datetime.timedelta(seconds=time)
 
         try:
             await self._punish(user_id, group_id)
         except BadRoleError as e:
-            await self._manage_exceptions(e, message if message else Message(chat=Chat(group_id=group_id)))
+            if message and message.chat.original_object:
+                await self._manage_exceptions(e, message)
+            else:
+                raise e
         else:
             if time:
-                # noinspection PyTypeChecker
-                Punishment(user_id, group_id, until=datetime.datetime.now() + time).save()
+                until = datetime.datetime.now(datetime.timezone.utc) + time
                 if datetime.timedelta() < time <= constants.TIME_THRESHOLD_TO_MANUAL_UNPUNISH:
                     await flanautils.do_later(time, self._check_punishments)
             else:
-                # noinspection PyTypeChecker
-                Punishment(user_id, group_id).save()
-
-    async def send_bad_phrase(self, message: Message, probability=0.00166666667) -> multibot_constants.ORIGINAL_MESSAGE | None:
-        if not self.is_bot_mentioned(message) and random.random() >= probability or message.author.id == self.owner_id:
-            return
-
-        await self.typing_delay(message)
-
-        return await self.send(random.choice(constants.BAD_PHRASES), message)
+                until = None
+            # noinspection PyTypeChecker
+            Punishment(self.bot_platform, user_id, group_id, until=until).save()
 
     async def send_bye(self, message: Message) -> multibot_constants.ORIGINAL_MESSAGE:
         return await self.send(random.choice((*constants.BYE_PHRASES, flanautils.CommonWords.random_time_greeting())), message)
 
     async def send_hello(self, message: Message) -> multibot_constants.ORIGINAL_MESSAGE:
         return await self.send(random.choice((*constants.HELLO_PHRASES, flanautils.CommonWords.random_time_greeting())), message)
+
+    async def send_insult(self, message: Message) -> multibot_constants.ORIGINAL_MESSAGE | None:
+        await self.typing_delay(message)
+        return await self.send(random.choice(constants.INSULTS), message)
 
     @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
     async def send_medias(self, medias: OrderedSet[Media], message: Message, send_song_info=False) -> tuple[list[Message], int]:
@@ -819,21 +818,25 @@ class FlanaBot(MultiBot, ABC):
         attributes = (
             f'Título: {song_info.title}\n' if song_info.title else '',
             f'Autor: {song_info.author}\n' if song_info.author else '',
-            f"{f'Álbum: {song_info.album}'}\n" if song_info.album else '',
+            f'Álbum: {song_info.album}\n' if song_info.album else '',
             f'Previa:'
         )
         await self.send(''.join(attributes), message)
         if song_info:
             await self.send(song_info, message)
 
-    async def unmute(self, user_id: int, group_id: int, message: Message = None):
-        try:
-            await self._unmute(user_id, group_id)
-        except UserDisconnectedError as e:
-            await self._manage_exceptions(e, message if message else Message(chat=Chat(group_id=group_id)))
-
-    async def unpunish(self, user_id: int, group_id: int, message: Message = None):
+    async def unpunish(self, user: int | str | User, group_: int | str | Chat, message: Message = None):
+        user_id = self._get_user_id(user)
+        group_id = self._get_group_id(group_)
         try:
             await self._unpunish(user_id, group_id)
         except BadRoleError as e:
-            await self._manage_exceptions(e, message if message else Message(chat=Chat(group_id=group_id)))
+            if message and message.chat.original_object:
+                await self._manage_exceptions(e, message)
+            else:
+                raise e
+        else:
+            try:
+                Punishment.find_one({'platform': self.bot_platform.value, 'user_id': user_id, 'group_id': group_id, 'until': None}).delete()
+            except AttributeError:
+                pass

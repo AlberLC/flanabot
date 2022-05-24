@@ -44,7 +44,7 @@ class WeatherChart(DateChart):
 
         if self.show_now_vertical_line and first_dt <= now <= last_dt:
             self.figure.add_vline(x=now, line_width=1, line_dash='dot')
-            self.figure.add_annotation(text="Ahora", yref="paper", x=now, y=0.01, showarrow=False)
+            self.figure.add_annotation(text='Ahora', yref='paper', x=now, y=0.01, showarrow=False)
 
         for day_weather in self.day_weathers:
             date_time = datetime.datetime(year=day_weather.date.year, month=day_weather.date.month, day=day_weather.date.day, tzinfo=self.timezone)

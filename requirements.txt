@@ -14,7 +14,7 @@ click==8.0.3
 colorama==0.4.4
 cryptg==0.2.post4
 cryptography==36.0.1
-discord.py==1.7.3
+discord.py==2.0.0a4269+gb7e25645
 fastapi==0.71.0
 flanaapis
 flanautils

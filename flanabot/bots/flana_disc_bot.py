@@ -2,12 +2,11 @@ import asyncio
 import os
 
 import discord
-from multibot import DiscordBot
+from multibot import BadRoleError, DiscordBot, User
 
 from flanabot import constants
 from flanabot.bots.flana_bot import FlanaBot
-from flanabot.exceptions import BadRoleError, UserDisconnectedError
-from flanabot.models import User
+from flanabot.models import Chat, Punishment
 
 HEAT_NAMES = [
     'Canal Congelado',
@@ -20,18 +19,9 @@ HEAT_NAMES = [
     'Verano Cordobés al Sol',
     'Canal Ardiendo',
     'abrid las putas ventanas y traed el extintor',
-    'Canal INFIERNO',
-    'La Palma 🌋'
+    'Canal INFIERNO'
 ]
 HOT_CHANNEL_ID = 493530483045564417
-ROLES = {
-    'Administrador': 387344390030360587,
-    'Carroñero': 493523298429435905,
-    'al lol': 881238165476741161,
-    'Persona': 866046517998387220,
-    'Castigado': 877662459568209921,
-    'Bot': 493784221085597706
-}
 
 
 # ---------------------------------------------------------------------------------------------------- #
@@ -67,33 +57,19 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
 
             await channel.edit(name=HEAT_NAMES[int(self.heat_level)])
 
-    async def _mute(self, user_id: int, group_id: int):
-        user = await self.get_user(user_id, group_id)
+    async def _punish(self, user: int | str | User, group_: int | str | Chat):
+        user_id = self._get_user_id(user)
         try:
-            await user.original_object.edit(mute=True)
-        except discord.errors.HTTPException:
-            raise UserDisconnectedError
-
-    async def _punish(self, user_id: int, group_id: int):
-        user = await self.get_user(user_id, group_id)
-        try:
-            await user.original_object.remove_roles(self._find_role_by_id(ROLES['Persona'], user.original_object.guild.roles))
-            await user.original_object.add_roles(self._find_role_by_id(ROLES['Castigado'], user.original_object.guild.roles))
+            await self.add_role(user_id, group_, 'Castigado')
+            await self.remove_role(user_id, group_, 'Persona')
         except AttributeError:
             raise BadRoleError(str(self._punish))
 
-    async def _unmute(self, user_id: int, group_id: int):
-        user = await self.get_user(user_id, group_id)
+    async def _unpunish(self, user: int | str | User, group_: int | str | Chat):
+        user_id = self._get_user_id(user)
         try:
-            await user.original_object.edit(mute=False)
-        except discord.errors.HTTPException:
-            raise UserDisconnectedError
-
-    async def _unpunish(self, user_id: int, group_id: int):
-        user = await self.get_user(user_id, group_id)
-        try:
-            await user.original_object.remove_roles(self._find_role_by_id(ROLES['Castigado'], user.original_object.guild.roles))
-            await user.original_object.add_roles(self._find_role_by_id(ROLES['Persona'], user.original_object.guild.roles))
+            await self.add_role(user_id, group_, 'Persona')
+            await self.remove_role(user_id, group_, 'Castigado')
         except AttributeError:
             raise BadRoleError(str(self._unpunish))
 
@@ -116,18 +92,12 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
     # -------------------------------------------------------- #
-    async def is_deaf(self, user_id: int, group_id: int) -> bool:
-        user = await self.get_user(user_id, group_id)
-        return user.original_object.voice.deaf
-
-    async def is_muted(self, user_id: int, group_id: int) -> bool:
-        user = await self.get_user(user_id, group_id)
-        return user.original_object.voice.mute
-
-    @staticmethod
-    def is_self_deaf(user: User) -> bool:
-        return user.original_object.voice.self_deaf
-
-    @staticmethod
-    def is_self_muted(user: User) -> bool:
-        return user.original_object.voice.self_mute
+    async def is_punished(self, user: int | str | User, group_: int | str | Chat):
+        user = await self.get_user(user, group_)
+        group_id = self._get_group_id(group_)
+        return group_id in {punishment.group_id for punishment in Punishment.find({
+            'platform': self.bot_platform.value,
+            'user_id': user.id,
+            'group_id': group_id,
+            'is_active': True
+        })}

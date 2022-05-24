@@ -4,10 +4,9 @@ from dataclasses import dataclass, field
 from typing import Iterable
 
 from flanautils import Media, OrderedSet
-from multibot import Message as MultiBotMessage
+from multibot.models import Message as MultiBotMessage, User
 
 from flanabot.models.chat import Chat
-from flanabot.models.user import User
 from flanabot.models.weather_chart import WeatherChart
 
 
