@@ -447,7 +447,7 @@ class FlanaBot(MultiBot, ABC):
                                 (
                                         message.chat.config['auto_insult']
                                         and
-                                        random.random() < 0.5
+                                        random.random() < constants.INSULTS
                                 )
                         )
                 )
