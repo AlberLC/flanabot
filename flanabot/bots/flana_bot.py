@@ -780,7 +780,7 @@ class FlanaBot(MultiBot, ABC):
             bot_state_message: Message = await self.send('Descargando...', message)
 
         if message.chat.is_group:
-            sended_info_message = await self.send(f'{message.author.name} compartió{self._medias_sended_info(medias)}', message)
+            sended_info_message = await self.send(f"{message.author.name.split('#')[0]} compartió{self._medias_sended_info(medias)}", message)
 
         for media in medias:
             if not media.content:
