@@ -13,6 +13,7 @@ from flanabot.models.weather_chart import WeatherChart
 @dataclass(eq=False)
 class Message(MultiBotMessage):
     author: User = None
+    button_pressed_user: User = None
     mentions: Iterable[User] = field(default_factory=list)
     chat: Chat = None
     replied_message: Message = None

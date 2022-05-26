@@ -311,10 +311,10 @@ class FlanaBot(MultiBot, ABC):
     # ---------------------------------------------- #
     async def _on_button_press(self, message: Message):
         await self._accept_button_event(message)
-        if message.author.is_admin is False:
+        if not message.button_pressed_user.is_admin:
             return
 
-        match message.last_button_pressed:
+        match message.button_pressed_text:
             case WeatherEmoji.ZOOM_IN.value:
                 buttons_message_type = ButtonsMessageType.WEATHER
                 message.weather_chart.zoom_in()
@@ -335,7 +335,7 @@ class FlanaBot(MultiBot, ABC):
                 buttons_message_type = ButtonsMessageType.WEATHER
                 trace_metadata_name = WeatherEmoji(emoji).name.lower()
                 message.weather_chart.trace_metadatas[trace_metadata_name].show = not message.weather_chart.trace_metadatas[trace_metadata_name].show
-            case _ if 'auto_' in (config := message.last_button_pressed.split()[1]):
+            case _ if 'auto_' in (config := message.button_pressed_text.split()[1]):
                 buttons_message_type = ButtonsMessageType.CONFIG
                 message.chat.config[config] = not message.chat.config[config]
                 message.save()
