@@ -6,7 +6,7 @@ from multibot import BadRoleError, DiscordBot, User
 
 from flanabot import constants
 from flanabot.bots.flana_bot import FlanaBot
-from flanabot.models import Chat, Punishment
+from flanabot.models import Chat, Message, Punishment
 
 HEAT_NAMES = [
     'Canal Congelado',
@@ -29,7 +29,7 @@ HOT_CHANNEL_ID = 493530483045564417
 # ---------------------------------------------------------------------------------------------------- #
 class FlanaDiscBot(DiscordBot, FlanaBot):
     def __init__(self):
-        super().__init__(os.environ['DISCORD_BOT_TOKEN'])
+        super().__init__(os.environ['DISCORD_BOT_TOKEN2'])
         self.heating = False
         self.heat_level = 0
 
@@ -38,7 +38,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     # ----------------------------------------------------------- #
     def _add_handlers(self):
         super()._add_handlers()
-        self.bot_client.add_listener(self._on_voice_state_update, 'on_voice_state_update')
+        self.client.add_listener(self._on_voice_state_update, 'on_voice_state_update')
 
     async def _heat_channel(self, channel: discord.VoiceChannel):
         while True:
@@ -57,16 +57,16 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
 
             await channel.edit(name=HEAT_NAMES[int(self.heat_level)])
 
-    async def _punish(self, user: int | str | User, group_: int | str | Chat):
-        user_id = self._get_user_id(user)
+    async def _punish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
+        user_id = self.get_user_id(user)
         try:
             await self.add_role(user_id, group_, 'Castigado')
             await self.remove_role(user_id, group_, 'Persona')
         except AttributeError:
             raise BadRoleError(str(self._punish))
 
-    async def _unpunish(self, user: int | str | User, group_: int | str | Chat):
-        user_id = self._get_user_id(user)
+    async def _unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
+        user_id = self.get_user_id(user)
         try:
             await self.add_role(user_id, group_, 'Persona')
             await self.remove_role(user_id, group_, 'Castigado')
@@ -92,11 +92,11 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
     # -------------------------------------------------------- #
-    async def is_punished(self, user: int | str | User, group_: int | str | Chat):
+    async def is_punished(self, user: int | str | User, group_: int | str | Chat | Message):
         user = await self.get_user(user, group_)
-        group_id = self._get_group_id(group_)
+        group_id = self.get_group_id(group_)
         return group_id in {punishment.group_id for punishment in Punishment.find({
-            'platform': self.bot_platform.value,
+            'platform': self.platform.value,
             'user_id': user.id,
             'group_id': group_id,
             'is_active': True

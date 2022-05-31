@@ -1,6 +1,6 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from multibot.models import Chat as MultiBotChat, User
+from multibot.models import Chat as MultiBotChat
 
 
 @dataclass(eq=False)
@@ -11,7 +11,6 @@ class Chat(MultiBotChat):
                       'auto_insult': True,
                       'auto_scraping': True,
                       'auto_weather_chart': True}
-    users: list[User] = field(default_factory=list)
 
     def __post_init__(self):
         super().__post_init__()

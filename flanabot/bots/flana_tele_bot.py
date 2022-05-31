@@ -36,7 +36,7 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
         super().__init__(
             api_id=os.environ['TELEGRAM_API_ID'],
             api_hash=os.environ['TELEGRAM_API_HASH'],
-            bot_session=os.environ['TELEGRAM_BOT_SESSION'],
+            bot_session=os.environ['TELEGRAM_BOT_SESSION2'],
             user_session=os.environ['TELEGRAM_USER_SESSION']
         )
         self.whitelist_ids = []
@@ -53,7 +53,7 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
 
     @user_client
     async def _update_whitelist(self):
-        self.whitelist_ids = [self.owner_id, self.bot_id] + await self._get_contacts_ids()
+        self.whitelist_ids = [self.owner_id, self.id] + await self._get_contacts_ids()
 
     # ---------------------------------------------- #
     #                    HANDLERS                    #

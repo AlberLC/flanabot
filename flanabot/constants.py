@@ -10,7 +10,6 @@ MAX_PLACE_QUERY_LENGTH = 50
 PUNISHMENT_INCREMENT_EXPONENT = 6
 PUNISHMENTS_RESET = datetime.timedelta(weeks=6 * flanautils.WEEKS_IN_A_MONTH)
 RECOVERY_DELETED_MESSAGE_BEFORE = datetime.timedelta(hours=1)
-TIME_THRESHOLD_TO_MANUAL_UNPUNISH = datetime.timedelta(days=3)
 SCRAPING_MESSAGE_WAITING_TIME = 0.1
 
 BYE_PHRASES = ('Adiós.', 'adieu', 'adio', 'adioh', 'adios', 'adió', 'adiós', 'agur', 'bye', 'byyeeee', 'chao',

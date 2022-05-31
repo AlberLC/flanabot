@@ -146,14 +146,14 @@ class FlanaBot(MultiBot, ABC):
             return
 
         last_2s_messages = Message.find({
-            'platform': self.bot_platform.value,
+            'platform': self.platform.value,
             'author': message.author.object_id,
             'last_update': {
                 '$gte': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=2)
             }
         })
         last_7s_messages = Message.find({
-            'platform': self.bot_platform.value,
+            'platform': self.platform.value,
             'author': message.author.object_id,
             'last_update': {
                 '$gte': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=7),
@@ -163,7 +163,7 @@ class FlanaBot(MultiBot, ABC):
 
         if len(last_2s_messages) >= 5 or len(last_7s_messages) >= 7:
             n_punishments = len(Punishment.find({
-                'platform': self.bot_platform.value,
+                'platform': self.platform.value,
                 'user_id': message.author.id,
                 'group_id': message.chat.group_id
             }))
@@ -174,23 +174,6 @@ class FlanaBot(MultiBot, ABC):
                 await self._manage_exceptions(e, message)
             else:
                 await self.send(f'Castigado durante {TimeUnits(seconds=punishment_seconds).to_words()}.', message)
-
-    async def _check_punishments(self):
-        punishment_groups = self._get_grouped_punishments(Punishment)
-
-        now = datetime.datetime.now(datetime.timezone.utc)
-        for (user_id, group_id), sorted_punishments in punishment_groups:
-            if now < (last_punishment := sorted_punishments[-1]).until:
-                continue
-
-            if last_punishment.until + constants.PUNISHMENTS_RESET <= now:
-                for old_punishment in sorted_punishments:
-                    old_punishment.delete()
-
-            if last_punishment.is_active:
-                await self.unpunish(user_id, group_id)
-                last_punishment.is_active = False
-                last_punishment.save()
 
     @staticmethod
     def _get_config_buttons(config: dict | Chat | Message) -> list[list[str]]:
@@ -261,7 +244,7 @@ class FlanaBot(MultiBot, ABC):
         new_line = ' ' if len(medias_sended_info) == 1 else '\n'
         return f'{new_line}{medias_sended_info_joined}:'
 
-    async def _punish(self, user: int | str | User, group_: int | str | Chat):
+    async def _punish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         pass
 
     async def _search_and_send_medias(self, message: Message, send_song_info=False) -> list[Message]:
@@ -303,7 +286,7 @@ class FlanaBot(MultiBot, ABC):
     async def _show_config(self, config_name: str, message: Message):
         await self.send(f"{config_name} está {'activado ✔' if message.chat.config.get(config_name) else 'desactivado ❌'}", message)
 
-    async def _unpunish(self, user: int | str | User, group_: int | str | Chat):
+    async def _unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         pass
 
     # ---------------------------------------------- #
@@ -311,8 +294,6 @@ class FlanaBot(MultiBot, ABC):
     # ---------------------------------------------- #
     async def _on_button_press(self, message: Message):
         await self._accept_button_event(message)
-        if not message.button_pressed_user.is_admin:
-            return
 
         match message.button_pressed_text:
             case WeatherEmoji.ZOOM_IN.value:
@@ -335,13 +316,13 @@ class FlanaBot(MultiBot, ABC):
                 buttons_message_type = ButtonsMessageType.WEATHER
                 trace_metadata_name = WeatherEmoji(emoji).name.lower()
                 message.weather_chart.trace_metadatas[trace_metadata_name].show = not message.weather_chart.trace_metadatas[trace_metadata_name].show
-            case _ if 'auto_' in (config := message.button_pressed_text.split()[1]):
+            case _ if message.button_pressed_user.is_admin and 'auto_' in (config := message.button_pressed_text.split()[1]):
                 buttons_message_type = ButtonsMessageType.CONFIG
                 message.chat.config[config] = not message.chat.config[config]
                 message.save()
                 await self.edit('<b>Estos son los ajustes del grupo:</b>\n\n', self._get_config_buttons(message), message)
             case _:
-                buttons_message_type = None
+                return
 
         if buttons_message_type is ButtonsMessageType.WEATHER:
             message.weather_chart.apply_zoom()
@@ -469,11 +450,12 @@ class FlanaBot(MultiBot, ABC):
     @group
     @admin(send_negative=True)
     async def _on_punish(self, message: Message):
-        await self._update_punishment(self.punish, message, time=flanautils.words_to_time(message.text))
+        for user in await self._find_users_to_punish(message):
+            await self.punish(user, message, flanautils.words_to_time(message.text), message)
 
     async def _on_ready(self):
         await super()._on_ready()
-        await flanautils.do_every(constants.CHECK_PUNISHMENTS_EVERY_SECONDS, self._check_punishments)
+        await flanautils.do_every(constants.CHECK_PUNISHMENTS_EVERY_SECONDS, Punishment.check_olds, self._unpunish, self.platform)
 
     @inline(False)
     async def _on_recover_message(self, message: Message):
@@ -489,7 +471,7 @@ class FlanaBot(MultiBot, ABC):
             return
 
         affected_object_ids = [affected_message_object_id for affected_message_object_id in message_deleted_bot_action.affected_objects]
-        deleted_messages: list[Message] = [affected_message for affected_object_id in affected_object_ids if (affected_message := Message.find_one({'platform': self.bot_platform.value, '_id': affected_object_id})).author.id != self.bot_id]
+        deleted_messages: list[Message] = [affected_message for affected_object_id in affected_object_ids if (affected_message := Message.find_one({'platform': self.platform.value, '_id': affected_object_id})).author.id != self.id]
         for deleted_message in deleted_messages:
             await self.send(deleted_message.text, message)
 
@@ -563,7 +545,8 @@ class FlanaBot(MultiBot, ABC):
     @bot_mentioned
     @admin(send_negative=True)
     async def _on_unpunish(self, message: Message):
-        await self._update_punishment(self.unpunish, message)
+        for user in await self._find_users_to_punish(message):
+            await self.unpunish(user, message, message)
 
     async def _on_weather_chart(self, message: Message):
         bot_state_message: Message | None = None
@@ -571,7 +554,7 @@ class FlanaBot(MultiBot, ABC):
             show_progress_state = False
         elif message.chat.is_group and not self.is_bot_mentioned(message):
             if message.chat.config['auto_weather_chart']:
-                if BotAction.find_one({'action': bytes(Action.AUTO_WEATHER_CHART), 'chat': message.chat.object_id, 'date': {'$gt': datetime.datetime.now(datetime.timezone.utc) - constants.AUTO_WEATHER_EVERY}}):
+                if BotAction.find_one({'action': Action.AUTO_WEATHER_CHART.value, 'chat': message.chat.object_id, 'date': {'$gt': datetime.datetime.now(datetime.timezone.utc) - constants.AUTO_WEATHER_EVERY}}):
                     return
                 show_progress_state = False
             else:
@@ -584,7 +567,8 @@ class FlanaBot(MultiBot, ABC):
             possible_mentioned_ids.append(user.name.lower())
             possible_mentioned_ids.append(user.name.split('#')[0].lower())
             possible_mentioned_ids.append(f'@{user.id}')
-        for role in message.chat.roles:
+
+        for role in await self.get_group_roles(message):
             possible_mentioned_ids.append(f'@{role.id}')
 
         original_text_words = flanautils.remove_accents(message.text.lower())
@@ -733,31 +717,13 @@ class FlanaBot(MultiBot, ABC):
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
     # -------------------------------------------------------- #
-    async def is_punished(self, user: int | str | User, group_: int | str | Chat) -> bool:
+    async def is_punished(self, user: int | str | User, group_: int | str | Chat | Message) -> bool:
         pass
 
-    async def punish(self, user: int | str | User, group_: int | str | Chat, time: int | datetime.timedelta, message: Message = None):
-        user_id = self._get_user_id(user)
-        group_id = self._get_group_id(group_)
-        if isinstance(time, int):
-            time = datetime.timedelta(seconds=time)
-
-        try:
-            await self._punish(user_id, group_id)
-        except BadRoleError as e:
-            if message and message.chat.original_object:
-                await self._manage_exceptions(e, message)
-            else:
-                raise e
-        else:
-            if time:
-                until = datetime.datetime.now(datetime.timezone.utc) + time
-                if datetime.timedelta() < time <= constants.TIME_THRESHOLD_TO_MANUAL_UNPUNISH:
-                    await flanautils.do_later(time, self._check_punishments)
-            else:
-                until = None
-            # noinspection PyTypeChecker
-            Punishment(self.bot_platform, user_id, group_id, until=until).save()
+    async def punish(self, user: int | str | User, group_: int | str | Chat | Message, time: int | datetime.timedelta, message: Message = None):
+        # noinspection PyTypeChecker
+        punish = Punishment(self.platform, self.get_user_id(user), self.get_group_id(group_), time)
+        await punish.punish(self._punish, self._unpunish, message)
 
     async def send_bye(self, message: Message) -> multibot_constants.ORIGINAL_MESSAGE:
         return await self.send(random.choice((*constants.BYE_PHRASES, flanautils.CommonWords.random_time_greeting())), message)
@@ -825,18 +791,7 @@ class FlanaBot(MultiBot, ABC):
         if song_info:
             await self.send(song_info, message)
 
-    async def unpunish(self, user: int | str | User, group_: int | str | Chat, message: Message = None):
-        user_id = self._get_user_id(user)
-        group_id = self._get_group_id(group_)
-        try:
-            await self._unpunish(user_id, group_id)
-        except BadRoleError as e:
-            if message and message.chat.original_object:
-                await self._manage_exceptions(e, message)
-            else:
-                raise e
-        else:
-            try:
-                Punishment.find_one({'platform': self.bot_platform.value, 'user_id': user_id, 'group_id': group_id, 'until': None}).delete()
-            except AttributeError:
-                pass
+    async def unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
+        # noinspection PyTypeChecker
+        punish = Punishment(self.platform, self.get_user_id(user), self.get_group_id(group_))
+        await punish.unpunish(self._unpunish, message)
