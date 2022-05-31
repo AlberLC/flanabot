@@ -29,7 +29,7 @@ HOT_CHANNEL_ID = 493530483045564417
 # ---------------------------------------------------------------------------------------------------- #
 class FlanaDiscBot(DiscordBot, FlanaBot):
     def __init__(self):
-        super().__init__(os.environ['DISCORD_BOT_TOKEN2'])
+        super().__init__(os.environ['DISCORD_BOT_TOKEN'])
         self.heating = False
         self.heat_level = 0
 

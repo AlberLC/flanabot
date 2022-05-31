@@ -36,7 +36,7 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
         super().__init__(
             api_id=os.environ['TELEGRAM_API_ID'],
             api_hash=os.environ['TELEGRAM_API_HASH'],
-            bot_session=os.environ['TELEGRAM_BOT_SESSION2'],
+            bot_session=os.environ['TELEGRAM_BOT_SESSION'],
             user_session=os.environ['TELEGRAM_USER_SESSION']
         )
         self.whitelist_ids = []
