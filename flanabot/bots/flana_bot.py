@@ -568,8 +568,9 @@ class FlanaBot(MultiBot, ABC):
             possible_mentioned_ids.append(user.name.split('#')[0].lower())
             possible_mentioned_ids.append(f'@{user.id}')
 
-        for role in await self.get_group_roles(message):
-            possible_mentioned_ids.append(f'@{role.id}')
+        if roles := await self.get_group_roles(message):
+            for role in roles:
+                possible_mentioned_ids.append(f'@{role.id}')
 
         original_text_words = flanautils.remove_accents(message.text.lower())
         original_text_words = original_text_words.replace(',', ' ').replace(';', ' ').replace('-', ' -')
