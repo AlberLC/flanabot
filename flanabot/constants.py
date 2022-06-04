@@ -71,14 +71,5 @@ KEYWORDS = {
                       'wetter')
 }
 
-RECOVER_PHRASES = (
-    'No hay nada que recuperar.',
-    'Ya lo he recuperado y enviado, así que callate ya.',
-    'Ya lo he recuperado y enviado, así que mejor estás antento antes de dar por culo.',
-    'Ya lo he recuperado y enviado, no lo voy a hacer dos veces.',
-    'Ya lo he recuperado y enviado. A ver si leemos más y jodemos menos.',
-    'Ya lo he reenviado.'
-)
-
 SCRAPING_PHRASES = ('Analizando...', 'Buscando...', 'Hackeando internet... 👀', 'Rebuscando en la web...',
                     'Robando cosas...', 'Scrapeando...', 'Scraping...')

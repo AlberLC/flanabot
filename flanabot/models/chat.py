@@ -1,3 +1,5 @@
+__all__ = ['Chat']
+
 from dataclasses import dataclass
 
 from multibot.models import Chat as MultiBotChat

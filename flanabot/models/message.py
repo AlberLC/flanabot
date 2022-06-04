@@ -1,5 +1,7 @@
 from __future__ import annotations  # todo0 remove in 3.11
 
+__all__ = ['Message']
+
 from dataclasses import dataclass, field
 from typing import Iterable
 

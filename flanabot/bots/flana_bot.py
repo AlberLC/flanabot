@@ -1,3 +1,5 @@
+__all__ = ['FlanaBot']
+
 import asyncio
 import datetime
 import random
@@ -10,6 +12,7 @@ import flanaapis.geolocation.functions
 import flanaapis.weather.functions
 import flanautils
 import plotly.graph_objects
+import pymongo
 from flanaapis import InstagramLoginError, MediaNotFoundError, Place, PlaceNotFoundError, WeatherEmoji, instagram, tiktok, twitter
 from flanautils import Media, MediaType, NotFoundError, OrderedSet, Source, TimeUnits, TraceMetadata, return_if_first_empty
 from multibot import Action, BadRoleError, BotAction, MultiBot, SendError, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, reply
@@ -184,6 +187,7 @@ class FlanaBot(MultiBot, ABC):
                 config = message.chat.config
 
         buttons_texts = [f"{'✔' if v else '❌'}  {k}" for k, v in config.items()]
+        # noinspection PyTypeChecker
         return flanautils.chunks(buttons_texts, 3)
 
     @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
@@ -460,22 +464,24 @@ class FlanaBot(MultiBot, ABC):
     @inline(False)
     async def _on_recover_message(self, message: Message):
         if message.replied_message:
-            message_deleted_bot_action = BotAction.find_one({'action': bytes(Action.MESSAGE_DELETED), 'chat': message.chat.object_id, 'affected_objects': message.replied_message.object_id})
+            message_deleted_bot_action = BotAction.find_one({'action': Action.MESSAGE_DELETED.value, 'chat': message.chat.object_id, 'affected_objects': message.replied_message.object_id})
         elif self.is_bot_mentioned(message):
-            message_deleted_bot_action = BotAction.find_one({'action': bytes(Action.MESSAGE_DELETED), 'chat': message.chat.object_id, 'date': {'$gt': datetime.datetime.now(datetime.timezone.utc) - constants.RECOVERY_DELETED_MESSAGE_BEFORE}})
+            message_deleted_bot_action = BotAction.find_one({
+                'action': Action.MESSAGE_DELETED.value,
+                'chat': message.chat.object_id,
+                'date': {'$gt': datetime.datetime.now(datetime.timezone.utc) - constants.RECOVERY_DELETED_MESSAGE_BEFORE}
+            }, sort_keys=(('date', pymongo.DESCENDING),))
         else:
             return
 
         if not message_deleted_bot_action:
-            await self.send_error(random.choice(constants.RECOVER_PHRASES), message)
+            await self.send_error('No hay nada que recuperar.', message)
             return
 
         affected_object_ids = [affected_message_object_id for affected_message_object_id in message_deleted_bot_action.affected_objects]
         deleted_messages: list[Message] = [affected_message for affected_object_id in affected_object_ids if (affected_message := Message.find_one({'platform': self.platform.value, '_id': affected_object_id})).author.id != self.id]
         for deleted_message in deleted_messages:
             await self.send(deleted_message.text, message)
-
-        message_deleted_bot_action.delete()
 
     async def _on_scraping(self, message: Message, delete_original: bool = None) -> OrderedSet[Media]:
         sended_media_messages = await self._search_and_send_medias(message.replied_message) if message.replied_message else OrderedSet()
@@ -758,10 +764,7 @@ class FlanaBot(MultiBot, ABC):
                 message.song_infos.add(media.song_info)
                 message.save()
 
-            try:
-                bot_message = await self.send(media, message)
-            except SendError as e:
-                await self._manage_exceptions(e, message)
+            if not (bot_message := await self.send(media, message)):
                 fails += 1
             else:
                 sended_media_messages.append(bot_message)

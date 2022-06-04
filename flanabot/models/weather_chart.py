@@ -1,3 +1,5 @@
+__all__ = ['Direction', 'WeatherChart']
+
 import datetime
 from dataclasses import dataclass, field
 

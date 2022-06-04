@@ -1,3 +1,5 @@
+__all__ = ['FlanaDiscBot']
+
 import asyncio
 import os
 

@@ -1,5 +1,7 @@
 from __future__ import annotations  # todo0 remove in 3.11
 
+__all__ = ['whitelisted_event', 'FlanaTeleBot']
+
 import functools
 import os
 from typing import Callable
