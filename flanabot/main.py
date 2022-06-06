@@ -12,6 +12,7 @@ from flanabot.bots.flana_tele_bot import FlanaTeleBot
 async def main():
     flana_disc_bot = FlanaDiscBot()
     flana_tele_bot = FlanaTeleBot()
+
     await asyncio.gather(
         flana_disc_bot.start(),
         flana_tele_bot.start()

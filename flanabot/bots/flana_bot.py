@@ -191,7 +191,7 @@ class FlanaBot(MultiBot, ABC):
         return flanautils.chunks(buttons_texts, 3)
 
     @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
-    async def _manage_exceptions(self, exceptions: BaseException | Iterable[BaseException], message: Message):
+    async def _manage_exceptions(self, exceptions: BaseException | Iterable[BaseException], context: Chat | Message):
         if not isinstance(exceptions, Iterable):
             exceptions = (exceptions,)
 
@@ -199,15 +199,15 @@ class FlanaBot(MultiBot, ABC):
             try:
                 raise exception
             except BadRoleError as e:
-                await self.send_error(f'Rol no encontrado en {e}', message)
+                await self.send_error(f'Rol no encontrado en {e}', context)
             except InstagramLoginError as e:
-                await self.send_error(f'No me puedo loguear en Instagram  {random.choice(multibot_constants.SAD_EMOJIS)}  👉  {e}', message)
+                await self.send_error(f'No me puedo loguear en Instagram  {random.choice(multibot_constants.SAD_EMOJIS)}  👉  {e}', context)
             except MediaNotFoundError as e:
-                await self.send_error(f'No he podido sacar nada de {e.source}  {random.choice(multibot_constants.SAD_EMOJIS)}', message)
+                await self.send_error(f'No he podido sacar nada de {e.source}  {random.choice(multibot_constants.SAD_EMOJIS)}', context)
             except PlaceNotFoundError as e:
-                await self.send_error(f'No he podido encontrar "{e}"  {random.choice(multibot_constants.SAD_EMOJIS)}', message)
+                await self.send_error(f'No he podido encontrar "{e}"  {random.choice(multibot_constants.SAD_EMOJIS)}', context)
             except Exception as e:
-                await super()._manage_exceptions(e, message)
+                await super()._manage_exceptions(e, context)
 
     @staticmethod
     def _medias_sended_info(medias: Iterable[Media]) -> str:
@@ -343,12 +343,6 @@ class FlanaBot(MultiBot, ABC):
     @group
     @bot_mentioned
     async def _on_config_list_show(self, message: Message):
-        # config_info = pprint.pformat(message.chat.config)
-        # config_info = flanautils.translate(config_info, {'{': None, '}': None, ',': None, 'True': '', "'": None, 'False': '❌'})
-        # config_info = config_info.splitlines()
-        # config_info = '\n'.join(config_info_.strip() for config_info_ in config_info)
-        # await self.send(f'<b>Estos son los ajustes del grupo:</b>\n\n<code>{config_info}</code>', message)
-
         await self.send('<b>Estos son los ajustes del grupo:</b>\n\n', self._get_config_buttons(message), message)
 
     async def _on_covid_chart(self, message: Message):  # todo2
