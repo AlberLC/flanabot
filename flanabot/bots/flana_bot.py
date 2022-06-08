@@ -18,7 +18,7 @@ from flanautils import Media, MediaType, NotFoundError, OrderedSet, Source, Time
 from multibot import Action, BadRoleError, BotAction, MultiBot, SendError, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, reply
 
 from flanabot import constants
-from flanabot.models import ButtonsMessageType, Chat, Message, Punishment, WeatherChart
+from flanabot.models import Chat, Message, Punishment, WeatherChart
 
 
 # ----------------------------------------------------------------------------------------------------- #
@@ -131,7 +131,8 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_weather_chart_config_show, (constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
         self.register(self._on_weather_chart_config_show, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
 
-        self.register_button(self._on_button_press)
+        self.register_button(self._on_config_button_press, list(Chat.DEFAULT_CONFIG.keys()))
+        self.register_button(self._on_weather_button_press, WeatherEmoji.values)
 
     async def _change_config(self, config_name: str, message: Message, value: bool = None):
         if value is None:
@@ -296,49 +297,19 @@ class FlanaBot(MultiBot, ABC):
     # ---------------------------------------------- #
     #                    HANDLERS                    #
     # ---------------------------------------------- #
-    async def _on_button_press(self, message: Message):
-        await self._accept_button_event(message)
-
-        match message.button_pressed_text:
-            case WeatherEmoji.ZOOM_IN.value:
-                buttons_message_type = ButtonsMessageType.WEATHER
-                message.weather_chart.zoom_in()
-            case WeatherEmoji.ZOOM_OUT.value:
-                buttons_message_type = ButtonsMessageType.WEATHER
-                message.weather_chart.zoom_out()
-            case WeatherEmoji.LEFT.value:
-                buttons_message_type = ButtonsMessageType.WEATHER
-                message.weather_chart.move_left()
-            case WeatherEmoji.RIGHT.value:
-                buttons_message_type = ButtonsMessageType.WEATHER
-                message.weather_chart.move_right()
-            case WeatherEmoji.PRECIPITATION_VOLUME.value:
-                buttons_message_type = ButtonsMessageType.WEATHER
-                message.weather_chart.trace_metadatas['rain_volume'].show = not message.weather_chart.trace_metadatas['rain_volume'].show
-                message.weather_chart.trace_metadatas['snow_volume'].show = not message.weather_chart.trace_metadatas['snow_volume'].show
-            case emoji if emoji in WeatherEmoji.values:
-                buttons_message_type = ButtonsMessageType.WEATHER
-                trace_metadata_name = WeatherEmoji(emoji).name.lower()
-                message.weather_chart.trace_metadatas[trace_metadata_name].show = not message.weather_chart.trace_metadatas[trace_metadata_name].show
-            case _ if message.button_pressed_user.is_admin and 'auto_' in (config := message.button_pressed_text.split()[1]):
-                buttons_message_type = ButtonsMessageType.CONFIG
-                message.chat.config[config] = not message.chat.config[config]
-                message.save()
-                await self.edit('<b>Estos son los ajustes del grupo:</b>\n\n', self._get_config_buttons(message), message)
-            case _:
-                return
-
-        if buttons_message_type is ButtonsMessageType.WEATHER:
-            message.weather_chart.apply_zoom()
-            message.weather_chart.draw()
-            message.save()
-
-            image_bytes = message.weather_chart.to_image()
-            await self.edit(Media(image_bytes, MediaType.IMAGE), message)
-
     async def _on_bye(self, message: Message):
         if not message.chat.is_group or self.is_bot_mentioned(message):
             await self.send_bye(message)
+
+    async def _on_config_button_press(self, message: Message):
+        await self._accept_button_event(message)
+
+        if not message.button_pressed_user.is_admin or 'auto_' not in (config := message.button_pressed_text.split()[1]):
+            return
+
+        message.chat.config[config] = not message.chat.config[config]
+        message.save()
+        await self.edit('<b>Estos son los ajustes del grupo:</b>\n\n', self._get_config_buttons(message), message)
 
     @group
     @bot_mentioned
@@ -548,6 +519,34 @@ class FlanaBot(MultiBot, ABC):
         for user in await self._find_users_to_punish(message):
             await self.unpunish(user, message, message)
 
+    async def _on_weather_button_press(self, message: Message):
+        await self._accept_button_event(message)
+
+        match message.button_pressed_text:
+            case WeatherEmoji.ZOOM_IN.value:
+                message.weather_chart.zoom_in()
+            case WeatherEmoji.ZOOM_OUT.value:
+                message.weather_chart.zoom_out()
+            case WeatherEmoji.LEFT.value:
+                message.weather_chart.move_left()
+            case WeatherEmoji.RIGHT.value:
+                message.weather_chart.move_right()
+            case WeatherEmoji.PRECIPITATION_VOLUME.value:
+                message.weather_chart.trace_metadatas['rain_volume'].show = not message.weather_chart.trace_metadatas['rain_volume'].show
+                message.weather_chart.trace_metadatas['snow_volume'].show = not message.weather_chart.trace_metadatas['snow_volume'].show
+            case emoji if emoji in WeatherEmoji.values:
+                trace_metadata_name = WeatherEmoji(emoji).name.lower()
+                message.weather_chart.trace_metadatas[trace_metadata_name].show = not message.weather_chart.trace_metadatas[trace_metadata_name].show
+            case _:
+                return
+
+        message.weather_chart.apply_zoom()
+        message.weather_chart.draw()
+        message.save()
+
+        image_bytes = message.weather_chart.to_image()
+        await self.edit(Media(image_bytes, MediaType.IMAGE), message)
+
     async def _on_weather_chart(self, message: Message):
         bot_state_message: Message | None = None
         if message.is_inline:
@@ -568,7 +567,7 @@ class FlanaBot(MultiBot, ABC):
             possible_mentioned_ids.append(user.name.split('#')[0].lower())
             possible_mentioned_ids.append(f'@{user.id}')
 
-        if roles := await self.get_group_roles(message):
+        if roles := await self.get_roles(message):
             for role in roles:
                 possible_mentioned_ids.append(f'@{role.id}')
 
