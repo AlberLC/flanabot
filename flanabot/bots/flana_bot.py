@@ -449,7 +449,11 @@ class FlanaBot(MultiBot, ABC):
             await self.send(deleted_message.text, message)
 
     async def _on_scraping(self, message: Message, delete_original: bool = None) -> OrderedSet[Media]:
-        sended_media_messages = await self._search_and_send_medias(message.replied_message) if message.replied_message else OrderedSet()
+        sended_media_messages = OrderedSet()
+        if message.replied_message:
+            word_matches = flanautils.cartesian_product_string_matching(message.text, constants.KEYWORDS['scraping'], min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)
+            if sum(max(matches.values()) for matches in word_matches.values()):
+                sended_media_messages += await self._search_and_send_medias(message.replied_message)
         sended_media_messages += await self._search_and_send_medias(message)
         await self.send_inline_results(message)
 
@@ -461,6 +465,8 @@ class FlanaBot(MultiBot, ABC):
                 (
                         (
                                 delete_original is None
+                                and
+                                not message.replied_message
                                 and
                                 message.chat.config['auto_delete_original']
                         )
