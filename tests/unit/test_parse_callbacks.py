@@ -7,7 +7,6 @@ os.environ |= flanautils.find_environment_variables('../.env')
 import unittest
 from typing import Iterable
 
-from multibot import constants as multibot_constants
 from flanabot.bots.flana_tele_bot import FlanaTeleBot
 
 
@@ -15,7 +14,7 @@ class TestParseCallbacks(unittest.TestCase):
     def _test_no_always_callbacks(self, phrases: Iterable[str], callback: callable):
         for i, phrase in enumerate(phrases):
             with self.subTest(phrase):
-                callbacks = [registered_callback.callback for registered_callback in self.flana_tele_bot._parse_callbacks(phrase, multibot_constants.RATIO_REWARD_EXPONENT, multibot_constants.KEYWORDS_LENGHT_PENALTY, multibot_constants.MINIMUM_RATIO_TO_MATCH)
+                callbacks = [registered_callback.callback for registered_callback in self.flana_tele_bot._parse_callbacks(phrase, self.flana_tele_bot._registered_callbacks)
                              if not registered_callback.always]
                 self.assertEqual(1, len(callbacks))
                 self.assertEqual(callback, callbacks[0], f'\n\nExpected: {callback.__name__}\nActual:   {callbacks[0].__name__}')
@@ -92,8 +91,7 @@ class TestParseCallbacks(unittest.TestCase):
     def test_on_delete_original_config_activate(self):
         phrases = [
             'activa el borrado automatico',
-            'flanabot pon el auto delete activado',
-            'flanabot activa el autodelete'
+            'flanabot pon el auto delete activado'
         ]
         self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_delete_original_config_activate)
 
@@ -104,8 +102,7 @@ class TestParseCallbacks(unittest.TestCase):
     def test_on_delete_original_config_deactivate(self):
         phrases = [
             'desactiva el borrado automatico',
-            'flanabot pon el auto delete desactivado',
-            'flanabot desactiva el autodelete'
+            'flanabot pon el auto delete desactivado'
         ]
         self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_delete_original_config_deactivate)
 
@@ -119,9 +116,9 @@ class TestParseCallbacks(unittest.TestCase):
 
     def test_on_mute(self):
         phrases = [
-            # 'silencia',
-            # 'silencia al pavo ese',
-            # 'calla a ese pesao',
+            'silencia',
+            'silencia al pavo ese',
+            'calla a ese pesao',
             'haz que se calle',
             'quitale el microfono a ese',
             'quitale el micro',

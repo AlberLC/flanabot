@@ -152,20 +152,15 @@ class FlanaBot(MultiBot, ABC):
         last_2s_messages = Message.find({
             'platform': self.platform.value,
             'author': message.author.object_id,
-            'last_update': {
-                '$gte': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=2)
-            }
+            'last_update': {'$gte': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=2)}
         })
         last_7s_messages = Message.find({
             'platform': self.platform.value,
             'author': message.author.object_id,
-            'last_update': {
-                '$gte': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=7),
-                '$lt': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=2)
-            }
+            'last_update': {'$gte': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=7)}
         })
 
-        if len(last_2s_messages) >= 5 or len(last_7s_messages) >= 7:
+        if len(last_2s_messages) >= constants.FLOOD_2s_LIMIT or len(last_7s_messages) >= constants.FLOOD_7s_LIMIT:
             n_punishments = len(Punishment.find({
                 'platform': self.platform.value,
                 'user_id': message.author.id,
@@ -308,7 +303,7 @@ class FlanaBot(MultiBot, ABC):
             return
 
         message.chat.config[config] = not message.chat.config[config]
-        message.save()
+
         await self.edit('<b>Estos son los ajustes del grupo:</b>\n\n', self._get_config_buttons(message), message)
 
     @group
@@ -548,7 +543,6 @@ class FlanaBot(MultiBot, ABC):
 
         message.weather_chart.apply_zoom()
         message.weather_chart.draw()
-        message.save()
 
         image_bytes = message.weather_chart.to_image()
         await self.edit(Media(image_bytes, MediaType.IMAGE), message)

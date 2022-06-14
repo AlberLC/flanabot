@@ -4,6 +4,8 @@ import flanautils
 
 AUTO_WEATHER_EVERY = datetime.timedelta(hours=6)
 CHECK_PUNISHMENTS_EVERY_SECONDS = datetime.timedelta(hours=1).total_seconds()
+FLOOD_2s_LIMIT = 4
+FLOOD_7s_LIMIT = 7
 HEAT_PERIOD_SECONDS = datetime.timedelta(minutes=15).total_seconds()
 INSULT_PROBABILITY = 0.00166666667
 MAX_PLACE_QUERY_LENGTH = 50
