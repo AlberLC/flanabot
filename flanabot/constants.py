@@ -85,16 +85,20 @@ INSULTS = (
 )
 
 KEYWORDS = {
+    'choose': ('choose', 'elige'),
     'covid_chart': ('case', 'caso', 'contagiado', 'contagio', 'corona', 'coronavirus', 'covid', 'covid19', 'death',
                     'disease', 'enfermedad', 'enfermos', 'fallecido', 'incidencia', 'jacovid', 'mascarilla', 'muerte',
                     'muerto', 'pandemia', 'sick', 'virus'),
     'currency_chart': ('argentina', 'bitcoin', 'cardano', 'cripto', 'crypto', 'criptodivisa', 'cryptodivisa',
                        'cryptomoneda', 'cryptocurrency', 'currency', 'dinero', 'divisa', 'ethereum', 'inversion',
                        'moneda', 'pasta'),
+    'dice': ('dado', 'dice'),
+    'poll': ('encuesta', 'poll', 'quiz'),
     'punish': ('acaba', 'aprende', 'ataca', 'atalo', 'azota', 'boss', 'castiga', 'castigo', 'condena', 'controla',
                'destroy', 'destroza', 'duro', 'ejecuta', 'enseña', 'escarmiento', 'execute', 'finish', 'fuck', 'fusila',
                'hell', 'humos', 'infierno', 'jefe', 'jode', 'learn', 'leccion', 'lesson', 'manda', 'purgatorio',
                'sancion', 'shoot', 'teach', 'termina', 'whip'),
+    'random': ('aleatorio', 'azar', 'random'),
     'scraping': ('api', 'aqui', 'busca', 'contenido', 'content', 'descarga', 'descargar', 'download', 'envia', 'habia',
                  'media', 'redes', 'scrap', 'scraping', 'search', 'send', 'social', 'sociales', 'tenia', 'video',
                  'videos'),

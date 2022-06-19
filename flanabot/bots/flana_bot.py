@@ -15,7 +15,7 @@ import plotly.graph_objects
 import pymongo
 from flanaapis import InstagramLoginError, MediaNotFoundError, Place, PlaceNotFoundError, WeatherEmoji, instagram, tiktok, twitter
 from flanautils import Media, MediaType, NotFoundError, OrderedSet, Source, TimeUnits, TraceMetadata, return_if_first_empty
-from multibot import Action, BadRoleError, BotAction, MultiBot, SendError, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, reply
+from multibot import Action, BadRoleError, BotAction, ButtonsGroup, MultiBot, SendError, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, reply
 
 from flanabot import constants
 from flanabot.models import Chat, Message, Punishment, WeatherChart
@@ -36,6 +36,10 @@ class FlanaBot(MultiBot, ABC):
         super()._add_handlers()
 
         self.register(self._on_bye, multibot_constants.KEYWORDS['bye'])
+
+        self.register(self._on_choose, constants.KEYWORDS['choose'])
+        self.register(self._on_choose, constants.KEYWORDS['random'])
+        self.register(self._on_choose, (constants.KEYWORDS['choose'], constants.KEYWORDS['random']))
 
         self.register(self._on_config_list_show, multibot_constants.KEYWORDS['config'])
         self.register(self._on_config_list_show, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['config']))
@@ -79,6 +83,8 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['config']))
         self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['config']))
 
+        self.register(self._on_dice, constants.KEYWORDS['dice'])
+
         self.register(self._on_hello, multibot_constants.KEYWORDS['hello'])
 
         self.register(self._on_new_message_default, default=True)
@@ -87,6 +93,10 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['message']))
         self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
         self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
+
+        self.register(self._on_poll, constants.KEYWORDS['poll'])
+
+        self.register_button(self._on_poll_button_press, ButtonsGroup.POLL)
 
         self.register(self._on_punish, constants.KEYWORDS['punish'])
         self.register(self._on_punish, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['unpunish']))
@@ -131,8 +141,8 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_weather_chart_config_show, (constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
         self.register(self._on_weather_chart_config_show, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
 
-        self.register_button(self._on_config_button_press, list(Chat.DEFAULT_CONFIG.keys()))
-        self.register_button(self._on_weather_button_press, WeatherEmoji.values)
+        self.register_button(self._on_config_button_press, ButtonsGroup.CONFIG)
+        self.register_button(self._on_weather_button_press, ButtonsGroup.WEATHER)
 
     async def _change_config(self, config_name: str, message: Message, value: bool = None):
         if value is None:
@@ -173,18 +183,6 @@ class FlanaBot(MultiBot, ABC):
                 await self._manage_exceptions(e, message)
             else:
                 await self.send(f'Castigado durante {TimeUnits(seconds=punishment_seconds).to_words()}.', message)
-
-    @staticmethod
-    def _get_config_buttons(config: dict | Chat | Message) -> list[list[str]]:
-        match config:
-            case Chat() as chat:
-                config = chat.config
-            case Message() as message:
-                config = message.chat.config
-
-        buttons_texts = [f"{'✔' if v else '❌'}  {k}" for k, v in config.items()]
-        # noinspection PyTypeChecker
-        return flanautils.chunks(buttons_texts, 3)
 
     @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
     async def _manage_exceptions(self, exceptions: BaseException | Iterable[BaseException], context: Chat | Message):
@@ -296,20 +294,33 @@ class FlanaBot(MultiBot, ABC):
         if not message.chat.is_group or self.is_bot_mentioned(message):
             await self.send_bye(message)
 
+    @bot_mentioned
+    async def _on_choose(self, message: Message):
+        discarded_words = {*constants.KEYWORDS['choose'], *constants.KEYWORDS['random'], self.name, f'<@{self.id}>'}
+        if final_words := [word for word in message.text.split() if word.lower() not in discarded_words]:
+            await self.send(random.choice(final_words), message)
+        else:
+            await self.send(random.choice(('¿Que elija el qué?', '¿Y las opciones?', '?', '🤔')), message)
+
     async def _on_config_button_press(self, message: Message):
         await self._accept_button_event(message)
 
-        if not message.button_pressed_user.is_admin or 'auto_' not in (config := message.button_pressed_text.split()[1]):
+        if not message.buttons_info.presser_user.is_admin:
             return
 
+        config = message.buttons_info.pressed_text.split()[1]
         message.chat.config[config] = not message.chat.config[config]
+        pressed_button = message.buttons_info[message.buttons_info.pressed_text]
+        pressed_button.is_checked = not pressed_button.is_checked
+        pressed_button.text = f"{'✔' if pressed_button.is_checked else '❌'}  {config}"
 
-        await self.edit('<b>Estos son los ajustes del grupo:</b>\n\n', self._get_config_buttons(message), message)
+        await self.edit('<b>Estos son los ajustes del grupo:</b>\n\n', message.buttons_info.buttons, message)
 
     @group
     @bot_mentioned
     async def _on_config_list_show(self, message: Message):
-        await self.send('<b>Estos son los ajustes del grupo:</b>\n\n', self._get_config_buttons(message), message)
+        buttons_texts = [(f"{'✔' if v else '❌'}  {k}", v) for k, v in message.chat.config.items()]
+        await self.send('<b>Estos son los ajustes del grupo:</b>\n\n', flanautils.chunks(buttons_texts, 3), message, buttons_key=ButtonsGroup.CONFIG)
 
     async def _on_covid_chart(self, message: Message):  # todo2
         pass
@@ -365,6 +376,13 @@ class FlanaBot(MultiBot, ABC):
     async def _on_delete_original_config_show(self, message: Message):
         await self._show_config('auto_delete_original', message)
 
+    @bot_mentioned
+    async def _on_dice(self, message: Message):
+        if top_number := flanautils.sum_numbers_in_text(message.text):
+            await self.send(random.randint(1, top_number), message)
+        else:
+            await self.send(random.choice(('¿De cuántas caras?', '¿Y el número?', '?', '🤔')), message)
+
     async def _on_hello(self, message: Message):
         if not message.chat.is_group or self.is_bot_mentioned(message):
             await self.send_hello(message)
@@ -409,6 +427,18 @@ class FlanaBot(MultiBot, ABC):
     async def _on_no_delete_original(self, message: Message):
         if not await self._on_scraping(message, delete_original=False):
             await self._on_recover_message(message)
+
+    @bot_mentioned
+    async def _on_poll(self, message: Message):
+        discarded_words = {*constants.KEYWORDS['poll'], self.name, f'<@{self.id}>'}
+        if final_words := [word for word in message.text.split() if word.lower() not in discarded_words]:
+            await self.send(flanautils.chunks(final_words, 1), message, buttons_key=ButtonsGroup.POLL)
+        else:
+            await self.send(random.choice(('¿Y las opciones?', '?', '🤔')), message)
+
+    async def _on_poll_button_press(self, message: Message):
+        await self._accept_button_event(message)
+        ...
 
     @bot_mentioned
     @group
@@ -523,7 +553,7 @@ class FlanaBot(MultiBot, ABC):
     async def _on_weather_button_press(self, message: Message):
         await self._accept_button_event(message)
 
-        match message.button_pressed_text:
+        match message.buttons_info.pressed_text:
             case WeatherEmoji.ZOOM_IN.value:
                 message.weather_chart.zoom_in()
             case WeatherEmoji.ZOOM_OUT.value:
@@ -676,6 +706,7 @@ class FlanaBot(MultiBot, ABC):
                 [WeatherEmoji.HUMIDITY.value, WeatherEmoji.PRECIPITATION_PROBABILITY.value, WeatherEmoji.PRECIPITATION_VOLUME.value, WeatherEmoji.PRESSURE.value, WeatherEmoji.WIND_SPEED.value]
             ],
             message,
+            buttons_key=ButtonsGroup.WEATHER,
             send_as_file=False
         )
         await self.send_inline_results(message)
