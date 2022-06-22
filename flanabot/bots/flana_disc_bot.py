@@ -2,9 +2,11 @@ __all__ = ['FlanaDiscBot']
 
 import asyncio
 import os
+from typing import Sequence
 
 import discord
-from multibot import BadRoleError, DiscordBot, User
+import flanautils
+from multibot import BadRoleError, DiscordBot, User, constants as multibot_constants
 
 from flanabot import constants
 from flanabot.bots.flana_bot import FlanaBot
@@ -41,6 +43,13 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     def _add_handlers(self):
         super()._add_handlers()
         self.client.add_listener(self._on_voice_state_update, 'on_voice_state_update')
+
+    # noinspection PyTypeChecker
+    def _distribute_poll_buttons(self, texts: Sequence[str]) -> list[list[str]]:
+        if len(texts) <= multibot_constants.DISCORD_BUTTONS_MAX:
+            return flanautils.chunks(texts, 1)
+        else:
+            return flanautils.chunks(texts, multibot_constants.DISCORD_BUTTONS_MAX)
 
     async def _heat_channel(self, channel: discord.VoiceChannel):
         while True:

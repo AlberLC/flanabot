@@ -3,10 +3,11 @@ __all__ = ['FlanaBot']
 import asyncio
 import datetime
 import random
+import re
 import time as time_module
 from abc import ABC
 from asyncio import Future
-from typing import Iterable
+from typing import Iterable, Sequence
 
 import flanaapis.geolocation.functions
 import flanaapis.weather.functions
@@ -96,8 +97,6 @@ class FlanaBot(MultiBot, ABC):
 
         self.register(self._on_poll, constants.KEYWORDS['poll'])
 
-        self.register_button(self._on_poll_button_press, ButtonsGroup.POLL)
-
         self.register(self._on_punish, constants.KEYWORDS['punish'])
         self.register(self._on_punish, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['unpunish']))
         self.register(self._on_punish, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['permission']))
@@ -121,6 +120,11 @@ class FlanaBot(MultiBot, ABC):
 
         self.register(self._on_song_info, constants.KEYWORDS['song_info'])
 
+        self.register(self._on_stop_poll, multibot_constants.KEYWORDS['deactivate'])
+        self.register(self._on_stop_poll, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['poll']))
+        self.register(self._on_stop_poll, multibot_constants.KEYWORDS['stop'])
+        self.register(self._on_stop_poll, (multibot_constants.KEYWORDS['stop'], constants.KEYWORDS['poll']))
+
         self.register(self._on_unpunish, constants.KEYWORDS['unpunish'])
 
         self.register(self._on_unpunish, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['punish']))
@@ -142,6 +146,7 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_weather_chart_config_show, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
 
         self.register_button(self._on_config_button_press, ButtonsGroup.CONFIG)
+        self.register_button(self._on_poll_button_press, ButtonsGroup.POLL)
         self.register_button(self._on_weather_button_press, ButtonsGroup.WEATHER)
 
     async def _change_config(self, config_name: str, message: Message, value: bool = None):
@@ -297,7 +302,7 @@ class FlanaBot(MultiBot, ABC):
     @bot_mentioned
     async def _on_choose(self, message: Message):
         discarded_words = {*constants.KEYWORDS['choose'], *constants.KEYWORDS['random'], self.name, f'<@{self.id}>'}
-        if final_words := [word for word in message.text.split() if word.lower() not in discarded_words]:
+        if final_words := [word for word in message.text.split() if not flanautils.cartesian_product_string_matching(word.lower(), discarded_words, min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)]:
             await self.send(random.choice(final_words), message)
         else:
             await self.send(random.choice(('¿Que elija el qué?', '¿Y las opciones?', '?', '🤔')), message)
@@ -428,17 +433,52 @@ class FlanaBot(MultiBot, ABC):
         if not await self._on_scraping(message, delete_original=False):
             await self._on_recover_message(message)
 
+    def _distribute_poll_buttons(self, texts: Sequence[str]) -> list[list[str]]:
+        pass
+
     @bot_mentioned
     async def _on_poll(self, message: Message):
-        discarded_words = {*constants.KEYWORDS['poll'], self.name, f'<@{self.id}>'}
-        if final_words := [word for word in message.text.split() if word.lower() not in discarded_words]:
-            await self.send(flanautils.chunks(final_words, 1), message, buttons_key=ButtonsGroup.POLL)
+        discarded_words = {*constants.KEYWORDS['poll'], self.name.lower(), f'<@{self.id}>'}
+        if final_options := [option.title() for option in message.text.split() if not flanautils.cartesian_product_string_matching(option.lower(), discarded_words, min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)]:
+            await self.send('Encuesta en curso...', self._distribute_poll_buttons(final_options), message, buttons_key=ButtonsGroup.POLL, contents={'poll': {'is_active': True, 'votes': {option: [] for option in final_options}}})
         else:
             await self.send(random.choice(('¿Y las opciones?', '?', '🤔')), message)
 
     async def _on_poll_button_press(self, message: Message):
         await self._accept_button_event(message)
-        ...
+        if not message.contents['poll']['is_active']:
+            return
+
+        option_name = results[0] if (results := re.findall('(.*?) ➜.+', message.buttons_info.pressed_text)) else message.buttons_info.pressed_text
+        selected_option_votes = message.contents['poll']['votes'][option_name]
+        presser_id = message.buttons_info.presser_user.id
+        presser_name = message.buttons_info.presser_user.name.split('#')[0]
+        total_votes = sum(len(option_votes) for option_votes in message.contents['poll']['votes'].values())
+        if [presser_id, presser_name] in selected_option_votes:
+            selected_option_votes.remove([presser_id, presser_name])
+            total_votes -= 1
+        else:
+            for option_votes in message.contents['poll']['votes'].values():
+                try:
+                    option_votes.remove([presser_id, presser_name])
+                except ValueError:
+                    pass
+                else:
+                    total_votes -= 1
+                    break
+            selected_option_votes.append((presser_id, presser_name))
+            total_votes += 1
+
+        if total_votes:
+            buttons = []
+            for option, option_votes in message.contents['poll']['votes'].items():
+                percent = f'{round(len(option_votes) / total_votes * 100)}%'
+                names = f"({', '.join(option_vote[1] for option_vote in option_votes)})" if option_votes else ''
+                buttons.append(f'{option} ➜ {percent} {names}')
+        else:
+            buttons = list(message.contents['poll']['votes'].keys())
+
+        await self.edit(self._distribute_poll_buttons(buttons), message)
 
     @bot_mentioned
     @group
@@ -542,6 +582,46 @@ class FlanaBot(MultiBot, ABC):
                 await self.send_song_info(song_info, message)
         elif self.is_bot_mentioned(message) or not message.chat.is_group:
             await self._manage_exceptions(SendError('No hay información musical en ese mensaje.'), message)
+
+    async def _on_stop_poll(self, message: Message):
+        if poll_message := message.replied_message:
+            if poll_message.contents.get('poll') is None:
+                return
+
+        elif (
+                self.is_bot_mentioned(message)
+                and
+                flanautils.cartesian_product_string_matching(message.text, constants.KEYWORDS['poll'], min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)
+                and
+                (poll_message := Message.find_one({'contents.poll.is_active': True}, sort_keys=(('date', pymongo.DESCENDING),)))
+        ):
+            poll_message = await self.get_message(poll_message.chat.id, poll_message.id)
+        else:
+            return
+
+        winners = []
+        max_votes = 1
+        for option, votes in poll_message.contents['poll']['votes'].items():
+            if len(votes) > max_votes:
+                winners = [option]
+                max_votes = len(votes)
+            elif len(votes) == max_votes:
+                winners.append(option)
+
+        match winners:
+            case [_, _, *_]:
+                winners = [f'<b>{winner}</b>' for winner in winners]
+                text = f"Encuesta finalizada. Los ganadores son: {flanautils.join_last_separator(winners, ', ', ' y ')}."
+            case [winner]:
+                text = f'Encuesta finalizada. Ganador: <b>{winner}</b>.'
+            case _:
+                text = 'Encuesta finalizada.'
+
+        poll_message.contents['poll']['is_active'] = False
+
+        await self.edit(text, poll_message)
+        if not message.replied_message:
+            await self.send(text, reply_to=poll_message)
 
     @group
     @bot_mentioned
