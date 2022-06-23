@@ -269,7 +269,7 @@ class FlanaBot(MultiBot, ABC):
             return_exceptions=True
         )
 
-        if not message.is_inline and (self.is_bot_mentioned(message) or not message.chat.is_group):
+        if not message.is_inline and (self.is_bot_mentioned(message) or message.chat.is_private):
             while not results.done():
                 if constants.SCRAPING_MESSAGE_WAITING_TIME <= time_module.perf_counter() - start_time:
                     bot_state_message = await self.send(random.choice(constants.SCRAPING_PHRASES), message)
@@ -296,7 +296,7 @@ class FlanaBot(MultiBot, ABC):
     #                    HANDLERS                    #
     # ---------------------------------------------- #
     async def _on_bye(self, message: Message):
-        if not message.chat.is_group or self.is_bot_mentioned(message):
+        if message.chat.is_private or self.is_bot_mentioned(message):
             await self.send_bye(message)
 
     async def _on_choose(self, message: Message):
@@ -393,7 +393,7 @@ class FlanaBot(MultiBot, ABC):
             await self.send(random.choice(('¿De cuántas caras?', '¿Y el número?', '?', '🤔')), message)
 
     async def _on_hello(self, message: Message):
-        if not message.chat.is_group or self.is_bot_mentioned(message):
+        if message.chat.is_private or self.is_bot_mentioned(message):
             await self.send_hello(message)
 
     async def _on_new_message_default(self, message: Message):
@@ -586,16 +586,15 @@ class FlanaBot(MultiBot, ABC):
         if song_infos:
             for song_info in song_infos:
                 await self.send_song_info(song_info, message)
-        elif self.is_bot_mentioned(message) or not message.chat.is_group:
+        elif self.is_bot_mentioned(message) or message.chat.is_private:
             await self._manage_exceptions(SendError('No hay información musical en ese mensaje.'), message)
 
     async def _on_stop_poll(self, message: Message):
         if poll_message := message.replied_message:
             if poll_message.contents.get('poll') is None:
                 return
-
         elif (
-                self.is_bot_mentioned(message)
+                (message.chat.is_private or self.is_bot_mentioned(message))
                 and
                 flanautils.cartesian_product_string_matching(message.text, constants.KEYWORDS['poll'], min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)
                 and
