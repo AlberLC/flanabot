@@ -381,8 +381,10 @@ class FlanaBot(MultiBot, ABC):
     async def _on_delete_original_config_show(self, message: Message):
         await self._show_config('auto_delete_original', message)
 
-    @bot_mentioned
     async def _on_dice(self, message: Message):
+        if message.chat.is_group and not self.is_bot_mentioned(message):
+            return
+
         if top_number := flanautils.sum_numbers_in_text(message.text):
             await self.send(random.randint(1, top_number), message)
         else:
@@ -436,8 +438,10 @@ class FlanaBot(MultiBot, ABC):
     def _distribute_poll_buttons(self, texts: Sequence[str]) -> list[list[str]]:
         pass
 
-    @bot_mentioned
     async def _on_poll(self, message: Message):
+        if message.chat.is_group and not self.is_bot_mentioned(message):
+            return
+
         discarded_words = {*constants.KEYWORDS['poll'], self.name.lower(), f'<@{self.id}>'}
         if final_options := [option.title() for option in message.text.split() if not flanautils.cartesian_product_string_matching(option.lower(), discarded_words, min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)]:
             await self.send('Encuesta en curso...', self._distribute_poll_buttons(final_options), message, buttons_key=ButtonsGroup.POLL, contents={'poll': {'is_active': True, 'votes': {option: [] for option in final_options}}})
