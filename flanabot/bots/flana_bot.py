@@ -303,7 +303,7 @@ class FlanaBot(MultiBot, ABC):
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
 
-        discarded_words = {*constants.KEYWORDS['choose'], *constants.KEYWORDS['random'], self.name, f'<@{self.id}>'}
+        discarded_words = {*constants.KEYWORDS['choose'], *constants.KEYWORDS['random'], self.name.lower(), f'<@{self.id}>'}
         if final_words := [word for word in message.text.split() if not flanautils.cartesian_product_string_matching(word.lower(), discarded_words, min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)]:
             await self.send(random.choice(final_words), message)
         else:
