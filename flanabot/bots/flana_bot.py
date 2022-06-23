@@ -299,8 +299,10 @@ class FlanaBot(MultiBot, ABC):
         if not message.chat.is_group or self.is_bot_mentioned(message):
             await self.send_bye(message)
 
-    @bot_mentioned
     async def _on_choose(self, message: Message):
+        if message.chat.is_group and not self.is_bot_mentioned(message):
+            return
+
         discarded_words = {*constants.KEYWORDS['choose'], *constants.KEYWORDS['random'], self.name, f'<@{self.id}>'}
         if final_words := [word for word in message.text.split() if not flanautils.cartesian_product_string_matching(word.lower(), discarded_words, min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)]:
             await self.send(random.choice(final_words), message)
@@ -310,7 +312,7 @@ class FlanaBot(MultiBot, ABC):
     async def _on_config_button_press(self, message: Message):
         await self._accept_button_event(message)
 
-        if not message.buttons_info.presser_user.is_admin:
+        if message.buttons_info.presser_user.is_admin is False:
             return
 
         config = message.buttons_info.pressed_text.split()[1]
