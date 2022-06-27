@@ -21,9 +21,10 @@ HEAT_NAMES = [
     'Canal Caliente',
     'Canal Olor a Vasco',
     'Verano Cordobés al Sol',
-    'Canal Ardiendo',
     'abrid las putas ventanas y traed el extintor',
-    'Canal INFIERNO'
+    'Canal Ardiendo',
+    'Canal INFIERNO',
+    '🔥🔥🔥🔥🔥🔥🔥'
 ]
 HOT_CHANNEL_ID = 493530483045564417
 
