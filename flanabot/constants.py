@@ -85,7 +85,7 @@ INSULTS = (
 )
 
 KEYWORDS = {
-    'choose': ('choose', 'elige'),
+    'choose': ('choose', 'elige', 'escoge'),
     'covid_chart': ('case', 'caso', 'contagiado', 'contagio', 'corona', 'coronavirus', 'covid', 'covid19', 'death',
                     'disease', 'enfermedad', 'enfermos', 'fallecido', 'incidencia', 'jacovid', 'mascarilla', 'muerte',
                     'muerto', 'pandemia', 'sick', 'virus'),

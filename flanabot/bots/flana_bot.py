@@ -303,21 +303,34 @@ class FlanaBot(MultiBot, ABC):
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
 
-        discarded_words = {*constants.KEYWORDS['choose'], *constants.KEYWORDS['random'], self.name.lower(), f'<@{self.id}>'}
+        discarded_words = {
+            *constants.KEYWORDS['choose'],
+            *constants.KEYWORDS['random'],
+            self.name.lower(), f'<@{self.id}>',
+            *flanautils.CommonWords.get('conjunctions'),
+            'entre', 'between'
+        }
+
         if final_words := [word for word in message.text.split() if not flanautils.cartesian_product_string_matching(word.lower(), discarded_words, min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)]:
+            for i in range(1, len(final_words) - 1):
+                if final_words[i] in ('al', 'del', 'to'):
+                    n1 = final_words[i - 1]
+                    n2 = final_words[i + 1]
+                    await self.send(random.randint(n1, n2), message)
+                    return
             await self.send(random.choice(final_words), message)
         else:
             await self.send(random.choice(('¿Que elija el qué?', '¿Y las opciones?', '?', '🤔')), message)
 
     async def _on_config_button_press(self, message: Message):
-        await self._accept_button_event(message)
+        await self.accept_button_event(message)
 
         if message.buttons_info.presser_user.is_admin is False:
             return
 
         config = message.buttons_info.pressed_text.split()[1]
         message.chat.config[config] = not message.chat.config[config]
-        pressed_button = message.buttons_info[message.buttons_info.pressed_text]
+        pressed_button = message.buttons_info.pressed_button
         pressed_button.is_checked = not pressed_button.is_checked
         pressed_button.text = f"{'✔' if pressed_button.is_checked else '❌'}  {config}"
 
@@ -451,7 +464,7 @@ class FlanaBot(MultiBot, ABC):
             await self.send(random.choice(('¿Y las opciones?', '?', '🤔')), message)
 
     async def _on_poll_button_press(self, message: Message):
-        await self._accept_button_event(message)
+        await self.accept_button_event(message)
         if not message.contents['poll']['is_active']:
             return
 
@@ -636,7 +649,7 @@ class FlanaBot(MultiBot, ABC):
             await self.unpunish(user, message, message)
 
     async def _on_weather_button_press(self, message: Message):
-        await self._accept_button_event(message)
+        await self.accept_button_event(message)
 
         match message.buttons_info.pressed_text:
             case WeatherEmoji.ZOOM_IN.value:
@@ -699,7 +712,7 @@ class FlanaBot(MultiBot, ABC):
                 - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['date'], min_ratio=0.85).keys()
                 - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['thanks'], min_ratio=0.85).keys()
                 - possible_mentioned_ids
-                - flanautils.CommonWords.all_words
+                - flanautils.CommonWords.get()
         )
         if not place_words:
             if not message.is_inline:
