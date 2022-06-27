@@ -2,6 +2,7 @@ __all__ = ['FlanaBot']
 
 import asyncio
 import datetime
+import math
 import random
 import re
 import time as time_module
@@ -313,10 +314,22 @@ class FlanaBot(MultiBot, ABC):
 
         if final_words := [word for word in message.text.split() if not flanautils.cartesian_product_string_matching(word.lower(), discarded_words, min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)]:
             for i in range(1, len(final_words) - 1):
-                if final_words[i] in ('al', 'del', 'to'):
-                    n1 = final_words[i - 1]
-                    n2 = final_words[i + 1]
-                    await self.send(random.randint(n1, n2), message)
+                try:
+                    n1 = flanautils.cast_number(final_words[i - 1])
+                except ValueError:
+                    try:
+                        n1 = flanautils.words_to_numbers(final_words[i - 1], ignore_no_numbers=False)
+                    except KeyError:
+                        continue
+                try:
+                    n2 = flanautils.cast_number(final_words[i + 1])
+                except ValueError:
+                    try:
+                        n2 = flanautils.words_to_numbers(final_words[i + 1], ignore_no_numbers=False)
+                    except KeyError:
+                        continue
+                if final_words[i] in ('al', 'el', 'to'):
+                    await self.send(random.randint(math.ceil(n1), math.floor(n2)), message)
                     return
             await self.send(random.choice(final_words), message)
         else:
@@ -401,7 +414,7 @@ class FlanaBot(MultiBot, ABC):
             return
 
         if top_number := flanautils.sum_numbers_in_text(message.text):
-            await self.send(random.randint(1, top_number), message)
+            await self.send(random.randint(1, math.floor(top_number)), message)
         else:
             await self.send(random.choice(('¿De cuántas caras?', '¿Y el número?', '?', '🤔')), message)
 
