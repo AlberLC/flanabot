@@ -168,11 +168,13 @@ class FlanaBot(MultiBot, ABC):
         last_2s_messages = Message.find({
             'platform': self.platform.value,
             'author': message.author.object_id,
+            'chat': message.chat.object_id,
             'date': {'$gte': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=2)}
         })
         last_7s_messages = Message.find({
             'platform': self.platform.value,
             'author': message.author.object_id,
+            'chat': message.chat.object_id,
             'date': {'$gte': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=7)}
         })
 
