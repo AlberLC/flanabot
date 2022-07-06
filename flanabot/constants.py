@@ -71,7 +71,7 @@ INSULTS = (
     '¿Pero cuándo te vas a callar?',
     '¿Por qué no te callas?',
     '¿Quién te ha preguntado?',
-    '¿Qúe quieres?',
+    '¿Qué quieres?',
     '¿Te callas o te callo?',
     '¿Te imaginas que me interesa?',
     '¿Te quieres callar?',
