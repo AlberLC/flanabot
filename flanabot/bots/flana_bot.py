@@ -472,6 +472,8 @@ class FlanaBot(MultiBot, ABC):
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
 
+        await self.delete_message(message)
+
         discarded_words = {*constants.KEYWORDS['poll'], self.name.lower(), f'<@{self.id}>'}
         if final_options := [option.title() for option in message.text.split() if not flanautils.cartesian_product_string_matching(option.lower(), discarded_words, min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)]:
             await self.send('Encuesta en curso...', self._distribute_poll_buttons(final_options), message, buttons_key=ButtonsGroup.POLL, contents={'poll': {'is_active': True, 'votes': {option: [] for option in final_options}}})
@@ -506,7 +508,7 @@ class FlanaBot(MultiBot, ABC):
         if total_votes:
             buttons = []
             for option, option_votes in message.contents['poll']['votes'].items():
-                percent = f'{round(len(option_votes) / total_votes * 100)}%'
+                percent = f'{len(option_votes)}/{total_votes}'
                 names = f"({', '.join(option_vote[1] for option_vote in option_votes)})" if option_votes else ''
                 buttons.append(f'{option} ➜ {percent} {names}')
         else:
