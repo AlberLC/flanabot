@@ -200,7 +200,7 @@ class FlanaBot(MultiBot, ABC):
         conjunctions = [f' {conjunction} ' for conjunction in flanautils.CommonWords.get('conjunctions')]
         if any(char in text for char in (',', ';', *conjunctions)):
             conjunction_parts = [f'(?:[,;]*{conjunction}[,;]*)+' for conjunction in conjunctions]
-            options = re.split(f"{'|'.join(conjunction_parts)}|(?:[,;]+)", text)
+            options = re.split(f"{'|'.join(conjunction_parts)}|[,;]+", text)
             return [option.strip() for option in options if option]
         else:
             return text.split()
