@@ -192,6 +192,19 @@ class FlanaBot(MultiBot, ABC):
             else:
                 await self.send(f'Castigado durante {TimeUnits(seconds=punishment_seconds).to_words()}.', message)
 
+    @staticmethod
+    def _get_options(text: str, discarded_words: Iterable = ()) -> list[str]:
+        options = (option for option in text.split() if not flanautils.cartesian_product_string_matching(option.lower(), discarded_words, min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT))
+        text = ' '.join(options)
+
+        conjunctions = [f' {conjunction} ' for conjunction in flanautils.CommonWords.get('conjunctions')]
+        if any(char in text for char in (',', ';', *conjunctions)):
+            conjunction_parts = [f'(?:[,;]*{conjunction}[,;]*)+' for conjunction in conjunctions]
+            options = re.split(f"{'|'.join(conjunction_parts)}|(?:[,;]+)", text)
+            return [option.strip() for option in options if option]
+        else:
+            return text.split()
+
     @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
     async def _manage_exceptions(self, exceptions: BaseException | Iterable[BaseException], context: Chat | Message):
         if not isinstance(exceptions, Iterable):
@@ -310,30 +323,29 @@ class FlanaBot(MultiBot, ABC):
             *constants.KEYWORDS['choose'],
             *constants.KEYWORDS['random'],
             self.name.lower(), f'<@{self.id}>',
-            *flanautils.CommonWords.get('conjunctions'),
             'entre', 'between'
         }
 
-        if final_words := [word for word in message.text.split() if not flanautils.cartesian_product_string_matching(word.lower(), discarded_words, min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)]:
-            for i in range(1, len(final_words) - 1):
+        if final_options := self._get_options(message.text, discarded_words):
+            for i in range(1, len(final_options) - 1):
                 try:
-                    n1 = flanautils.cast_number(final_words[i - 1])
+                    n1 = flanautils.cast_number(final_options[i - 1])
                 except ValueError:
                     try:
-                        n1 = flanautils.words_to_numbers(final_words[i - 1], ignore_no_numbers=False)
+                        n1 = flanautils.words_to_numbers(final_options[i - 1], ignore_no_numbers=False)
                     except KeyError:
                         continue
                 try:
-                    n2 = flanautils.cast_number(final_words[i + 1])
+                    n2 = flanautils.cast_number(final_options[i + 1])
                 except ValueError:
                     try:
-                        n2 = flanautils.words_to_numbers(final_words[i + 1], ignore_no_numbers=False)
+                        n2 = flanautils.words_to_numbers(final_options[i + 1], ignore_no_numbers=False)
                     except KeyError:
                         continue
-                if final_words[i] in ('al', 'el', 'to'):
+                if final_options[i] in ('al', 'el', 'to'):
                     await self.send(random.randint(math.ceil(n1), math.floor(n2)), message)
                     return
-            await self.send(random.choice(final_words), message)
+            await self.send(random.choice(final_options), message)
         else:
             await self.send(random.choice(('¿Que elija el qué?', '¿Y las opciones?', '?', '🤔')), message)
 
@@ -475,7 +487,7 @@ class FlanaBot(MultiBot, ABC):
         await self.delete_message(message)
 
         discarded_words = {*constants.KEYWORDS['poll'], self.name.lower(), f'<@{self.id}>'}
-        if final_options := [option.title() for option in message.text.split() if not flanautils.cartesian_product_string_matching(option.lower(), discarded_words, min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)]:
+        if final_options := [f'{option[0].upper()}{option[1:]}' for option in self._get_options(message.text, discarded_words)]:
             await self.send('Encuesta en curso...', self._distribute_poll_buttons(final_options), message, buttons_key=ButtonsGroup.POLL, contents={'poll': {'is_active': True, 'votes': {option: [] for option in final_options}}})
         else:
             await self.send(random.choice(('¿Y las opciones?', '?', '🤔')), message)
