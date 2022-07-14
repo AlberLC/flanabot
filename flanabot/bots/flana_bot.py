@@ -454,6 +454,14 @@ class FlanaBot(MultiBot, ABC):
                         message.author.id != self.owner_id
                         and
                         (
+                                not message.replied_message
+                                or
+                                message.replied_message.author.id != self.id
+                                or
+                                not message.replied_message.contents.get('media')
+                        )
+                        and
+                        (
                                 self.is_bot_mentioned(message)
                                 or
                                 (
@@ -674,6 +682,15 @@ class FlanaBot(MultiBot, ABC):
     @bot_mentioned
     @admin(send_negative=True)
     async def _on_unpunish(self, message: Message):
+        if (
+                message.replied_message
+                and
+                message.replied_message.author.id == self.id
+                and
+                message.replied_message.contents.get('media')
+        ):
+            return
+
         for user in await self._find_users_to_punish(message):
             await self.unpunish(user, message, message)
 
