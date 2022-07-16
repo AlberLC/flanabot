@@ -6,6 +6,7 @@ from typing import Sequence
 
 import discord
 import flanautils
+from flanautils import NotFoundError
 from multibot import BadRoleError, DiscordBot, User, constants as multibot_constants
 
 from flanabot import constants
@@ -43,6 +44,8 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     # ----------------------------------------------------------- #
     def _add_handlers(self):
         super()._add_handlers()
+        self.client.add_listener(self._on_member_join, 'on_member_join')
+        self.client.add_listener(self._on_member_remove, 'on_member_remove')
         self.client.add_listener(self._on_voice_state_update, 'on_voice_state_update')
 
     # noinspection PyTypeChecker
@@ -88,6 +91,18 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     # ---------------------------------------------- #
     #                    HANDLERS                    #
     # ---------------------------------------------- #
+    async def _on_member_join(self, member: discord.Member):
+        user = self._create_user_from_discord_user(member)
+        user.pull_from_database(overwrite_fields=('roles',))
+        for role in user.roles:
+            try:
+                await self.add_role(user, member.guild.id, role.id)
+            except NotFoundError:
+                pass
+
+    async def _on_member_remove(self, member: discord.Member):
+        self._create_user_from_discord_user(member).save()
+
     async def _on_voice_state_update(self, _: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         if getattr(before.channel, 'id', None) == HOT_CHANNEL_ID:
             channel = before.channel
