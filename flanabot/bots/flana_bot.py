@@ -741,7 +741,7 @@ class FlanaBot(MultiBot, ABC):
             possible_mentioned_ids.append(user.name.split('#')[0].lower())
             possible_mentioned_ids.append(f'@{user.id}')
 
-        if roles := await self.get_roles(message):
+        if roles := await self.get_group_roles(message):
             for role in roles:
                 possible_mentioned_ids.append(f'@{role.id}')
 
