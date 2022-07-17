@@ -21,11 +21,10 @@ HEAT_NAMES = [
     'Canal Caloret',
     'Canal Caliente',
     'Canal Olor a Vasco',
-    'Verano Cordobés al Sol',
-    'abrid las putas ventanas y traed el extintor',
+    'Canal Verano Cordobés al Sol',
+    'Canal Al rojo vivo',
     'Canal Ardiendo',
-    'Canal INFIERNO',
-    '🔥🔥🔥🔥🔥🔥🔥'
+    'Canal INFIERNO'
 ]
 HOT_CHANNEL_ID = 493530483045564417
 
@@ -60,17 +59,18 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             await asyncio.sleep(constants.HEAT_PERIOD_SECONDS)
 
             if channel.members:
-                if self.heat_level == len(HEAT_NAMES) - 1:
-                    return
                 self.heat_level += 0.5
-            elif not channel.members:
+            else:
                 if not self.heat_level:
                     return
                 self.heat_level -= 0.5
-            else:
-                continue
 
-            await channel.edit(name=HEAT_NAMES[int(self.heat_level)])
+            i = int(self.heat_level)
+            if i < len(HEAT_NAMES):
+                channel_name = HEAT_NAMES[int(self.heat_level)]
+            else:
+                channel_name = '🔥' * (i - len(HEAT_NAMES) + 1)
+            await channel.edit(name=channel_name)
 
     async def _punish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         user_id = self.get_user_id(user)
