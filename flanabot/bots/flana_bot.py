@@ -496,7 +496,7 @@ class FlanaBot(MultiBot, ABC):
         await self.delete_message(message)
 
         discarded_words = {*constants.KEYWORDS['poll'], self.name.lower(), f'<@{self.id}>'}
-        if final_options := [option.capitalize() for option in self._get_options(message.text, discarded_words)]:
+        if final_options := [f'{option[0].upper()}{option[1:]}' for option in self._get_options(message.text, discarded_words)]:
             await self.send('Encuesta en curso...', self._distribute_poll_buttons(final_options), message, buttons_key=ButtonsGroup.POLL, contents={'poll': {'is_active': True, 'votes': {option: [] for option in final_options}}})
         else:
             await self.send(random.choice(('¿Y las opciones?', '?', '🤔')), message)
