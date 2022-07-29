@@ -17,7 +17,7 @@ import plotly.graph_objects
 import pymongo
 from flanaapis import InstagramLoginError, MediaNotFoundError, Place, PlaceNotFoundError, WeatherEmoji, instagram, tiktok, twitter
 from flanautils import Media, MediaType, NotFoundError, OrderedSet, Source, TimeUnits, TraceMetadata, return_if_first_empty
-from multibot import Action, BadRoleError, BotAction, ButtonsGroup, MultiBot, SendError, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, reply
+from multibot import Action, BadRoleError, BotAction, ButtonsGroup, MultiBot, Role, SendError, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, reply
 
 from flanabot import constants
 from flanabot.models import Chat, Message, Punishment, WeatherChart
@@ -102,7 +102,15 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_punish, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['unpunish']))
         self.register(self._on_punish, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['permission']))
 
+        self.register(self._on_recover_message, multibot_constants.KEYWORDS['reset'])
         self.register(self._on_recover_message, (multibot_constants.KEYWORDS['reset'], multibot_constants.KEYWORDS['message']))
+
+        self.register(self._on_roles, multibot_constants.KEYWORDS['permission'])
+        self.register(self._on_roles, multibot_constants.KEYWORDS['role'])
+        self.register(self._on_roles, (multibot_constants.KEYWORDS['permission'], multibot_constants.KEYWORDS['role']))
+        self.register(self._on_roles, (multibot_constants.KEYWORDS['change'], multibot_constants.KEYWORDS['permission']))
+        self.register(self._on_roles, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['role']))
+        self.register(self._on_roles, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['role']))
 
         self.register(self._on_scraping, constants.KEYWORDS['scraping'])
 
@@ -148,6 +156,7 @@ class FlanaBot(MultiBot, ABC):
 
         self.register_button(self._on_config_button_press, ButtonsGroup.CONFIG)
         self.register_button(self._on_poll_button_press, ButtonsGroup.POLL)
+        self.register_button(self._on_roles_button_press, ButtonsGroup.ROLES)
         self.register_button(self._on_weather_button_press, ButtonsGroup.WEATHER)
 
     async def _change_config(self, config_name: str, message: Message, value: bool = None):
@@ -158,6 +167,9 @@ class FlanaBot(MultiBot, ABC):
         message.chat.save()
 
         await self.send(f"He {'activado ✔' if value else 'desactivado ❌'} {config_name}.", message)
+
+    async def _changeable_roles(self, group_: int | str | Chat | Message) -> list[Role]:
+        pass
 
     @admin(False)
     @group
@@ -191,6 +203,9 @@ class FlanaBot(MultiBot, ABC):
                 await self._manage_exceptions(e, message)
             else:
                 await self.send(f'Castigado durante {TimeUnits(seconds=punishment_seconds).to_words()}.', message)
+
+    def _distribute_buttons(self, texts: Sequence[str]) -> list[list[str]]:
+        pass
 
     @staticmethod
     def _get_options(text: str, discarded_words: Iterable = ()) -> list[str]:
@@ -266,6 +281,20 @@ class FlanaBot(MultiBot, ABC):
     async def _punish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         pass
 
+    async def _role_state_options(self, group_: int | str | Chat | Message, activated_user_role_names: list[str]) -> list[str]:
+        options = []
+        for role in await self._changeable_roles(group_):
+            if role.name == '@everyone':
+                continue
+
+            if role.name in activated_user_role_names:
+                options.append(f'✔  {role.name}')
+            else:
+                options.append(f'❌  {role.name}')
+        options.reverse()
+
+        return options
+
     async def _search_and_send_medias(self, message: Message, send_song_info=False) -> list[Message]:
         sended_media_messages = []
 
@@ -326,26 +355,26 @@ class FlanaBot(MultiBot, ABC):
             'entre', 'between'
         }
 
-        if final_options := self._get_options(message.text, discarded_words):
-            for i in range(1, len(final_options) - 1):
+        if options := self._get_options(message.text, discarded_words):
+            for i in range(1, len(options) - 1):
                 try:
-                    n1 = flanautils.cast_number(final_options[i - 1])
+                    n1 = flanautils.cast_number(options[i - 1])
                 except ValueError:
                     try:
-                        n1 = flanautils.words_to_numbers(final_options[i - 1], ignore_no_numbers=False)
+                        n1 = flanautils.words_to_numbers(options[i - 1], ignore_no_numbers=False)
                     except KeyError:
                         continue
                 try:
-                    n2 = flanautils.cast_number(final_options[i + 1])
+                    n2 = flanautils.cast_number(options[i + 1])
                 except ValueError:
                     try:
-                        n2 = flanautils.words_to_numbers(final_options[i + 1], ignore_no_numbers=False)
+                        n2 = flanautils.words_to_numbers(options[i + 1], ignore_no_numbers=False)
                     except KeyError:
                         continue
-                if final_options[i] in ('al', 'el', 'to'):
+                if options[i] in ('al', 'el', 'to'):
                     await self.send(random.randint(math.ceil(n1), math.floor(n2)), message)
                     return
-            await self.send(random.choice(final_options), message)
+            await self.send(random.choice(options), message)
         else:
             await self.send(random.choice(('¿Que elija el qué?', '¿Y las opciones?', '?', '🤔')), message)
 
@@ -486,9 +515,6 @@ class FlanaBot(MultiBot, ABC):
         if not await self._on_scraping(message, delete_original=False):
             await self._on_recover_message(message)
 
-    def _distribute_poll_buttons(self, texts: Sequence[str]) -> list[list[str]]:
-        pass
-
     async def _on_poll(self, message: Message):
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
@@ -497,7 +523,13 @@ class FlanaBot(MultiBot, ABC):
 
         discarded_words = {*constants.KEYWORDS['poll'], self.name.lower(), f'<@{self.id}>'}
         if final_options := [f'{option[0].upper()}{option[1:]}' for option in self._get_options(message.text, discarded_words)]:
-            await self.send('Encuesta en curso...', self._distribute_poll_buttons(final_options), message, buttons_key=ButtonsGroup.POLL, contents={'poll': {'is_active': True, 'votes': {option: [] for option in final_options}}})
+            await self.send(
+                'Encuesta en curso...',
+                self._distribute_buttons(final_options),
+                message,
+                buttons_key=ButtonsGroup.POLL,
+                contents={'poll': {'is_active': True, 'votes': {option: [] for option in final_options}}}
+            )
         else:
             await self.send(random.choice(('¿Y las opciones?', '?', '🤔')), message)
 
@@ -535,7 +567,7 @@ class FlanaBot(MultiBot, ABC):
         else:
             buttons = list(message.contents['poll']['votes'].keys())
 
-        await self.edit(self._distribute_poll_buttons(buttons), message)
+        await self.edit(self._distribute_buttons(buttons), message)
 
     @bot_mentioned
     @group
@@ -569,6 +601,39 @@ class FlanaBot(MultiBot, ABC):
         deleted_messages: list[Message] = [affected_message for affected_object_id in affected_object_ids if (affected_message := Message.find_one({'platform': self.platform.value, '_id': affected_object_id})).author.id != self.id]
         for deleted_message in deleted_messages:
             await self.send(deleted_message.text, message)
+
+    async def _on_roles(self, message: Message):
+        # noinspection PyTypeChecker
+        user_role_names = [discord_role.name for discord_role in message.author.original_object.roles]
+
+        await self.delete_message(message)
+        await self.send(
+            f'<b>Roles de {message.author.name}:</b>',
+            self._distribute_buttons(await self._role_state_options(message, user_role_names)),
+            message,
+            buttons_key=ButtonsGroup.ROLES,
+            contents={'user_id': message.author.id}
+        )
+
+    async def _on_roles_button_press(self, message: Message):
+        await self.accept_button_event(message)
+        if message.buttons_info.presser_user.id != message.contents['user_id']:
+            return
+
+        role = await self.find_role(message.buttons_info.pressed_text[1:].strip(), message)
+        user_role_names = [discord_role.name for discord_role in message.buttons_info.presser_user.original_object.roles]
+        if role.name in user_role_names:
+            await self.remove_role(message.buttons_info.presser_user, message, role)
+            message.buttons_info.presser_user.roles.remove(role)
+            user_role_names.remove(role.name)
+        else:
+            await self.add_role(message.buttons_info.presser_user, message, role)
+            message.buttons_info.presser_user.roles.append(role)
+            user_role_names.append(role.name)
+
+        await self.edit(self._distribute_buttons(await self._role_state_options(message, user_role_names)), message)
+
+        message.buttons_info.presser_user.save()
 
     async def _on_scraping(self, message: Message, delete_original: bool = None) -> OrderedSet[Media]:
         sended_media_messages = OrderedSet()

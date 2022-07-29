@@ -7,12 +7,16 @@ from typing import Sequence
 import discord
 import flanautils
 from flanautils import NotFoundError
-from multibot import BadRoleError, DiscordBot, User, constants as multibot_constants
+from multibot import BadRoleError, DiscordBot, Role, User, constants as multibot_constants
 
 from flanabot import constants
 from flanabot.bots.flana_bot import FlanaBot
 from flanabot.models import Chat, Message, Punishment
 
+CHANGEABLE_ROLES = {
+    360868977754505217: [881238165476741161, 991454395663401072],
+    862823584670285835: [976660580939202610, 984269640752590868],
+}
 HEAT_NAMES = [
     'Canal Congelado',
     'Canal Fresquito',
@@ -47,8 +51,12 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         self.client.add_listener(self._on_member_remove, 'on_member_remove')
         self.client.add_listener(self._on_voice_state_update, 'on_voice_state_update')
 
+    async def _changeable_roles(self, group_: int | str | Chat | Message) -> list[Role]:
+        group_id = self.get_group_id(group_)
+        return [role for role in await self.get_group_roles(group_) if role.id in CHANGEABLE_ROLES[group_id]]
+
     # noinspection PyTypeChecker
-    def _distribute_poll_buttons(self, texts: Sequence[str]) -> list[list[str]]:
+    def _distribute_buttons(self, texts: Sequence[str]) -> list[list[str]]:
         if len(texts) <= multibot_constants.DISCORD_BUTTONS_MAX:
             return flanautils.chunks(texts, 1)
         else:

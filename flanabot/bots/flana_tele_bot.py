@@ -47,7 +47,7 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
     # ----------------------------------------------------------- #
     # -------------------- PROTECTED METHODS -------------------- #
     # ----------------------------------------------------------- #
-    def _distribute_poll_buttons(self, texts: Sequence[str]) -> list[list[str]]:
+    def _distribute_buttons(self, texts: Sequence[str]) -> list[list[str]]:
         # noinspection PyTypeChecker
         return flanautils.chunks(texts, 1)
 
