@@ -602,6 +602,8 @@ class FlanaBot(MultiBot, ABC):
         for deleted_message in deleted_messages:
             await self.send(deleted_message.text, message)
 
+    @group
+    @bot_mentioned
     async def _on_roles(self, message: Message):
         # noinspection PyTypeChecker
         user_role_names = [discord_role.name for discord_role in message.author.original_object.roles]
