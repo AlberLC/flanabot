@@ -160,7 +160,6 @@ class TestParseCallbacks(unittest.TestCase):
             'ataca',
             'acaba',
             'acaba con',
-            'termina con el',
             'acabaq con su sufri,iento',
             'acaba con ese apvo',
             'castigalo',
