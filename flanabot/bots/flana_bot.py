@@ -15,7 +15,7 @@ import flanaapis.weather.functions
 import flanautils
 import plotly.graph_objects
 import pymongo
-from flanaapis import InstagramLoginError, MediaNotFoundError, Place, PlaceNotFoundError, WeatherEmoji, instagram, tiktok, twitter
+from flanaapis import InstagramLoginError, MediaNotFoundError, Place, PlaceNotFoundError, WeatherEmoji, instagram, tiktok, twitter, youtube
 from flanautils import Media, MediaType, NotFoundError, OrderedSet, Source, TimeUnits, TraceMetadata, return_if_first_empty
 from multibot import Action, BadRoleError, BotAction, ButtonsGroup, MultiBot, Role, SendError, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, reply
 
@@ -246,6 +246,7 @@ class FlanaBot(MultiBot, ABC):
             Source.INSTAGRAM: {MediaType.IMAGE: 0, MediaType.AUDIO: 0, MediaType.GIF: 0, MediaType.VIDEO: 0, None: 0, MediaType.ERROR: 0},
             Source.TIKTOK: {MediaType.IMAGE: 0, MediaType.AUDIO: 0, MediaType.GIF: 0, MediaType.VIDEO: 0, None: 0, MediaType.ERROR: 0},
             Source.REDDIT: {MediaType.IMAGE: 0, MediaType.AUDIO: 0, MediaType.GIF: 0, MediaType.VIDEO: 0, None: 0, MediaType.ERROR: 0},
+            Source.YOUTUBE: {MediaType.IMAGE: 0, MediaType.AUDIO: 0, MediaType.GIF: 0, MediaType.VIDEO: 0, None: 0, MediaType.ERROR: 0},
             None: {MediaType.IMAGE: 0, MediaType.AUDIO: 0, MediaType.GIF: 0, MediaType.VIDEO: 0, None: 0, MediaType.ERROR: 0}
         }
         for media in medias:
@@ -311,6 +312,7 @@ class FlanaBot(MultiBot, ABC):
             twitter.get_medias(message.text),
             instagram.get_medias(message.text),
             tiktok.get_medias(message.text),
+            youtube.get_medias(message.text),
             return_exceptions=True
         )
 
@@ -819,6 +821,7 @@ class FlanaBot(MultiBot, ABC):
             original_text_words,
             {symbol: None for symbol in set(flanautils.SYMBOLS) - {'-', '.'}}
         ).split()
+        # noinspection PyTypeChecker
         place_words = (
                 OrderedSet(original_text_words)
                 - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['show'], min_ratio=0.85).keys()
