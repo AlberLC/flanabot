@@ -5,7 +5,6 @@ import datetime
 import math
 import random
 import re
-import time as time_module
 from abc import ABC
 from asyncio import Future
 from typing import Iterable, Sequence
@@ -305,8 +304,7 @@ class FlanaBot(MultiBot, ABC):
         return sended_media_messages
 
     async def _search_medias(self, message: Message) -> OrderedSet[Media]:
-        bot_state_message: Message | None = None
-        start_time = time_module.perf_counter()
+        bot_state_message = await self.send(random.choice(constants.SCRAPING_PHRASES), message)
 
         results: Future = asyncio.gather(
             twitter.get_medias(message.text),
@@ -316,16 +314,8 @@ class FlanaBot(MultiBot, ABC):
             return_exceptions=True
         )
 
-        if not message.is_inline and (self.is_bot_mentioned(message) or message.chat.is_private):
-            while not results.done():
-                if constants.SCRAPING_MESSAGE_WAITING_TIME <= time_module.perf_counter() - start_time:
-                    bot_state_message = await self.send(random.choice(constants.SCRAPING_PHRASES), message)
-                    break
-                await asyncio.sleep(0.1)
-
         await results
-        if bot_state_message:
-            await self.delete_message(bot_state_message)
+        await self.delete_message(bot_state_message)
 
         results, exceptions = flanautils.filter_exceptions(results.result())
 
@@ -989,7 +979,7 @@ class FlanaBot(MultiBot, ABC):
         sended_info_message: Message | None = None
 
         if not message.is_inline:
-            bot_state_message: Message = await self.send('Descargando...', message)
+            bot_state_message: Message = await self.send('Enviando...', message)
 
         if message.chat.is_group:
             sended_info_message = await self.send(f"{message.author.name.split('#')[0]} compartió{self._medias_sended_info(medias)}", message)
