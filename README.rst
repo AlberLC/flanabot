@@ -30,7 +30,7 @@ Features
 - Mute users temporarily or forever.
 - Ban users temporarily or forever.
 - Configurable default behavior for each chat, just talk to him to configure it.
-- Get media from Twitter, Instagram, TikTok and Youtube and send it to the chat. From tiktok also obtains data about the song that is playing in the video.
+- Get media from Twitter, Instagram, TikTok and Youtube and send it to the chat. From TikTok also obtains data about the song that is playing in the video.
 
 
 .. |license| image:: https://img.shields.io/github/license/AlberLC/flanabot?style=flat
