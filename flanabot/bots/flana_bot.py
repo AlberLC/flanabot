@@ -307,7 +307,7 @@ class FlanaBot(MultiBot, ABC):
 
         tweet_ids = twitter.find_tweet_ids(message.text)
         instagram_ids = instagram.find_instagram_ids(message.text)
-        tiktok_ids = tiktok.find_tiktok_ids(message.text)
+        tiktok_ids = await tiktok.find_tiktok_ids(message.text)
         tiktok_download_urls = tiktok.find_download_urls(message.text)
         youtube_ids = youtube.find_youtube_ids(message.text)
 
