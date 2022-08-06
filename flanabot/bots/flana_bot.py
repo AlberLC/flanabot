@@ -6,7 +6,6 @@ import math
 import random
 import re
 from abc import ABC
-from asyncio import Future
 from typing import Iterable, Sequence
 
 import flanaapis.geolocation.functions
@@ -304,24 +303,33 @@ class FlanaBot(MultiBot, ABC):
         return sended_media_messages
 
     async def _search_medias(self, message: Message) -> OrderedSet[Media]:
+        medias = OrderedSet()
+
+        tweet_ids = twitter.find_tweet_ids(message.text)
+        instagram_ids = instagram.find_instagram_ids(message.text)
+        tiktok_ids = tiktok.find_tiktok_ids(message.text)
+        tiktok_download_urls = tiktok.find_download_urls(message.text)
+        youtube_ids = youtube.find_youtube_ids(message.text)
+
+        if not any((tweet_ids, instagram_ids, tiktok_ids, tiktok_download_urls, youtube_ids)):
+            return medias
+
         bot_state_message = await self.send(random.choice(constants.SCRAPING_PHRASES), message)
 
-        results: Future = asyncio.gather(
-            twitter.get_medias(message.text),
-            instagram.get_medias(message.text),
-            tiktok.get_medias(message.text),
-            youtube.get_medias(message.text),
-            return_exceptions=True
+        gather_result = asyncio.gather(
+            twitter.get_medias(tweet_ids),
+            instagram.get_medias(instagram_ids),
+            tiktok.get_medias(tiktok_ids, tiktok_download_urls),
+            youtube.get_medias(youtube_ids)
         )
 
-        await results
+        await gather_result
         await self.delete_message(bot_state_message)
 
-        results, exceptions = flanautils.filter_exceptions(results.result())
-
+        medias, exceptions = flanautils.filter_exceptions(gather_result.result())
         await self._manage_exceptions(exceptions, message)
 
-        return OrderedSet(*results)
+        return OrderedSet(*medias)
 
     async def _show_config(self, config_name: str, message: Message):
         await self.send(f"{config_name} está {'activado ✔' if message.chat.config.get(config_name) else 'desactivado ❌'}", message)
