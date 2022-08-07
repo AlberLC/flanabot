@@ -320,7 +320,8 @@ class FlanaBot(MultiBot, ABC):
             twitter.get_medias(tweet_ids),
             instagram.get_medias(instagram_ids),
             tiktok.get_medias(tiktok_ids, tiktok_download_urls),
-            youtube.get_medias(youtube_ids)
+            youtube.get_medias(youtube_ids),
+            return_exceptions=True
         )
 
         await gather_result
