@@ -229,11 +229,11 @@ class FlanaBot(MultiBot, ABC):
             except BadRoleError as e:
                 await self.send_error(f'Rol no encontrado en {e}', context)
             except InstagramLoginError as e:
-                await self.send_error(f'No me puedo loguear en Instagram  {random.choice(multibot_constants.SAD_EMOJIS)}  👉  {e}', context)
+                await self.send_error(f'No me puedo loguear en Instagram {random.choice(multibot_constants.SAD_EMOJIS)}  👉  {e}', context)
             except MediaNotFoundError as e:
-                await self.send_error(f'No he podido sacar nada de {e.source}  {random.choice(multibot_constants.SAD_EMOJIS)}', context)
+                await self.send_error(f'No he podido sacar nada de {e.source} {random.choice(multibot_constants.SAD_EMOJIS)}', context)
             except PlaceNotFoundError as e:
-                await self.send_error(f'No he podido encontrar "{e}"  {random.choice(multibot_constants.SAD_EMOJIS)}', context)
+                await self.send_error(f'No he podido encontrar "{e}" {random.choice(multibot_constants.SAD_EMOJIS)}', context)
             except Exception as e:
                 await super()._manage_exceptions(e, context)
 
@@ -287,9 +287,9 @@ class FlanaBot(MultiBot, ABC):
                 continue
 
             if role.name in activated_user_role_names:
-                options.append(f'✔  {role.name}')
+                options.append(f'✔ {role.name}')
             else:
-                options.append(f'❌  {role.name}')
+                options.append(f'❌ {role.name}')
         options.reverse()
 
         return options
@@ -389,14 +389,14 @@ class FlanaBot(MultiBot, ABC):
         message.chat.config[config] = not message.chat.config[config]
         pressed_button = message.buttons_info.pressed_button
         pressed_button.is_checked = not pressed_button.is_checked
-        pressed_button.text = f"{'✔' if pressed_button.is_checked else '❌'}  {config}"
+        pressed_button.text = f"{'✔' if pressed_button.is_checked else '❌'} {config}"
 
         await self.edit('<b>Estos son los ajustes del grupo:</b>\n\n', message.buttons_info.buttons, message)
 
     @group
     @bot_mentioned
     async def _on_config_list_show(self, message: Message):
-        buttons_texts = [(f"{'✔' if v else '❌'}  {k}", v) for k, v in message.chat.config.items()]
+        buttons_texts = [(f"{'✔' if v else '❌'} {k}", v) for k, v in message.chat.config.items()]
         await self.delete_message(message)
         await self.send('<b>Estos son los ajustes del grupo:</b>\n\n', flanautils.chunks(buttons_texts, 3), message, buttons_key=ButtonsGroup.CONFIG)
 
