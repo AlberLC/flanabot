@@ -302,7 +302,7 @@ class FlanaBot(MultiBot, ABC):
 
         return sended_media_messages
 
-    async def _search_medias(self, message: Message) -> OrderedSet[Media]:
+    async def _search_medias(self, message: Message, timeout_for_media: int | float = None) -> OrderedSet[Media]:
         medias = OrderedSet()
 
         tweet_ids = twitter.find_tweet_ids(message.text)
@@ -320,7 +320,7 @@ class FlanaBot(MultiBot, ABC):
             twitter.get_medias(tweet_ids),
             instagram.get_medias(instagram_ids),
             tiktok.get_medias(tiktok_ids, tiktok_download_urls),
-            youtube.get_medias(youtube_ids),
+            youtube.get_medias(youtube_ids, timeout_for_media),
             return_exceptions=True
         )
 

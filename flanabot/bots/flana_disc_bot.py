@@ -6,7 +6,7 @@ from typing import Sequence
 
 import discord
 import flanautils
-from flanautils import NotFoundError
+from flanautils import Media, NotFoundError, OrderedSet
 from multibot import BadRoleError, DiscordBot, Role, User, constants as multibot_constants
 
 from flanabot import constants
@@ -87,6 +87,9 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             await self.remove_role(user_id, group_, 'Persona')
         except AttributeError:
             raise BadRoleError(str(self._punish))
+
+    async def _search_medias(self, message: Message, timeout_for_media: int | float = None) -> OrderedSet[Media]:
+        return await super()._search_medias(message, 15)
 
     async def _unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         user_id = self.get_user_id(user)
