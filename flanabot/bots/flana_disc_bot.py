@@ -89,7 +89,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             raise BadRoleError(str(self._punish))
 
     async def _search_medias(self, message: Message, timeout_for_media: int | float = None) -> OrderedSet[Media]:
-        return await super()._search_medias(message, 15)
+        return await super()._search_medias(message, timeout_for_media=15)
 
     async def _unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         user_id = self.get_user_id(user)
