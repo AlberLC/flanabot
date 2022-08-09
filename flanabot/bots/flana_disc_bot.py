@@ -107,10 +107,11 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 self.heat_level -= 0.5
 
             i = int(self.heat_level)
-            n_fires = i - len(HEAT_NAMES) + 1
             if i < len(HEAT_NAMES):
+                n_fires = 0
                 channel_name = HEAT_NAMES[i]
             else:
+                n_fires = i - len(HEAT_NAMES) + 1
                 channel_name = '🔥' * n_fires
             await channel.edit(name=channel_name)
 
