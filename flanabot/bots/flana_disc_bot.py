@@ -2,6 +2,7 @@ __all__ = ['FlanaDiscBot']
 
 import asyncio
 import os
+import random
 from typing import Sequence
 
 import discord
@@ -30,7 +31,13 @@ HEAT_NAMES = [
     'Canal Ardiendo',
     'Canal INFIERNO'
 ]
-HOT_CHANNEL_ID = 493530483045564417
+CHANNEL_IDS = {
+    'A': 493529846027386900,
+    'B': 493529881125060618,
+    'C': 493530483045564417,
+    'D': 829032476949217302,
+    'E': 829032505645596742
+}
 
 
 # ---------------------------------------------------------------------------------------------------- #
@@ -63,6 +70,32 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             return flanautils.chunks(texts, multibot_constants.DISCORD_BUTTONS_MAX)
 
     async def _heat_channel(self, channel: discord.VoiceChannel):
+        async def set_fire_to(channel_key: str, depends_on: str, firewall=0):
+            fire_score = random.randint(0, channels[depends_on]['n_fires']) - firewall // 2
+            if fire_score < 1:
+                if not channels[channel_key]['n_fires']:
+                    return
+                channels[channel_key]['n_fires'] -= 1
+            elif fire_score in range(1, 3):
+                return
+            else:
+                channels[channel_key]['n_fires'] += 1
+
+            if channels[channel_key]['n_fires']:
+                new_name = '🔥' * channels['B']['n_fires']
+            else:
+                new_name = channels['B']['original_name']
+            await channels[channel_key]['object'].edit(name=new_name)
+
+        channels = {}
+        for key in CHANNEL_IDS:
+            channel_ = flanautils.find(channel.guild.voice_channels, condition=lambda c: c.id == CHANNEL_IDS[key])
+            channels[key] = {
+                'object': channel_,
+                'original_name': channel_.name,
+                'n_fires': 0
+            }
+
         while True:
             await asyncio.sleep(constants.HEAT_PERIOD_SECONDS)
 
@@ -74,11 +107,21 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 self.heat_level -= 0.5
 
             i = int(self.heat_level)
+            n_fires = i - len(HEAT_NAMES) + 1
             if i < len(HEAT_NAMES):
                 channel_name = HEAT_NAMES[i]
             else:
-                channel_name = '🔥' * (i - len(HEAT_NAMES) + 1)
+                channel_name = '🔥' * n_fires
             await channel.edit(name=channel_name)
+
+            for k, v in channels.items():
+                v['n_fires'] = v['object'].name.count('🔥')
+            channels['C']['n_fires'] = n_fires
+
+            await set_fire_to('B', depends_on='C', firewall=len(channels['B']['object'].members))
+            await set_fire_to('A', depends_on='B', firewall=len(channels['A']['object'].members))
+            await set_fire_to('D', depends_on='C', firewall=len(channels['C']['object'].members))
+            await set_fire_to('E', depends_on='D', firewall=len(channels['D']['object'].members))
 
     async def _punish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         user_id = self.get_user_id(user)
@@ -115,9 +158,9 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         self._create_user_from_discord_user(member).save()
 
     async def _on_voice_state_update(self, _: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
-        if getattr(before.channel, 'id', None) == HOT_CHANNEL_ID:
+        if getattr(before.channel, 'id', None) == CHANNEL_IDS['C']:
             channel = before.channel
-        elif getattr(after.channel, 'id', None) == HOT_CHANNEL_ID:
+        elif getattr(after.channel, 'id', None) == CHANNEL_IDS['C']:
             channel = after.channel
         else:
             return
