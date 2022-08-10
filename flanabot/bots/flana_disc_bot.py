@@ -47,7 +47,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     def __init__(self):
         super().__init__(os.environ['DISCORD_BOT_TOKEN'])
         self.heating = False
-        self.heat_level = 0
+        self.heat_level: float = 0
 
     # ----------------------------------------------------------- #
     # -------------------- PROTECTED METHODS -------------------- #
@@ -82,9 +82,9 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 channels[channel_key]['n_fires'] += 1
 
             if channels[channel_key]['n_fires']:
-                new_name = '🔥' * channels['B']['n_fires']
+                new_name = '🔥' * channels[channel_key]['n_fires']
             else:
-                new_name = channels['B']['original_name']
+                new_name = channels[channel_key]['original_name']
             await channels[channel_key]['object'].edit(name=new_name)
 
         channels = {}
@@ -114,6 +114,9 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 n_fires = i - len(HEAT_NAMES) + 1
                 channel_name = '🔥' * n_fires
             await channel.edit(name=channel_name)
+
+            if not self.heat_level.is_integer():
+                return
 
             for k, v in channels.items():
                 v['n_fires'] = v['object'].name.count('🔥')
