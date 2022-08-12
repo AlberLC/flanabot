@@ -783,7 +783,7 @@ class FlanaBot(MultiBot, ABC):
         message.weather_chart.draw()
 
         image_bytes = message.weather_chart.to_image()
-        await self.edit(Media(image_bytes, MediaType.IMAGE), message)
+        await self.edit(Media(image_bytes, MediaType.IMAGE, 'jpg'), message)
 
     async def _on_weather_chart(self, message: Message):
         bot_state_message: Message | None = None
@@ -835,7 +835,7 @@ class FlanaBot(MultiBot, ABC):
         place_query = ' '.join(place_words)
         if len(place_query) >= constants.MAX_PLACE_QUERY_LENGTH:
             if show_progress_state:
-                await self.send_error(Media(str(flanautils.resolve_path('resources/mucho_texto.png')), MediaType.IMAGE, Source.LOCAL), message, send_as_file=False)
+                await self.send_error(Media(str(flanautils.resolve_path('resources/mucho_texto.png')), MediaType.IMAGE, 'jpg', Source.LOCAL), message, send_as_file=False)
             return
         if show_progress_state:
             bot_state_message = await self.send(f'Buscando "{place_query}" en el mapa 🧐...', message)
@@ -908,7 +908,7 @@ class FlanaBot(MultiBot, ABC):
         if bot_state_message:
             bot_state_message = await self.edit('Enviando...', bot_state_message)
         bot_message: Message = await self.send(
-            Media(image_bytes, MediaType.IMAGE),
+            Media(image_bytes, MediaType.IMAGE, 'jpg'),
             [
                 [WeatherEmoji.ZOOM_IN.value, WeatherEmoji.ZOOM_OUT.value, WeatherEmoji.LEFT.value, WeatherEmoji.RIGHT.value],
                 [WeatherEmoji.TEMPERATURE.value, WeatherEmoji.TEMPERATURE_FEEL.value, WeatherEmoji.CLOUDS.value, WeatherEmoji.VISIBILITY.value, WeatherEmoji.UVI.value],
