@@ -112,6 +112,8 @@ class FlanaBot(MultiBot, ABC):
 
         self.register(self._on_scraping, constants.KEYWORDS['scraping'])
 
+        self.register(self._on_scraping_audio, multibot_constants.KEYWORDS['audio'])
+
         self.register(self._on_scraping_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['scraping']))
         self.register(self._on_scraping_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['scraping'], multibot_constants.KEYWORDS['config']))
 
@@ -294,15 +296,18 @@ class FlanaBot(MultiBot, ABC):
 
         return options
 
-    async def _search_and_send_medias(self, message: Message, send_song_info=False) -> list[Message]:
-        sended_media_messages = []
+    async def _scrape_and_send(self, message: Message, audio_only=False) -> OrderedSet[Media]:
+        if not (medias := await self._search_medias(message, audio_only)):
+            return OrderedSet()
 
-        if medias := await self._search_medias(message):
-            sended_media_messages, _ = await self.send_medias(medias, message, send_song_info)
+        sended_media_messages, _ = await self.send_medias(medias, message)
+        sended_media_messages = OrderedSet(sended_media_messages)
+
+        await self.send_inline_results(message)
 
         return sended_media_messages
 
-    async def _search_medias(self, message: Message, timeout_for_media: int | float = None) -> OrderedSet[Media]:
+    async def _search_medias(self, message: Message, audio_only=False, timeout_for_media: int | float = None) -> OrderedSet[Media]:
         medias = OrderedSet()
 
         tweet_ids = twitter.find_tweet_ids(message.text)
@@ -469,7 +474,7 @@ class FlanaBot(MultiBot, ABC):
 
     async def _on_new_message_default(self, message: Message):
         if message.is_inline:
-            await self._on_scraping(message)
+            await self._scrape_and_send(message)
         elif (
                 (
                         message.chat.is_group
@@ -513,7 +518,7 @@ class FlanaBot(MultiBot, ABC):
                 await self._check_message_flood(message)
 
     async def _on_no_delete_original(self, message: Message):
-        if not await self._on_scraping(message, delete_original=False):
+        if not await self._scrape_and_send(message):
             await self._on_recover_message(message)
 
     async def _on_poll(self, message: Message):
@@ -638,41 +643,31 @@ class FlanaBot(MultiBot, ABC):
 
         message.buttons_info.presser_user.save()
 
-    async def _on_scraping(self, message: Message, delete_original: bool = None) -> OrderedSet[Media]:
+    async def _on_scraping(self, message: Message, audio_only=False) -> OrderedSet[Media]:
         sended_media_messages = OrderedSet()
+
         if message.replied_message:
-            word_matches = flanautils.cartesian_product_string_matching(message.text, constants.KEYWORDS['scraping'], min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)
-            if sum(max(matches.values()) for matches in word_matches.values()):
-                sended_media_messages += await self._search_and_send_medias(message.replied_message)
-        sended_media_messages += await self._search_and_send_medias(message)
-        await self.send_inline_results(message)
+            sended_media_messages += await self._scrape_and_send(message.replied_message, audio_only)
+
+        sended_media_messages += await self._scrape_and_send(message, audio_only)
 
         if (
                 sended_media_messages
                 and
                 message.chat.is_group
                 and
-                (
-                        (
-                                delete_original is None
-                                and
-                                not message.replied_message
-                                and
-                                message.chat.config['auto_delete_original']
-                        )
-                        or
-                        (
-                                delete_original is not None
-                                and
-                                delete_original
-                        )
-                )
+                not message.replied_message
+                and
+                message.chat.config['auto_delete_original']
         ):
             # noinspection PyTypeChecker
             BotAction(Action.MESSAGE_DELETED, message, affected_objects=[message, *sended_media_messages]).save()
             await self.delete_message(message)
 
         return sended_media_messages
+
+    async def _on_scraping_audio(self, message: Message) -> OrderedSet[Media]:
+        return await self._on_scraping(message, audio_only=True)
 
     @admin
     @group
@@ -980,7 +975,6 @@ class FlanaBot(MultiBot, ABC):
         await self.typing_delay(message)
         return await self.send(random.choice(constants.INSULTS), message)
 
-    @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
     async def send_medias(self, medias: OrderedSet[Media], message: Message, send_song_info=False) -> tuple[list[Message], int]:
         sended_media_messages = []
         fails = 0
@@ -1002,13 +996,13 @@ class FlanaBot(MultiBot, ABC):
                 message.song_infos.add(media.song_info)
                 message.save()
 
-            if not (bot_message := await self.send(media, message)):
-                fails += 1
-            else:
+            if bot_message := await self.send(media, message):
                 sended_media_messages.append(bot_message)
                 if media.song_info and bot_message:
                     bot_message.song_infos.add(media.song_info)
                     bot_message.save()
+            else:
+                fails += 1
 
             if send_song_info and media.song_info:
                 await self.send_song_info(media.song_info, message)
