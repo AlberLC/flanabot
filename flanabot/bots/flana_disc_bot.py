@@ -1,6 +1,7 @@
 __all__ = ['FlanaDiscBot']
 
 import asyncio
+import math
 import os
 import random
 from typing import Sequence
@@ -71,7 +72,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
 
     async def _heat_channel(self, channel: discord.VoiceChannel):
         async def set_fire_to(channel_key: str, depends_on: str, firewall=0):
-            fire_score = random.randint(0, channels[depends_on]['n_fires']) - firewall // 2
+            fire_score = random.randint(0, channels[depends_on]['n_fires'] - channels[channel_key]['n_fires']) - firewall // 2
             if fire_score < 1:
                 if not channels[channel_key]['n_fires']:
                     return
@@ -111,6 +112,8 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 n_fires = 0
                 channel_name = HEAT_NAMES[i]
             else:
+                if i >= 10:
+                    i = int(math.log(self.heat_level + 4, 1.1) - 18)
                 n_fires = i - len(HEAT_NAMES) + 1
                 channel_name = '🔥' * n_fires
             await channel.edit(name=channel_name)
@@ -135,8 +138,8 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         except AttributeError:
             raise BadRoleError(str(self._punish))
 
-    async def _search_medias(self, message: Message, timeout_for_media: int | float = None) -> OrderedSet[Media]:
-        return await super()._search_medias(message, timeout_for_media=15)
+    async def _search_medias(self, message: Message, audio_only=False, timeout_for_media: int | float = None) -> OrderedSet[Media]:
+        return await super()._search_medias(message, audio_only, timeout_for_media=15)
 
     async def _unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         user_id = self.get_user_id(user)
