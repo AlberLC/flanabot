@@ -322,10 +322,10 @@ class FlanaBot(MultiBot, ABC):
         bot_state_message = await self.send(random.choice(constants.SCRAPING_PHRASES), message)
 
         gather_result = asyncio.gather(
-            twitter.get_medias(tweet_ids),
-            instagram.get_medias(instagram_ids),
-            tiktok.get_medias(tiktok_ids, tiktok_download_urls),
-            youtube.get_medias(youtube_ids, timeout_for_media),
+            twitter.get_medias(tweet_ids, audio_only),
+            instagram.get_medias(instagram_ids, audio_only),
+            tiktok.get_medias(tiktok_ids, tiktok_download_urls, audio_only),
+            youtube.get_medias(youtube_ids, audio_only, timeout_for_media),
             return_exceptions=True
         )
 
