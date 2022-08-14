@@ -11,7 +11,7 @@ import flanautils
 from flanautils import Media, NotFoundError, OrderedSet
 from multibot import BadRoleError, DiscordBot, Role, User, constants as multibot_constants
 
-from flanabot import constants
+import constants
 from flanabot.bots.flana_bot import FlanaBot
 from flanabot.models import Chat, Message, Punishment
 
@@ -48,7 +48,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     def __init__(self):
         super().__init__(os.environ['DISCORD_BOT_TOKEN'])
         self.heating = False
-        self.heat_level: float = 0
+        self.heat_level: float = 10
 
     # ----------------------------------------------------------- #
     # -------------------- PROTECTED METHODS -------------------- #
@@ -83,17 +83,17 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 channels[channel_key]['n_fires'] += 1
 
             if channels[channel_key]['n_fires']:
-                new_name = '🔥' * channels[channel_key]['n_fires']
+                new_name_ = '🔥' * channels[channel_key]['n_fires']
             else:
-                new_name = channels[channel_key]['original_name']
-            await channels[channel_key]['object'].edit(name=new_name)
+                new_name_ = channels[channel_key]['original_name']
+            await channels[channel_key]['object'].edit(name=new_name_)
 
         channels = {}
         for key in CHANNEL_IDS:
-            channel = flanautils.find(channel.guild.voice_channels, condition=lambda c: c.id == CHANNEL_IDS[key])
+            channel_ = flanautils.find(channel.guild.voice_channels, condition=lambda c: c.id == CHANNEL_IDS[key])
             channels[key] = {
-                'object': channel,
-                'original_name': channel.name,
+                'object': channel_,
+                'original_name': channel_.name,
                 'n_fires': 0
             }
 
@@ -107,23 +107,20 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                     return
                 self.heat_level -= 0.5
 
+            if not self.heat_level.is_integer():
+                continue
+
             i = int(self.heat_level)
             if i < len(HEAT_NAMES):
                 n_fires = 0
-                channel_name = HEAT_NAMES[i]
+                new_name = HEAT_NAMES[i]
             else:
                 n_fires = i - len(HEAT_NAMES) + 1
-                if n_fires >= 6:
-                    n_fires = int(math.log(n_fires + 4, 1.1) - 18)
-                channel_name = '🔥' * n_fires
-            await channel.edit(name=channel_name)
-
-            if not self.heat_level.is_integer():
-                return
-
-            for k, v in channels.items():
-                v['n_fires'] = v['object'].name.count('🔥')
+                n_fires = round(math.log(n_fires + 4, 1.2) - 8)
+                new_name = '🔥' * n_fires
             channels['C']['n_fires'] = n_fires
+            if channel.name != new_name:
+                await channel.edit(name=new_name)
 
             await set_fire_to('B', depends_on='C', firewall=len(channels['B']['object'].members))
             await set_fire_to('A', depends_on='B', firewall=len(channels['A']['object'].members))
