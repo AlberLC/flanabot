@@ -90,10 +90,10 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
 
         channels = {}
         for key in CHANNEL_IDS:
-            channel_ = flanautils.find(channel.guild.voice_channels, condition=lambda c: c.id == CHANNEL_IDS[key])
+            channel = flanautils.find(channel.guild.voice_channels, condition=lambda c: c.id == CHANNEL_IDS[key])
             channels[key] = {
-                'object': channel_,
-                'original_name': channel_.name,
+                'object': channel,
+                'original_name': channel.name,
                 'n_fires': 0
             }
 
@@ -112,9 +112,9 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 n_fires = 0
                 channel_name = HEAT_NAMES[i]
             else:
-                if i >= 10:
-                    i = int(math.log(self.heat_level + 4, 1.1) - 18)
                 n_fires = i - len(HEAT_NAMES) + 1
+                if n_fires >= 6:
+                    n_fires = int(math.log(n_fires + 4, 1.1) - 18)
                 channel_name = '🔥' * n_fires
             await channel.edit(name=channel_name)
 
