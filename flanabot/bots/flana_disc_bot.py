@@ -48,7 +48,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     def __init__(self):
         super().__init__(os.environ['DISCORD_BOT_TOKEN'])
         self.heating = False
-        self.heat_level: float = 10
+        self.heat_level: float = 0
 
     # ----------------------------------------------------------- #
     # -------------------- PROTECTED METHODS -------------------- #
