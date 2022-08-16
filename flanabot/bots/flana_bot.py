@@ -307,6 +307,32 @@ class FlanaBot(MultiBot, ABC):
 
         return sended_media_messages
 
+    async def _scrape_send_and_delete(
+        self,
+        message: Message,
+        audio_only=False,
+        sended_media_messages: OrderedSet[Media] = None
+    ) -> OrderedSet[Media]:
+        if sended_media_messages is None:
+            sended_media_messages = OrderedSet()
+
+        sended_media_messages += await self._scrape_and_send(message, audio_only)
+
+        if (
+                sended_media_messages
+                and
+                message.chat.is_group
+                and
+                not message.replied_message
+                and
+                message.chat.config['auto_delete_original']
+        ):
+            # noinspection PyTypeChecker
+            BotAction(Action.MESSAGE_DELETED, message, affected_objects=[message, *sended_media_messages]).save()
+            await self.delete_message(message)
+
+        return sended_media_messages
+
     async def _search_medias(self, message: Message, audio_only=False, timeout_for_media: int | float = None) -> OrderedSet[Media]:
         medias = OrderedSet()
 
@@ -483,7 +509,7 @@ class FlanaBot(MultiBot, ABC):
                         and
                         not message.chat.config['auto_scraping']
                         or
-                        not await self._on_scraping(message)
+                        not await self._scrape_send_and_delete(message)
                 )
                 and
                 (
@@ -649,22 +675,7 @@ class FlanaBot(MultiBot, ABC):
         if message.replied_message:
             sended_media_messages += await self._scrape_and_send(message.replied_message, audio_only)
 
-        sended_media_messages += await self._scrape_and_send(message, audio_only)
-
-        if (
-                sended_media_messages
-                and
-                message.chat.is_group
-                and
-                not message.replied_message
-                and
-                message.chat.config['auto_delete_original']
-        ):
-            # noinspection PyTypeChecker
-            BotAction(Action.MESSAGE_DELETED, message, affected_objects=[message, *sended_media_messages]).save()
-            await self.delete_message(message)
-
-        return sended_media_messages
+        return await self._scrape_send_and_delete(message, audio_only, sended_media_messages)
 
     async def _on_scraping_audio(self, message: Message) -> OrderedSet[Media]:
         return await self._on_scraping(message, audio_only=True)
