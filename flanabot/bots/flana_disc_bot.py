@@ -106,7 +106,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 if not self.heat_level:
                     return
                 self.heat_level -= 0.5
-                if self.heating > len(HEAT_NAMES) - 1:
+                if self.heat_level > len(HEAT_NAMES) - 1:
                     self.heat_level = int(self.heat_level)
 
             if not self.heat_level.is_integer():
