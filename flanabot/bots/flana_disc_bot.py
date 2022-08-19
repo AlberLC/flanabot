@@ -48,7 +48,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     def __init__(self):
         super().__init__(os.environ['DISCORD_BOT_TOKEN'])
         self.heating = False
-        self.heat_level: float = 0
+        self.heat_level = 0.0
 
     # ----------------------------------------------------------- #
     # -------------------- PROTECTED METHODS -------------------- #
@@ -107,7 +107,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                     return
                 self.heat_level -= 0.5
                 if self.heat_level > len(HEAT_NAMES) - 1:
-                    self.heat_level = int(self.heat_level)
+                    self.heat_level = float(int(self.heat_level))
 
             if not self.heat_level.is_integer():
                 continue
