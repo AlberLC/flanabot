@@ -170,7 +170,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
 
         message_parts = ['<b>Registro de auditoría (solo desconectar y mover):</b>', '']
         for entry in audit_entries:
-            author = self._create_user_from_discord_user(entry.user)
+            author = await self._create_user_from_discord_user(entry.user)
             if entry.action is discord.AuditLogAction.member_disconnect:
                 message_parts.append(f"<b>{author.name}</b> ha <b>desconectado</b> {entry.extra.count} {'usuario' if entry.extra.count == 1 else 'usuarios'}  <i>({entry.created_at.astimezone().strftime('%d/%m/%Y  %H:%M:%S')})</i>")
             elif entry.action is discord.AuditLogAction.member_move:
@@ -179,7 +179,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         await self.send('\n'.join(message_parts), message)
 
     async def _on_member_join(self, member: discord.Member):
-        user = self._create_user_from_discord_user(member)
+        user = await self._create_user_from_discord_user(member)
         user.pull_from_database(overwrite_fields=('roles',))
         for role in user.roles:
             try:
@@ -188,7 +188,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 pass
 
     async def _on_member_remove(self, member: discord.Member):
-        self._create_user_from_discord_user(member).save()
+        (await self._create_user_from_discord_user(member)).save()
 
     async def _on_voice_state_update(self, _: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         if getattr(before.channel, 'id', None) == CHANNEL_IDS['C']:
