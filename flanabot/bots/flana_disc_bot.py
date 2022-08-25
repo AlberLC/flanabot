@@ -165,7 +165,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         )
         await self.delete_message(message)
         if not audit_entries:
-            await self.send_error(f'No hay entradas en el registro de auditoría <i>(desconectar y mover)</i> en la última hora {random.choice(multibot_constants.SAD_EMOJIS)}', message)
+            await self.send_error(f'No hay entradas en el registro de auditoría <i>(desconectar y mover)</i> en la última hora.', message)
             return
 
         message_parts = ['<b>Registro de auditoría (solo desconectar y mover):</b>', '']
