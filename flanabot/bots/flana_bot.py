@@ -638,7 +638,7 @@ class FlanaBot(MultiBot, ABC):
     @bot_mentioned
     async def _on_roles(self, message: Message):
         # noinspection PyTypeChecker
-        user_role_names = [role.name for role in await self.get_current_roles(message.author.original_object)]
+        user_role_names = [role.name for role in await self.get_current_roles(message.author)]
 
         await self.delete_message(message)
         await self.send(
@@ -655,7 +655,7 @@ class FlanaBot(MultiBot, ABC):
             return
 
         role = await self.find_role(message.buttons_info.pressed_text[1:].strip(), message)
-        user_role_names = [role.name for role in await self.get_current_roles(message.buttons_info.presser_user.original_object)]
+        user_role_names = [role.name for role in await self.get_current_roles(message.buttons_info.presser_user)]
         if role.name in user_role_names:
             await self.remove_role(message.buttons_info.presser_user, message, role)
             message.buttons_info.presser_user.roles.remove(role)
