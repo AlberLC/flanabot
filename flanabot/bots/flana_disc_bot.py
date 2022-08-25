@@ -1,6 +1,7 @@
 __all__ = ['FlanaDiscBot']
 
 import asyncio
+import datetime
 import math
 import os
 import random
@@ -9,7 +10,7 @@ from typing import Sequence
 import discord
 import flanautils
 from flanautils import Media, NotFoundError, OrderedSet
-from multibot import BadRoleError, DiscordBot, Role, User, constants as multibot_constants
+from multibot import BadRoleError, DiscordBot, Role, User, bot_mentioned, constants as multibot_constants, group
 
 import constants
 from flanabot.bots.flana_bot import FlanaBot
@@ -58,6 +59,8 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         self.client.add_listener(self._on_member_join, 'on_member_join')
         self.client.add_listener(self._on_member_remove, 'on_member_remove')
         self.client.add_listener(self._on_voice_state_update, 'on_voice_state_update')
+
+        self.register(self._on_audit_log, multibot_constants.KEYWORDS['audit'])
 
     async def _changeable_roles(self, group_: int | str | Chat | Message) -> list[Role]:
         group_id = self.get_group_id(group_)
@@ -151,6 +154,30 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     # ---------------------------------------------- #
     #                    HANDLERS                    #
     # ---------------------------------------------- #
+    @group
+    @bot_mentioned
+    async def _on_audit_log(self, message: Message):
+        audit_entries = await self.find_audit_entries(
+            message,
+            limit=constants.AUDIT_LOG_LIMIT,
+            actions=(discord.AuditLogAction.member_disconnect, discord.AuditLogAction.member_move),
+            after=datetime.datetime.now(datetime.timezone.utc) - constants.AUDIT_LOG_AGE
+        )
+        await self.delete_message(message)
+        if not audit_entries:
+            await self.send_error(f'No hay entradas en el registro de auditoría <i>(desconectar y mover)</i> en la última hora {random.choice(multibot_constants.SAD_EMOJIS)}', message)
+            return
+
+        message_parts = ['<b>Registro de auditoría (solo desconectar y mover):</b>', '']
+        for entry in audit_entries:
+            author = self._create_user_from_discord_user(entry.user)
+            if entry.action is discord.AuditLogAction.member_disconnect:
+                message_parts.append(f"<b>{author.name}</b> ha <b>desconectado</b> {entry.extra.count} {'usuario' if entry.extra.count == 1 else 'usuarios'}  <i>({entry.created_at.astimezone().strftime('%d/%m/%Y  %H:%M:%S')})</i>")
+            elif entry.action is discord.AuditLogAction.member_move:
+                message_parts.append(f"<b>{author.name}</b> ha <b>movido</b> {entry.extra.count} {'usuario' if entry.extra.count == 1 else 'usuarios'} a {entry.extra.channel.name}  <i>({entry.created_at.astimezone().strftime('%d/%m/%Y  %H:%M:%S')})</i>")
+
+        await self.send('\n'.join(message_parts), message)
+
     async def _on_member_join(self, member: discord.Member):
         user = self._create_user_from_discord_user(member)
         user.pull_from_database(overwrite_fields=('roles',))

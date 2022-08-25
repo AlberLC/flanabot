@@ -2,6 +2,8 @@ import datetime
 
 import flanautils
 
+AUDIT_LOG_AGE = datetime.timedelta(hours=1)
+AUDIT_LOG_LIMIT = 5
 AUTO_WEATHER_EVERY = datetime.timedelta(hours=6)
 CHECK_PUNISHMENTS_EVERY_SECONDS = datetime.timedelta(hours=1).total_seconds()
 FLOOD_2s_LIMIT = 4
