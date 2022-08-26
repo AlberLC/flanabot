@@ -419,9 +419,7 @@ class FlanaBot(MultiBot, ABC):
 
         config = message.buttons_info.pressed_text.split()[1]
         message.chat.config[config] = not message.chat.config[config]
-        pressed_button = message.buttons_info.pressed_button
-        pressed_button.is_checked = not pressed_button.is_checked
-        pressed_button.text = f"{'✔' if pressed_button.is_checked else '❌'} {config}"
+        message.buttons_info.pressed_button.text = f"{'✔' if message.chat.config[config] else '❌'} {config}"
 
         await self.edit('<b>Estos son los ajustes del grupo:</b>\n\n', message.buttons_info.buttons, message)
 
