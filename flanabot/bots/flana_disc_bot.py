@@ -9,6 +9,7 @@ from typing import Sequence
 
 import discord
 import flanautils
+import pytz
 from flanautils import Media, NotFoundError, OrderedSet
 from multibot import BadRoleError, DiscordBot, Role, User, bot_mentioned, constants as multibot_constants, group
 
@@ -171,10 +172,11 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         message_parts = ['<b>Registro de auditoría (solo desconectar y mover):</b>', '']
         for entry in audit_entries:
             author = await self._create_user_from_discord_user(entry.user)
+            date_string = entry.created_at.astimezone(pytz.timezone('Europe/Madrid')).strftime('%d/%m/%Y  %H:%M:%S')
             if entry.action is discord.AuditLogAction.member_disconnect:
-                message_parts.append(f"<b>{author.name}</b> ha <b>desconectado</b> {entry.extra.count} {'usuario' if entry.extra.count == 1 else 'usuarios'}  <i>({entry.created_at.astimezone().strftime('%d/%m/%Y  %H:%M:%S')})</i>")
+                message_parts.append(f"<b>{author.name}</b> ha <b>desconectado</b> {entry.extra.count} {'usuario' if entry.extra.count == 1 else 'usuarios'}  <i>({date_string})</i>")
             elif entry.action is discord.AuditLogAction.member_move:
-                message_parts.append(f"<b>{author.name}</b> ha <b>movido</b> {entry.extra.count} {'usuario' if entry.extra.count == 1 else 'usuarios'} a {entry.extra.channel.name}  <i>({entry.created_at.astimezone().strftime('%d/%m/%Y  %H:%M:%S')})</i>")
+                message_parts.append(f"<b>{author.name}</b> ha <b>movido</b> {entry.extra.count} {'usuario' if entry.extra.count == 1 else 'usuarios'} a {entry.extra.channel.name}  <i>({date_string})</i>")
 
         await self.send('\n'.join(message_parts), message)
 
