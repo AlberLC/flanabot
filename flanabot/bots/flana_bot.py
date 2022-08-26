@@ -113,6 +113,7 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_scraping, constants.KEYWORDS['scraping'])
 
         self.register(self._on_scraping_audio, multibot_constants.KEYWORDS['audio'])
+        self.register(self._on_scraping_audio, (multibot_constants.KEYWORDS['audio'], constants.KEYWORDS['scraping']))
 
         self.register(self._on_scraping_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['scraping']))
         self.register(self._on_scraping_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['scraping'], multibot_constants.KEYWORDS['config']))
