@@ -192,12 +192,12 @@ class FlanaBot(MultiBot, ABC):
         })
 
         if len(last_2s_messages) >= constants.FLOOD_2s_LIMIT or len(last_7s_messages) >= constants.FLOOD_7s_LIMIT:
-            n_punishments = len(Punishment.find({
+            punishment = Punishment.find_one({
                 'platform': self.platform.value,
                 'user_id': message.author.id,
                 'group_id': message.chat.group_id
-            }))
-            punishment_seconds = (n_punishments + 2) ** constants.PUNISHMENT_INCREMENT_EXPONENT
+            })
+            punishment_seconds = (getattr(punishment, 'level', 0) + 2) ** constants.PUNISHMENT_INCREMENT_EXPONENT
             try:
                 await self.punish(message.author.id, message.chat.group_id, punishment_seconds, message)
             except BadRoleError as e:
@@ -970,10 +970,10 @@ class FlanaBot(MultiBot, ABC):
     async def is_punished(self, user: int | str | User, group_: int | str | Chat | Message) -> bool:
         pass
 
-    async def punish(self, user: int | str | User, group_: int | str | Chat | Message, time: int | datetime.timedelta, message: Message = None):
+    async def punish(self, user: int | str | User, group_: int | str | Chat | Message, time: int | datetime.timedelta = None, message: Message = None):
         # noinspection PyTypeChecker
         punish = Punishment(self.platform, self.get_user_id(user), self.get_group_id(group_), time)
-        await punish.punish(self._punish, self._unpunish, message)
+        await punish.apply(self._punish, self._unpunish, message)
 
     async def send_bye(self, message: Message) -> multibot_constants.ORIGINAL_MESSAGE:
         return await self.send(random.choice((*constants.BYE_PHRASES, flanautils.CommonWords.random_time_greeting())), message)
@@ -1040,4 +1040,4 @@ class FlanaBot(MultiBot, ABC):
     async def unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         # noinspection PyTypeChecker
         punish = Punishment(self.platform, self.get_user_id(user), self.get_group_id(group_))
-        await punish.unpunish(self._unpunish, message)
+        await punish.remove(self._unpunish, message)

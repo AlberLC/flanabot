@@ -1,7 +1,5 @@
 import datetime
 
-import flanautils
-
 AUDIT_LOG_AGE = datetime.timedelta(hours=1)
 AUDIT_LOG_LIMIT = 5
 AUTO_WEATHER_EVERY = datetime.timedelta(hours=6)
@@ -12,9 +10,8 @@ HEAT_PERIOD_SECONDS = datetime.timedelta(minutes=15).total_seconds()
 INSULT_PROBABILITY = 0.00166666667
 MAX_PLACE_QUERY_LENGTH = 50
 PUNISHMENT_INCREMENT_EXPONENT = 6
-PUNISHMENTS_RESET = datetime.timedelta(weeks=6 * flanautils.WEEKS_IN_A_MONTH)
+PUNISHMENTS_RESET_TIME = datetime.timedelta(weeks=2)
 RECOVERY_DELETED_MESSAGE_BEFORE = datetime.timedelta(hours=1)
-SCRAPING_MESSAGE_WAITING_TIME = 0.1
 
 BYE_PHRASES = ('Adiós.', 'adieu', 'adio', 'adioh', 'adios', 'adió', 'adiós', 'agur', 'bye', 'byyeeee', 'chao',
                'hasta la vista', 'hasta luego', 'hasta nunca', ' hasta pronto', 'hasta la próxima',
@@ -95,7 +92,7 @@ KEYWORDS = {
                        'cryptomoneda', 'cryptocurrency', 'currency', 'dinero', 'divisa', 'ethereum', 'inversion',
                        'moneda', 'pasta'),
     'dice': ('dado', 'dice'),
-    'poll': ('encuesta', 'poll', 'quiz'),
+    'poll': ('encuesta', 'quiz'),
     'punish': ('acaba', 'aprende', 'ataca', 'atalo', 'azota', 'boss', 'castiga', 'castigo', 'condena', 'controla',
                'destroy', 'destroza', 'duro', 'ejecuta', 'enseña', 'escarmiento', 'execute', 'fuck', 'fusila', 'hell',
                'humos', 'infierno', 'jefe', 'jode', 'learn', 'leccion', 'lesson', 'manda', 'purgatorio', 'sancion',
