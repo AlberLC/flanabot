@@ -81,7 +81,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 if not channels[channel_key]['n_fires']:
                     return
                 channels[channel_key]['n_fires'] -= 1
-            elif fire_score in range(1, 3):
+            elif fire_score == 1:
                 return
             else:
                 channels[channel_key]['n_fires'] += 1
