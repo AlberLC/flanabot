@@ -972,8 +972,8 @@ class FlanaBot(MultiBot, ABC):
 
     async def punish(self, user: int | str | User, group_: int | str | Chat | Message, time: int | datetime.timedelta = None, message: Message = None):
         # noinspection PyTypeChecker
-        punish = Punishment(self.platform, self.get_user_id(user), self.get_group_id(group_), time)
-        await punish.apply(self._punish, self._unpunish, message)
+        punishment = Punishment(self.platform, self.get_user_id(user), self.get_group_id(group_), time)
+        await punishment.apply(self._punish, self._unpunish, message)
 
     async def send_bye(self, message: Message) -> multibot_constants.ORIGINAL_MESSAGE:
         return await self.send(random.choice((*constants.BYE_PHRASES, flanautils.CommonWords.random_time_greeting())), message)
@@ -1039,5 +1039,5 @@ class FlanaBot(MultiBot, ABC):
 
     async def unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         # noinspection PyTypeChecker
-        punish = Punishment(self.platform, self.get_user_id(user), self.get_group_id(group_))
-        await punish.remove(self._unpunish, message)
+        punishment = Punishment(self.platform, self.get_user_id(user), self.get_group_id(group_))
+        await punishment.remove(self._unpunish, message)
