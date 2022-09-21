@@ -8,6 +8,7 @@ from typing import Callable, Sequence
 
 import flanautils
 import telethon.tl.functions
+from flanautils import Media, OrderedSet
 from multibot import TelegramBot, find_message, user_client
 
 from flanabot.bots.flana_bot import FlanaBot
@@ -57,6 +58,9 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
             contacts_data = await self.user_client(telethon.tl.functions.contacts.GetContactsRequest(hash=0))
 
         return [contact.user_id for contact in contacts_data.contacts]
+
+    async def _search_medias(self, message: Message, audio_only=False, timeout_for_media: int | float = None) -> OrderedSet[Media]:
+        return await super()._search_medias(message, audio_only, timeout_for_media=45)
 
     @user_client
     async def _update_whitelist(self):
