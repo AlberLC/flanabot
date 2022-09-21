@@ -15,7 +15,7 @@ import plotly.graph_objects
 import pymongo
 from flanaapis import InstagramLoginError, MediaNotFoundError, Place, PlaceNotFoundError, WeatherEmoji, instagram, tiktok, twitter, youtube
 from flanautils import Media, MediaType, NotFoundError, OrderedSet, Source, TimeUnits, TraceMetadata, return_if_first_empty
-from multibot import Action, BadRoleError, BotAction, ButtonsGroup, MultiBot, Role, SendError, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, reply
+from multibot import Action, BadRoleError, BotAction, ButtonsGroup, MultiBot, RegisteredCallback, Role, SendError, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, reply
 
 from flanabot import constants
 from flanabot.models import Chat, Message, Punishment, WeatherChart
@@ -298,7 +298,10 @@ class FlanaBot(MultiBot, ABC):
         return options
 
     async def _scrape_and_send(self, message: Message, audio_only=False) -> OrderedSet[Media]:
-        if not (medias := await self._search_medias(message, audio_only)):
+        kwargs = {}
+        if self._parse_callbacks(message.text, [RegisteredCallback(..., [['sin'], ['timeout', 'limite']])]):
+            kwargs['timeout_for_media'] = None
+        if not (medias := await self._search_medias(message, audio_only, **kwargs)):
             return OrderedSet()
 
         sended_media_messages, _ = await self.send_medias(medias, message)
