@@ -59,7 +59,7 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
 
         return [contact.user_id for contact in contacts_data.contacts]
 
-    async def _search_medias(self, message: Message, audio_only=False, timeout_for_media: int | float = 30) -> OrderedSet[Media]:
+    async def _search_medias(self, message: Message, audio_only=False, timeout_for_media: int | float = 15) -> OrderedSet[Media]:
         return await super()._search_medias(message, audio_only, timeout_for_media)
 
     @user_client
