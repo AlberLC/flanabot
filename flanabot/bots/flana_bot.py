@@ -713,7 +713,7 @@ class FlanaBot(MultiBot, ABC):
         if song_infos:
             for song_info in song_infos:
                 await self.send_song_info(song_info, message)
-        elif self.is_bot_mentioned(message) or message.chat.is_private:
+        elif message.chat.is_private or self.is_bot_mentioned(message):
             await self._manage_exceptions(SendError('No hay información musical en ese mensaje.'), message)
 
     async def _on_stop_poll(self, message: Message):
