@@ -37,9 +37,9 @@ class FlanaBot(MultiBot, ABC):
 
         self.register(self._on_bye, multibot_constants.KEYWORDS['bye'])
 
-        self.register(self._on_choose, constants.KEYWORDS['choose'])
-        self.register(self._on_choose, constants.KEYWORDS['random'])
-        self.register(self._on_choose, (constants.KEYWORDS['choose'], constants.KEYWORDS['random']))
+        self.register(self._on_choose, constants.KEYWORDS['choose'], priority=2)
+        self.register(self._on_choose, constants.KEYWORDS['random'], priority=2)
+        self.register(self._on_choose, (constants.KEYWORDS['choose'], constants.KEYWORDS['random']), priority=2)
 
         self.register(self._on_config_list_show, multibot_constants.KEYWORDS['config'])
         self.register(self._on_config_list_show, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['config']))
