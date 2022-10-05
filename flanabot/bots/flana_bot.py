@@ -94,7 +94,7 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
         self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
 
-        self.register(self._on_poll, constants.KEYWORDS['poll'])
+        self.register(self._on_poll, constants.KEYWORDS['poll'], priority=2)
 
         self.register(self._on_punish, constants.KEYWORDS['punish'])
         self.register(self._on_punish, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['unpunish']))
