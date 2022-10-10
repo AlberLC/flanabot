@@ -69,6 +69,8 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
 
     # noinspection PyTypeChecker
     def _distribute_buttons(self, texts: Sequence[str]) -> list[list[str]]:
+        texts = [f'{text[:multibot_constants.DISCORD_BUTTON_MAX_CHARACTERS - 3]}...' if len(text) > multibot_constants.DISCORD_BUTTON_MAX_CHARACTERS else text for text in texts]
+
         if len(texts) <= multibot_constants.DISCORD_BUTTONS_MAX:
             return flanautils.chunks(texts, 1)
         else:
