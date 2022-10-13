@@ -91,6 +91,7 @@ KEYWORDS = {
                        'cryptomoneda', 'cryptocurrency', 'currency', 'dinero', 'divisa', 'ethereum', 'inversion',
                        'moneda', 'pasta'),
     'dice': ('dado', 'dice'),
+    'multiple_answer': ('multi', 'multi-answer', 'multiple', 'multirespuesta'),
     'poll': ('encuesta', 'quiz'),
     'punish': ('acaba', 'aprende', 'ataca', 'atalo', 'azota', 'boss', 'castiga', 'castigo', 'condena', 'controla',
                'destroy', 'destroza', 'duro', 'ejecuta', 'enseña', 'escarmiento', 'execute', 'fuck', 'fusila', 'hell',

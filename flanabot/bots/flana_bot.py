@@ -96,6 +96,8 @@ class FlanaBot(MultiBot, ABC):
 
         self.register(self._on_poll, constants.KEYWORDS['poll'], priority=2)
 
+        self.register(self._on_poll_multi, (constants.KEYWORDS['poll'], constants.KEYWORDS['multiple_answer']), priority=2)
+
         self.register(self._on_punish, constants.KEYWORDS['punish'])
         self.register(self._on_punish, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['unpunish']))
         self.register(self._on_punish, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['permission']))
@@ -549,23 +551,26 @@ class FlanaBot(MultiBot, ABC):
         if not await self._scrape_and_send(message):
             await self._on_recover_message(message)
 
-    async def _on_poll(self, message: Message):
+    async def _on_poll(self, message: Message, is_multiple_answer=False):
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
 
         await self.delete_message(message)
 
-        discarded_words = {*constants.KEYWORDS['poll'], self.name.lower(), f'<@{self.id}>'}
+        discarded_words = {*constants.KEYWORDS['poll'], *constants.KEYWORDS['multiple_answer'], self.name.lower(), f'<@{self.id}>'}
         if final_options := [f'{option[0].upper()}{option[1:]}' for option in self._get_options(message.text, discarded_words)]:
             await self.send(
-                'Encuesta en curso...',
+                f"Encuesta {'multirespuesta ' if is_multiple_answer else ''}en curso...",
                 self._distribute_buttons(final_options),
                 message,
                 buttons_key=ButtonsGroup.POLL,
-                contents={'poll': {'is_active': True, 'votes': {option: [] for option in final_options}}}
+                contents={'poll': {'is_active': True, 'is_multiple_answer': is_multiple_answer, 'votes': {option: [] for option in final_options}}}
             )
         else:
             await self.send(random.choice(('¿Y las opciones?', '?', '🤔')), message)
+
+    async def _on_poll_multi(self, message: Message):
+        await self._on_poll(message, is_multiple_answer=True)
 
     async def _on_poll_button_press(self, message: Message):
         await self.accept_button_event(message)
@@ -576,28 +581,31 @@ class FlanaBot(MultiBot, ABC):
         selected_option_votes = message.contents['poll']['votes'][option_name]
         presser_id = message.buttons_info.presser_user.id
         presser_name = message.buttons_info.presser_user.name.split('#')[0]
-        total_votes = sum(len(option_votes) for option_votes in message.contents['poll']['votes'].values())
+
         if [presser_id, presser_name] in selected_option_votes:
             selected_option_votes.remove([presser_id, presser_name])
-            total_votes -= 1
         else:
-            for option_votes in message.contents['poll']['votes'].values():
-                try:
-                    option_votes.remove([presser_id, presser_name])
-                except ValueError:
-                    pass
-                else:
-                    total_votes -= 1
-                    break
+            if not message.contents['poll']['is_multiple_answer']:
+                for option_votes in message.contents['poll']['votes'].values():
+                    try:
+                        option_votes.remove([presser_id, presser_name])
+                    except ValueError:
+                        pass
+                    else:
+                        break
             selected_option_votes.append((presser_id, presser_name))
-            total_votes += 1
+
+        if message.contents['poll']['is_multiple_answer']:
+            total_votes = len({option_votes[0][0] for option_votes in message.contents['poll']['votes'].values() if option_votes})
+        else:
+            total_votes = sum(len(option_votes) for option_votes in message.contents['poll']['votes'].values())
 
         if total_votes:
             buttons = []
             for option, option_votes in message.contents['poll']['votes'].items():
-                percent = f'{len(option_votes)}/{total_votes}'
+                ratio = f'{len(option_votes)}/{total_votes}'
                 names = f"({', '.join(option_vote[1] for option_vote in option_votes)})" if option_votes else ''
-                buttons.append(f'{option} ➜ {percent} {names}')
+                buttons.append(f'{option} ➜ {ratio} {names}')
         else:
             buttons = list(message.contents['poll']['votes'].keys())
 
