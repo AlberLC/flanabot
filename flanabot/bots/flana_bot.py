@@ -426,7 +426,7 @@ class FlanaBot(MultiBot, ABC):
         message.chat.config[config] = not message.chat.config[config]
         message.buttons_info.pressed_button.text = f"{'✔' if message.chat.config[config] else '❌'} {config}"
 
-        await self.edit('<b>Estos son los ajustes del grupo:</b>\n\n', message.buttons_info.buttons, message)
+        await self.edit('<b>Estos son los ajustes del chat:</b>\n\n', message.buttons_info.buttons, message)
 
     @group
     @bot_mentioned
