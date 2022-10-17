@@ -71,7 +71,7 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
     # ---------------------------------------------- #
     @whitelisted_event
     async def _on_inline_query_raw(self, message: Message):
-        await super()._on_new_message_raw(message)
+        await super()._on_inline_query_raw(message)
 
     @whitelisted_event
     async def _on_new_message_raw(self, message: Message):
