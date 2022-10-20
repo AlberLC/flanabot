@@ -596,7 +596,7 @@ class FlanaBot(MultiBot, ABC):
             selected_option_votes.append((presser_id, presser_name))
 
         if message.contents['poll']['is_multiple_answer']:
-            total_votes = len({option_votes[0][0] for option_votes in message.contents['poll']['votes'].values() if option_votes})
+            total_votes = len({option_vote[0] for option_votes in message.contents['poll']['votes'].values() if option_votes for option_vote in option_votes})
         else:
             total_votes = sum(len(option_votes) for option_votes in message.contents['poll']['votes'].values())
 
