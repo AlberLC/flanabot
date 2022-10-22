@@ -409,7 +409,7 @@ class FlanaBot(MultiBot, ABC):
                         n2 = flanautils.words_to_numbers(options[i + 1], ignore_no_numbers=False)
                     except KeyError:
                         continue
-                if options[i] in ('al', 'el', 'to'):
+                if options[i] in ('al', 'to'):
                     await self.send(random.randint(math.ceil(n1), math.floor(n2)), message)
                     return
             await self.send(random.choice(options), message)
