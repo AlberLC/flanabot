@@ -5,6 +5,7 @@ import datetime
 import math
 import os
 import random
+from collections import defaultdict
 from typing import Sequence
 
 import discord
@@ -17,10 +18,11 @@ import constants
 from flanabot.bots.flana_bot import FlanaBot
 from flanabot.models import Chat, Message, Punishment
 
-CHANGEABLE_ROLES = {
+# noinspection PyTypeChecker
+CHANGEABLE_ROLES = defaultdict(dict, {
     360868977754505217: [881238165476741161, 991454395663401072, 1033098591725699222],
-    862823584670285835: [976660580939202610, 984269640752590868],
-}
+    862823584670285835: [976660580939202610, 984269640752590868]
+})
 HEAT_NAMES = [
     'Canal Congelado',
     'Canal Fresquito',

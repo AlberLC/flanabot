@@ -526,7 +526,7 @@ class FlanaBot(MultiBot, ABC):
         await self.delete_message(message)
         await self.send(
             f'<b>Roles de {message.author.name}:</b>',
-            self._distribute_buttons(await self._role_state_options(message, user_role_names)),
+            self._distribute_buttons(options),
             message,
             buttons_key=ButtonsGroup.ROLES,
             contents={'user_id': message.author.id}
