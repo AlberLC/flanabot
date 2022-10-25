@@ -4,7 +4,7 @@ import datetime
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from multibot.models import Platform, PunishmentBase, db
+from multibot.models import Platform, PunishmentBase
 
 from flanabot import constants
 from flanabot.models.message import Message
@@ -12,7 +12,7 @@ from flanabot.models.message import Message
 
 @dataclass(eq=False)
 class Punishment(PunishmentBase):
-    collection = db.punishment
+    collection_name = 'punishment'
 
     level: int = 0
 
