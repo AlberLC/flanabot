@@ -257,7 +257,7 @@ class FlanaBot(MultiBot, ABC):
                 and
                 not message.replied_message
                 and
-                message.chat.config['auto_delete_original']
+                message.chat.config['delete_original']
         ):
             # noinspection PyTypeChecker
             BotAction(Action.MESSAGE_DELETED, message, affected_objects=[message, *sended_media_messages]).save()
@@ -353,7 +353,7 @@ class FlanaBot(MultiBot, ABC):
 
     @group
     @bot_mentioned
-    async def _on_config_list_show(self, message: Message):
+    async def _on_config(self, message: Message):
         buttons_texts = [(f"{'✔' if v else '❌'} {k}", v) for k, v in message.chat.config.items()]
         await self.delete_message(message)
         await self.send('<b>Estos son los ajustes del chat:</b>\n\n', flanautils.chunks(buttons_texts, 3), message, buttons_key=ButtonsGroup.CONFIG)
@@ -380,7 +380,7 @@ class FlanaBot(MultiBot, ABC):
                         and
                         not self.is_bot_mentioned(message)
                         and
-                        not message.chat.config['auto_scraping']
+                        not message.chat.config['scraping']
                         or
                         not await self._scrape_send_and_delete(message)
                 )
@@ -400,7 +400,7 @@ class FlanaBot(MultiBot, ABC):
                                 self.is_bot_mentioned(message)
                                 or
                                 (
-                                        message.chat.config['auto_insult']
+                                        message.chat.config['insult']
                                         and
                                         random.random() < constants.INSULT_PROBABILITY
                                 )
@@ -412,7 +412,7 @@ class FlanaBot(MultiBot, ABC):
     @ignore_self_message
     async def _on_new_message_raw(self, message: Message):
         await super()._on_new_message_raw(message)
-        if not message.is_inline:
+        if message.chat.config['check_flood'] and message.chat.config['punish'] and not message.is_inline:
             async with self.lock:
                 await self._check_message_flood(message)
 
@@ -484,6 +484,9 @@ class FlanaBot(MultiBot, ABC):
     @group
     @admin(send_negative=True)
     async def _on_punish(self, message: Message):
+        if not message.chat.config['punish']:
+            return
+
         for user in await self._find_users_to_punish(message):
             await self.punish(user, message, flanautils.words_to_time(message.text), message)
 
@@ -516,8 +519,9 @@ class FlanaBot(MultiBot, ABC):
     @group
     @bot_mentioned
     async def _on_roles(self, message: Message):
-        # noinspection PyTypeChecker
         user_role_names = [role.name for role in await self.get_current_roles(message.author)]
+        if not (options := await self._role_state_options(message, user_role_names)):
+            return
 
         await self.delete_message(message)
         await self.send(
@@ -612,13 +616,7 @@ class FlanaBot(MultiBot, ABC):
     @bot_mentioned
     @admin(send_negative=True)
     async def _on_unpunish(self, message: Message):
-        if (
-                message.replied_message
-                and
-                message.replied_message.author.id == self.id
-                and
-                message.replied_message.contents.get('media')
-        ):
+        if not message.chat.config['punish']:
             return
 
         for user in await self._find_users_to_punish(message):
@@ -656,7 +654,7 @@ class FlanaBot(MultiBot, ABC):
         if message.is_inline:
             show_progress_state = False
         elif message.chat.is_group and not self.is_bot_mentioned(message):
-            if message.chat.config['auto_weather_chart']:
+            if message.chat.config['weather_chart']:
                 if BotAction.find_one({'action': Action.AUTO_WEATHER_CHART.value, 'chat': message.chat.object_id, 'date': {'$gt': datetime.datetime.now(datetime.timezone.utc) - constants.AUTO_WEATHER_EVERY}}):
                     return
                 show_progress_state = False
