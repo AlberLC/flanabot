@@ -26,7 +26,7 @@ class TestParseCallbacks(unittest.TestCase):
         phrases = ['adios', 'taluego', 'adiooo', 'hasta la proxima', 'nos vemos', 'hasta la vista', 'hasta pronto']
         self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_bye)
 
-    def test_on_config_list_show(self):
+    def test_on_config(self):
         phrases = [
             'flanabot ajustes',
             'Flanabot ajustes',
@@ -36,79 +36,11 @@ class TestParseCallbacks(unittest.TestCase):
             'configuración',
             'configuration'
         ]
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_config_list_show)
-
-    def test_on_covid_chart(self):
-        phrases = [
-            'cuantos contagios',
-            'casos',
-            'enfermos',
-            'muerte',
-            'pandemia',
-            'enfermedad',
-            'fallecidos',
-            'mascarillas',
-            'virus',
-            'covid-19',
-            'como va el covid',
-            'lo peta el corona'
-        ]
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_covid_chart)
-
-    def test_on_currency_chart(self):
-        phrases = [
-            'como van esos dineros',
-            'critodivisa',
-            'esas cryptos',
-            'inversion',
-            'moneda',
-            'mas caro en argentina?',
-            'el puto bitcoin',
-            'divisa'
-        ]
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_currency_chart)
-
-    def test_on_currency_chart_config_activate(self):
-        phrases = ['activa el bitcoin automatico']
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_currency_chart_config_activate)
-
-    def test_on_currency_chart_config_change(self):
-        phrases = ['cambia la config del bitcoin automatico']
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_currency_chart_config_change)
-
-    def test_on_currency_chart_config_deactivate(self):
-        phrases = ['desactiva el bitcoin automatico']
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_currency_chart_config_deactivate)
-
-    def test_on_currency_chart_config_show(self):
-        phrases = ['enseña el bitcoin automatico', 'como esta el bitcoin automatico', 'flanabot ajustes bitcoin']
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_currency_chart_config_show)
+        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_config)
 
     def test_on_delete(self):
         phrases = ['borra ese mensaje', 'borra ese mensaje puto', 'borra', 'borra el mensaje', 'borra eso', 'borres']
         self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_delete)
-
-    def test_on_delete_original_config_activate(self):
-        phrases = [
-            'activa el borrado automatico',
-            'flanabot pon el auto delete activado'
-        ]
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_delete_original_config_activate)
-
-    def test_on_delete_original_config_change(self):
-        phrases = ['cambia la config del borrado automatico']
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_delete_original_config_change)
-
-    def test_on_delete_original_config_deactivate(self):
-        phrases = [
-            'desactiva el borrado automatico',
-            'flanabot pon el auto delete desactivado'
-        ]
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_delete_original_config_deactivate)
-
-    def test_on_delete_original_config_show(self):
-        phrases = ['enseña el borrado automatico', 'como esta el borrado automatico', 'flanabot ajustes delete']
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_delete_original_config_show)
 
     def test_on_hello(self):
         phrases = ['hola', 'hello', 'buenos dias', 'holaaaaaa', 'hi', 'holaaaaa', 'saludos', 'ola k ase']
@@ -186,22 +118,6 @@ class TestParseCallbacks(unittest.TestCase):
         ]
         self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_scraping)
 
-    def test_on_scraping_config_activate(self):
-        phrases = ['activa el scraping automatico', 'activa el scraping']
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_scraping_config_activate)
-
-    def test_on_scraping_config_change(self):
-        phrases = ['cambia la config del scraping']
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_scraping_config_change)
-
-    def test_on_scraping_config_deactivate(self):
-        phrases = ['desactiva el scraping automatico']
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_scraping_config_deactivate)
-
-    def test_on_scraping_config_show(self):
-        phrases = ['enseña el scraping automatico', 'como esta el scraping automatico', 'flanabot ajustes scraping']
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_scraping_config_show)
-
     def test_on_song_info(self):
         phrases = [
             'que sonaba ahi',
@@ -267,19 +183,3 @@ class TestParseCallbacks(unittest.TestCase):
             'pfff no ve que frio ahi en oviedo este finde'
         ]
         self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_weather_chart)
-
-    def test_on_weather_chart_config_activate(self):
-        phrases = ['activa el tiempo automatico', 'activa el tiempo']
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_weather_chart_config_activate)
-
-    def test_on_weather_chart_config_change(self):
-        phrases = ['cambia la config del tiempo']
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_weather_chart_config_change)
-
-    def test_on_weather_chart_config_deactivate(self):
-        phrases = ['desactiva el tiempo automatico']
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_weather_chart_config_deactivate)
-
-    def test_on_weather_chart_config_show(self):
-        phrases = ['enseña el tiempo automatico', 'como esta el tiempo automatico', 'flanabot ajustes tiempo']
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_weather_chart_config_show)

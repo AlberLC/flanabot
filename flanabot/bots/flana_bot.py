@@ -41,47 +41,8 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_choose, constants.KEYWORDS['random'], priority=2)
         self.register(self._on_choose, (constants.KEYWORDS['choose'], constants.KEYWORDS['random']), priority=2)
 
-        self.register(self._on_config_list_show, multibot_constants.KEYWORDS['config'])
-        self.register(self._on_config_list_show, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['config']))
-
-        self.register(self._on_covid_chart, constants.KEYWORDS['covid_chart'])
-
-        self.register(self._on_currency_chart, constants.KEYWORDS['currency_chart'])
-        self.register(self._on_currency_chart, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['currency_chart']))
-
-        self.register(self._on_currency_chart_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['currency_chart']))
-        self.register(self._on_currency_chart_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['currency_chart'], multibot_constants.KEYWORDS['config']))
-
-        self.register(self._on_currency_chart_config_change, (multibot_constants.KEYWORDS['change'], constants.KEYWORDS['currency_chart']))
-        self.register(self._on_currency_chart_config_change, (multibot_constants.KEYWORDS['change'], constants.KEYWORDS['currency_chart'], multibot_constants.KEYWORDS['config']))
-
-        self.register(self._on_currency_chart_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['currency_chart']))
-        self.register(self._on_currency_chart_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['currency_chart'], multibot_constants.KEYWORDS['config']))
-
-        self.register(self._on_currency_chart_config_show, (constants.KEYWORDS['currency_chart'], multibot_constants.KEYWORDS['config']))
-        self.register(self._on_currency_chart_config_show, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['currency_chart'], multibot_constants.KEYWORDS['config']))
-
-        self.register(self._on_delete_original_config_activate, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['delete']))
-        self.register(self._on_delete_original_config_activate, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
-        self.register(self._on_delete_original_config_activate, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['config']))
-        self.register(self._on_delete_original_config_activate, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['config']))
-
-        self.register(self._on_delete_original_config_change, (multibot_constants.KEYWORDS['change'], multibot_constants.KEYWORDS['delete']))
-        self.register(self._on_delete_original_config_change, (multibot_constants.KEYWORDS['change'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
-        self.register(self._on_delete_original_config_change, (multibot_constants.KEYWORDS['change'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['config']))
-        self.register(self._on_delete_original_config_change, (multibot_constants.KEYWORDS['change'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['config']))
-
-        self.register(self._on_delete_original_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete']))
-        self.register(self._on_delete_original_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
-        self.register(self._on_delete_original_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['config']))
-        self.register(self._on_delete_original_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['config']))
-
-        self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['delete']))
-        self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['config']))
-        self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
-        self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['config']))
-        self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['config']))
-        self.register(self._on_delete_original_config_show, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['config']))
+        self.register(self._on_config, multibot_constants.KEYWORDS['config'])
+        self.register(self._on_config, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['config']))
 
         self.register(self._on_dice, constants.KEYWORDS['dice'])
 
@@ -117,19 +78,6 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_scraping_audio, multibot_constants.KEYWORDS['audio'])
         self.register(self._on_scraping_audio, (multibot_constants.KEYWORDS['audio'], constants.KEYWORDS['scraping']))
 
-        self.register(self._on_scraping_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['scraping']))
-        self.register(self._on_scraping_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['scraping'], multibot_constants.KEYWORDS['config']))
-
-        self.register(self._on_scraping_config_change, (multibot_constants.KEYWORDS['change'], constants.KEYWORDS['scraping']))
-        self.register(self._on_scraping_config_change, (multibot_constants.KEYWORDS['change'], constants.KEYWORDS['scraping'], multibot_constants.KEYWORDS['config']))
-
-        self.register(self._on_scraping_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['scraping']))
-        self.register(self._on_scraping_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['scraping'], multibot_constants.KEYWORDS['config']))
-
-        self.register(self._on_scraping_config_show, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['scraping']))
-        self.register(self._on_scraping_config_show, (constants.KEYWORDS['scraping'], multibot_constants.KEYWORDS['config']))
-        self.register(self._on_scraping_config_show, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['scraping'], multibot_constants.KEYWORDS['config']))
-
         self.register(self._on_song_info, constants.KEYWORDS['song_info'])
 
         self.register(self._on_stop_poll, multibot_constants.KEYWORDS['deactivate'])
@@ -138,38 +86,16 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_stop_poll, (multibot_constants.KEYWORDS['stop'], constants.KEYWORDS['poll']))
 
         self.register(self._on_unpunish, constants.KEYWORDS['unpunish'])
-
         self.register(self._on_unpunish, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['punish']))
         self.register(self._on_unpunish, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['permission']))
 
         self.register(self._on_weather_chart, constants.KEYWORDS['weather_chart'])
         self.register(self._on_weather_chart, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['weather_chart']))
 
-        self.register(self._on_weather_chart_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['weather_chart']))
-        self.register(self._on_weather_chart_config_activate, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
-
-        self.register(self._on_weather_chart_config_change, (multibot_constants.KEYWORDS['change'], constants.KEYWORDS['weather_chart']))
-        self.register(self._on_weather_chart_config_change, (multibot_constants.KEYWORDS['change'], constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
-
-        self.register(self._on_weather_chart_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['weather_chart']))
-        self.register(self._on_weather_chart_config_deactivate, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
-
-        self.register(self._on_weather_chart_config_show, (constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
-        self.register(self._on_weather_chart_config_show, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['weather_chart'], multibot_constants.KEYWORDS['config']))
-
         self.register_button(self._on_config_button_press, ButtonsGroup.CONFIG)
         self.register_button(self._on_poll_button_press, ButtonsGroup.POLL)
         self.register_button(self._on_roles_button_press, ButtonsGroup.ROLES)
         self.register_button(self._on_weather_button_press, ButtonsGroup.WEATHER)
-
-    async def _change_config(self, config_name: str, message: Message, value: bool = None):
-        if value is None:
-            value = not message.chat.config[config_name]
-
-        message.chat.config[config_name] = value
-        message.chat.save()
-
-        await self.send(f"He {'activado ✔' if value else 'desactivado ❌'} {config_name}.", message)
 
     async def _changeable_roles(self, group_: int | str | Chat | Message) -> list[Role]:
         pass
@@ -369,9 +295,6 @@ class FlanaBot(MultiBot, ABC):
 
         return OrderedSet(*medias)
 
-    async def _show_config(self, config_name: str, message: Message):
-        await self.send(f"{config_name} está {'activado ✔' if message.chat.config.get(config_name) else 'desactivado ❌'}", message)
-
     async def _unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         pass
 
@@ -434,60 +357,6 @@ class FlanaBot(MultiBot, ABC):
         buttons_texts = [(f"{'✔' if v else '❌'} {k}", v) for k, v in message.chat.config.items()]
         await self.delete_message(message)
         await self.send('<b>Estos son los ajustes del chat:</b>\n\n', flanautils.chunks(buttons_texts, 3), message, buttons_key=ButtonsGroup.CONFIG)
-
-    async def _on_covid_chart(self, message: Message):  # todo2
-        pass
-
-    async def _on_currency_chart(self, message: Message):  # todo2
-        pass
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_currency_chart_config_activate(self, message: Message):
-        await self._change_config('auto_currency_chart', message, True)
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_currency_chart_config_change(self, message: Message):
-        await self._change_config('auto_currency_chart', message)
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_currency_chart_config_deactivate(self, message: Message):
-        await self._change_config('auto_currency_chart', message, False)
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_currency_chart_config_show(self, message: Message):
-        await self._show_config('auto_currency_chart', message)
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_delete_original_config_activate(self, message: Message):
-        await self._change_config('auto_delete_original', message, True)
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_delete_original_config_change(self, message: Message):
-        await self._change_config('auto_delete_original', message)
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_delete_original_config_deactivate(self, message: Message):
-        await self._change_config('auto_delete_original', message, False)
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_delete_original_config_show(self, message: Message):
-        await self._show_config('auto_delete_original', message)
 
     async def _on_dice(self, message: Message):
         if message.chat.is_group and not self.is_bot_mentioned(message):
@@ -689,30 +558,6 @@ class FlanaBot(MultiBot, ABC):
 
     async def _on_scraping_audio(self, message: Message) -> OrderedSet[Media]:
         return await self._on_scraping(message, audio_only=True)
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_scraping_config_activate(self, message: Message):
-        await self._change_config('auto_scraping', message, True)
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_scraping_config_change(self, message: Message):
-        await self._change_config('auto_scraping', message)
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_scraping_config_deactivate(self, message: Message):
-        await self._change_config('auto_scraping', message, False)
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_scraping_config_show(self, message: Message):
-        await self._show_config('auto_scraping', message)
 
     @reply
     async def _on_song_info(self, message: Message):
@@ -950,30 +795,6 @@ class FlanaBot(MultiBot, ABC):
             if not self.is_bot_mentioned(message):
                 # noinspection PyTypeChecker
                 BotAction(Action.AUTO_WEATHER_CHART, message, affected_objects=[bot_message]).save()
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_weather_chart_config_activate(self, message: Message):
-        await self._change_config('auto_weather_chart', message, True)
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_weather_chart_config_change(self, message: Message):
-        await self._change_config('auto_weather_chart', message)
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_weather_chart_config_deactivate(self, message: Message):
-        await self._change_config('auto_weather_chart', message, False)
-
-    @admin
-    @group
-    @bot_mentioned
-    async def _on_weather_chart_config_show(self, message: Message):
-        await self._show_config('auto_weather_chart', message)
 
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
