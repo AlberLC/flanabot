@@ -6,7 +6,7 @@ import math
 import random
 import re
 from abc import ABC
-from typing import Iterable, Sequence
+from typing import Iterable, Sequence, Type
 
 import flanaapis.geolocation.functions
 import flanaapis.weather.functions
@@ -774,6 +774,10 @@ class FlanaBot(MultiBot, ABC):
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
     # -------------------------------------------------------- #
+    @property
+    def chat_class(self) -> Type[Chat]:
+        return Chat
+
     async def check_old_punishments(self):
         punishments = Punishment.find({'platform': self.platform.value}, lazy=True)
 
@@ -798,6 +802,10 @@ class FlanaBot(MultiBot, ABC):
 
     async def is_punished(self, user: int | str | User, group_: int | str | Chat | Message) -> bool:
         pass
+
+    @property
+    def message_class(self) -> Type[Message]:
+        return Message
 
     async def punish(
         self,
