@@ -41,9 +41,6 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_choose, constants.KEYWORDS['random'], priority=2)
         self.register(self._on_choose, (constants.KEYWORDS['choose'], constants.KEYWORDS['random']), priority=2)
 
-        self.register(self._on_config, multibot_constants.KEYWORDS['config'])
-        self.register(self._on_config, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['config']))
-
         self.register(self._on_dice, constants.KEYWORDS['dice'])
 
         self.register(self._on_hello, multibot_constants.KEYWORDS['hello'])
@@ -92,7 +89,6 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_weather_chart, constants.KEYWORDS['weather_chart'])
         self.register(self._on_weather_chart, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['weather_chart']))
 
-        self.register_button(self._on_config_button_press, ButtonsGroup.CONFIG)
         self.register_button(self._on_poll_button_press, ButtonsGroup.POLL)
         self.register_button(self._on_roles_button_press, ButtonsGroup.ROLES)
         self.register_button(self._on_weather_button_press, ButtonsGroup.WEATHER)
@@ -338,25 +334,6 @@ class FlanaBot(MultiBot, ABC):
             await self.send(random.choice(options), message)
         else:
             await self.send(random.choice(('¿Que elija el qué?', '¿Y las opciones?', '?', '🤔')), message)
-
-    async def _on_config_button_press(self, message: Message):
-        await self.accept_button_event(message)
-
-        if message.buttons_info.presser_user.is_admin is False:
-            return
-
-        config = message.buttons_info.pressed_text.split()[1]
-        message.chat.config[config] = not message.chat.config[config]
-        message.buttons_info.pressed_button.text = f"{'✔' if message.chat.config[config] else '❌'} {config}"
-
-        await self.edit(message.buttons_info.buttons, message)
-
-    @group
-    @bot_mentioned
-    async def _on_config(self, message: Message):
-        buttons_texts = [(f"{'✔' if v else '❌'} {k}", v) for k, v in message.chat.config.items()]
-        await self.delete_message(message)
-        await self.send('<b>Estos son los ajustes del chat:</b>\n\n', flanautils.chunks(buttons_texts, 3), message, buttons_key=ButtonsGroup.CONFIG)
 
     async def _on_dice(self, message: Message):
         if message.chat.is_group and not self.is_bot_mentioned(message):
