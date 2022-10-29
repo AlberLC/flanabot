@@ -105,6 +105,7 @@ KEYWORDS = {
                   'nombre', 'sonaba', 'sonando', 'song', 'sono', 'sound', 'suena', 'title', 'titulo',
                   'video'),
     'unpunish': ('absolve', 'forgive', 'innocent', 'inocente', 'perdona', 'spare'),
+    'vote': ('votacion', 'votar', 'vote', 'voting', 'voto'),
     'weather_chart': ('atmosfera', 'atmosferico', 'calle', 'calor', 'caloret', 'clima', 'climatologia', 'cloud',
                       'cloudless', 'cloudy', 'cold', 'congelar', 'congelado', 'denbora', 'despejado', 'diluvio', 'frio',
                       'frost', 'hielo', 'humedad', 'llover', 'llueva', 'llueve', 'lluvia', 'nevada', 'nieva', 'nieve',

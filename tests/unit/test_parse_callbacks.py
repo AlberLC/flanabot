@@ -182,4 +182,4 @@ class TestParseCallbacks(unittest.TestCase):
             'hara mucho calor en egipto este fin de semana?',
             'pfff no ve que frio ahi en oviedo este finde'
         ]
-        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_weather_chart)
+        self._test_no_always_callbacks(phrases, self.flana_tele_bot._on_weather)
