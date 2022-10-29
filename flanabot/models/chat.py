@@ -12,7 +12,7 @@ class Chat(MultiBotChat):
                       'insult': True,
                       'punish': False,
                       'scraping': True,
-                      'weather_chart': True}
+                      'weather_chart': False}
 
     def __post_init__(self):
         super().__post_init__()
