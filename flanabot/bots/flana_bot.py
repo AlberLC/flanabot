@@ -25,9 +25,8 @@ from flanabot.models import Chat, Message, Punishment, WeatherChart
 # --------------------------------------------- FLANA_BOT --------------------------------------------- #
 # ----------------------------------------------------------------------------------------------------- #
 class FlanaBot(MultiBot, ABC):
-    Chat = Chat
-    Message = Message
-    User = User
+    _Chat = Chat
+    _Message = Message
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -113,13 +112,13 @@ class FlanaBot(MultiBot, ABC):
         if await self.is_punished(message.author, message.chat):
             return
 
-        last_2s_messages = Message.find({
+        last_2s_messages = self._Message.find({
             'platform': self.platform.value,
             'author': message.author.object_id,
             'chat': message.chat.object_id,
             'date': {'$gte': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=2)}
         })
-        last_7s_messages = Message.find({
+        last_7s_messages = self._Message.find({
             'platform': self.platform.value,
             'author': message.author.object_id,
             'chat': message.chat.object_id,
@@ -166,7 +165,7 @@ class FlanaBot(MultiBot, ABC):
                 and
                 flanautils.cartesian_product_string_matching(message.text, constants.KEYWORDS['poll'], min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)
                 and
-                (poll_message := Message.find_one({'contents.poll.is_active': True}, sort_keys=(('date', pymongo.DESCENDING),)))
+                (poll_message := self._Message.find_one({'contents.poll.is_active': True}, sort_keys=(('date', pymongo.DESCENDING),)))
         ):
             return await self.get_message(poll_message.chat.id, poll_message.id)
         else:
@@ -551,7 +550,7 @@ class FlanaBot(MultiBot, ABC):
             return
 
         affected_object_ids = [affected_message_object_id for affected_message_object_id in message_deleted_bot_action.affected_objects]
-        deleted_messages: list[Message] = [affected_message for affected_object_id in affected_object_ids if (affected_message := Message.find_one({'platform': self.platform.value, '_id': affected_object_id})).author.id != self.id]
+        deleted_messages: list[Message] = [affected_message for affected_object_id in affected_object_ids if (affected_message := self._Message.find_one({'platform': self.platform.value, '_id': affected_object_id})).author.id != self.id]
         for deleted_message in deleted_messages:
             await self.send(deleted_message.text, message)
 
