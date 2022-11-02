@@ -15,10 +15,10 @@ import plotly.graph_objects
 import pymongo
 from flanaapis import InstagramLoginError, MediaNotFoundError, Place, PlaceNotFoundError, WeatherEmoji, instagram, tiktok, twitter, youtube
 from flanautils import Media, MediaType, NotFoundError, OrderedSet, Source, TimeUnits, TraceMetadata, return_if_first_empty
-from multibot import Action, BadRoleError, BotAction, ButtonsGroup, MultiBot, RegisteredCallback, Role, SendError, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, reply
+from multibot import BadRoleError, LimitError, MultiBot, RegisteredCallback, Role, SendError, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, reply
 
 from flanabot import constants
-from flanabot.models import Chat, Message, Punishment, WeatherChart
+from flanabot.models import Action, BotAction, ButtonsGroup, Chat, Message, Punishment, WeatherChart
 
 
 # ----------------------------------------------------------------------------------------------------- #
@@ -37,6 +37,7 @@ class FlanaBot(MultiBot, ABC):
     # ----------------------------------------------------------- #
     def _add_handlers(self):
         super()._add_handlers()
+        self.register(self._on_ban, multibot_constants.KEYWORDS['ban'])
 
         self.register(self._on_bye, multibot_constants.KEYWORDS['bye'])
 
@@ -44,12 +45,23 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_choose, constants.KEYWORDS['random'], priority=2)
         self.register(self._on_choose, (constants.KEYWORDS['choose'], constants.KEYWORDS['random']), priority=2)
 
+        self.register(self._on_config, multibot_constants.KEYWORDS['config'])
+        self.register(self._on_config, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['config']))
+
+        self.register(self._on_delete, multibot_constants.KEYWORDS['delete'])
+        self.register(self._on_delete, (multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
+
         self.register(self._on_delete_votes, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['vote']))
         self.register(self._on_delete_votes, (multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['vote']))
 
         self.register(self._on_dice, constants.KEYWORDS['dice'])
 
         self.register(self._on_hello, multibot_constants.KEYWORDS['hello'])
+
+        self.register(self._on_mute, multibot_constants.KEYWORDS['mute'])
+        self.register(self._on_mute, (('haz', 'se'), multibot_constants.KEYWORDS['mute']))
+        self.register(self._on_mute, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['unmute']))
+        self.register(self._on_mute, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['sound']))
 
         self.register(self._on_new_message_default, default=True)
 
@@ -88,9 +100,17 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_stop_poll, multibot_constants.KEYWORDS['stop'])
         self.register(self._on_stop_poll, (multibot_constants.KEYWORDS['stop'], constants.KEYWORDS['poll']))
 
+        self.register(self._on_unban, multibot_constants.KEYWORDS['unban'])
+
+        self.register(self._on_unmute, multibot_constants.KEYWORDS['unmute'])
+        self.register(self._on_unmute, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['mute']))
+        self.register(self._on_unmute, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['sound']))
+
         self.register(self._on_unpunish, constants.KEYWORDS['unpunish'])
         self.register(self._on_unpunish, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['punish']))
         self.register(self._on_unpunish, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['permission']))
+
+        self.register(self._on_users, multibot_constants.KEYWORDS['user'])
 
         self.register(self._on_voting_ban, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['permission'], constants.KEYWORDS['vote']))
 
@@ -99,8 +119,10 @@ class FlanaBot(MultiBot, ABC):
         self.register(self._on_weather, constants.KEYWORDS['weather_chart'])
         self.register(self._on_weather, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['weather_chart']))
 
+        self.register_button(self._on_config_button_press, ButtonsGroup.CONFIG)
         self.register_button(self._on_poll_button_press, ButtonsGroup.POLL)
         self.register_button(self._on_roles_button_press, ButtonsGroup.ROLES)
+        self.register_button(self._on_users_button_press, ButtonsGroup.USERS)
         self.register_button(self._on_weather_button_press, ButtonsGroup.WEATHER)
 
     async def _changeable_roles(self, group_: int | str | Chat | Message) -> list[Role]:
@@ -340,6 +362,13 @@ class FlanaBot(MultiBot, ABC):
     # ---------------------------------------------- #
     #                    HANDLERS                    #
     # ---------------------------------------------- #
+    @bot_mentioned
+    @group
+    @admin(send_negative=True)
+    async def _on_ban(self, message: Message):
+        for user in await self._find_users_to_punish(message):
+            await self.ban(user, message, flanautils.words_to_time(message.text), message)
+
     async def _on_bye(self, message: Message):
         if message.chat.is_private or self.is_bot_mentioned(message):
             await self.send_bye(message)
@@ -378,6 +407,51 @@ class FlanaBot(MultiBot, ABC):
         else:
             await self.send(random.choice(('¿Que elija el qué?', '¿Y las opciones?', '?', '🤔')), message)
 
+    @group
+    @bot_mentioned
+    async def _on_config(self, message: Message):
+        if not message.chat.config:
+            return
+
+        buttons_texts = [(f"{'✔' if v else '❌'} {k}", v) for k, v in message.chat.config.items()]
+        await self.delete_message(message)
+        await self.send('<b>Estos son los ajustes del chat:</b>\n\n', flanautils.chunks(buttons_texts, 3), message, buttons_key=ButtonsGroup.CONFIG)
+
+    async def _on_config_button_press(self, message: Message):
+        await self.accept_button_event(message)
+
+        if message.buttons_info.presser_user.is_admin is False:
+            return
+
+        config = message.buttons_info.pressed_text.split()[1]
+        message.chat.config[config] = not message.chat.config[config]
+        message.buttons_info.pressed_button.text = f"{'✔' if message.chat.config[config] else '❌'} {config}"
+
+        await self.edit(message.buttons_info.buttons, message)
+
+    @inline(False)
+    async def _on_delete(self, message: Message):
+        if message.replied_message:
+            if message.replied_message.author.id == self.id:
+                await self.delete_message(message.replied_message)
+                if message.chat.is_group:
+                    await self.delete_message(message)
+            elif message.chat.is_group and self.is_bot_mentioned(message):
+                await self.send_negative(message)
+        elif message.chat.is_group and self.is_bot_mentioned(message) and (n_messages := flanautils.sum_numbers_in_text(message.text)):
+            if not message.author.is_admin:
+                await self.send_negative(message)
+                return
+
+            if n_messages <= 0:
+                await self._manage_exceptions(ValueError(), message)
+                return
+
+            try:
+                await self.clear(n_messages, message.chat)
+            except LimitError as e:
+                await self._manage_exceptions(e, message)
+
     @admin
     async def _on_delete_votes(self, message: Message):
         if message.chat.is_group and not self.is_bot_mentioned(message) or not (poll_message := await self._get_poll_message(message)):
@@ -403,6 +477,13 @@ class FlanaBot(MultiBot, ABC):
     async def _on_hello(self, message: Message):
         if message.chat.is_private or self.is_bot_mentioned(message):
             await self.send_hello(message)
+
+    @group
+    @bot_mentioned
+    @admin(send_negative=True)
+    async def _on_mute(self, message: Message):
+        for user in await self._find_users_to_punish(message):
+            await self.mute(user, message, flanautils.words_to_time(message.text), message)
 
     async def _on_new_message_default(self, message: Message):
         if message.is_inline:
@@ -534,7 +615,7 @@ class FlanaBot(MultiBot, ABC):
 
     @inline(False)
     async def _on_recover_message(self, message: Message):
-        if message.replied_message:
+        if message.replied_message and message.replied_message.author.id == self.id:
             message_deleted_bot_action = BotAction.find_one({'action': Action.MESSAGE_DELETED.value, 'chat': message.chat.object_id, 'affected_objects': message.replied_message.object_id})
         elif self.is_bot_mentioned(message):
             message_deleted_bot_action = BotAction.find_one({
@@ -549,8 +630,11 @@ class FlanaBot(MultiBot, ABC):
             await self.send_error('No hay nada que recuperar.', message)
             return
 
-        affected_object_ids = [affected_message_object_id for affected_message_object_id in message_deleted_bot_action.affected_objects]
-        deleted_messages: list[Message] = [affected_message for affected_object_id in affected_object_ids if (affected_message := self.Message.find_one({'platform': self.platform.value, '_id': affected_object_id})).author.id != self.id]
+        deleted_messages: list[Message] = []
+        for affected_object_id in message_deleted_bot_action.affected_objects:
+            if (affected_message := self.Message.find_one({'platform': self.platform.value, '_id': affected_object_id})).author.id != self.id:
+                deleted_messages.append(affected_message)
+
         for deleted_message in deleted_messages:
             await self.send(deleted_message.text, message)
 
@@ -639,6 +723,20 @@ class FlanaBot(MultiBot, ABC):
         if not message.replied_message:
             await self.send(text, reply_to=poll_message)
 
+    @bot_mentioned
+    @group
+    @admin(send_negative=True)
+    async def _on_unban(self, message: Message):
+        for user in await self._find_users_to_punish(message):
+            await self.unban(user, message, message)
+
+    @group
+    @bot_mentioned
+    @admin(send_negative=True)
+    async def _on_unmute(self, message: Message):
+        for user in await self._find_users_to_punish(message):
+            await self.unmute(user, message, message)
+
     @group
     @bot_mentioned
     @admin(send_negative=True)
@@ -648,6 +746,46 @@ class FlanaBot(MultiBot, ABC):
 
         for user in await self._find_users_to_punish(message):
             await self.unpunish(user, message, message)
+
+    @group
+    @bot_mentioned
+    async def _on_users(self, message: Message):
+        role_names = [role.name for role in await self.get_group_roles(message.chat.group_id)]
+        role_names.remove('@everyone')
+
+        user_names = [f'<@{user.id}>' for user in await self.find_users_by_roles([], message)]
+        joined_user_names = ', '.join(user_names)
+        await self.delete_message(message)
+        bot_message = await self.send(
+            f"<b>{len(user_names)} usuario{'' if len(user_names) == 1 else 's'}:</b>",
+            flanautils.chunks([f'❌ {role_name}' for role_name in role_names], 5),
+            message,
+            buttons_key=ButtonsGroup.USERS
+        )
+        await self.edit(f"<b>{len(user_names)} usuario{'' if len(user_names) == 1 else 's'}:</b>\n{joined_user_names}\n\n<b>Filtrar usuarios por roles:</b>", bot_message)
+
+    async def _on_users_button_press(self, message: Message):
+        await self.accept_button_event(message)
+
+        try:
+            button_role_name = message.buttons_info.pressed_text.split(maxsplit=1)[1]
+        except IndexError:
+            return
+
+        pressed_button = message.buttons_info.pressed_button
+        pressed_button.is_checked = not pressed_button.is_checked
+        pressed_button.text = f"{'✔' if pressed_button.is_checked else '❌'} {button_role_name}"
+
+        selected_role_names = [checked_button.text.split(maxsplit=1)[1] for checked_button in message.buttons_info.checked_buttons]
+        user_names = [f'<@{user.id}>' for user in await self.find_users_by_roles(selected_role_names, message)]
+        joined_user_names = ', '.join(user_names)
+        await self.edit(
+            f"<b>{len(user_names)} usuario{'' if len(user_names) == 1 else 's'}:</b>\n"
+            f"{joined_user_names}\n\n"
+            f"<b>Filtrar usuarios por roles:</b>",
+            message.buttons_info.buttons,
+            message
+        )
 
     @admin
     async def _on_voting_ban(self, message: Message):
@@ -871,6 +1009,12 @@ class FlanaBot(MultiBot, ABC):
                     punishment.level -= 1
                     punishment.last_update = now
                     punishment.save()
+
+    @classmethod
+    async def clear_old_database_items(cls):
+        await super().clear_old_database_items()
+        before_date = datetime.datetime.now(datetime.timezone.utc) - multibot_constants.MESSAGE_EXPIRATION_TIME
+        BotAction.collection.delete_many({'date': {'$lte': before_date}})
 
     async def is_punished(self, user: int | str | User, group_: int | str | Chat | Message) -> bool:
         pass
