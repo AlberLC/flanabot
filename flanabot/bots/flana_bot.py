@@ -147,7 +147,7 @@ class FlanaBot(MultiBot, ABC):
             'date': {'$gte': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=7)}
         })
 
-        if len(last_2s_messages) >= constants.FLOOD_2s_LIMIT or len(last_7s_messages) >= constants.FLOOD_7s_LIMIT:
+        if len(last_2s_messages) > constants.FLOOD_2s_LIMIT or len(last_7s_messages) > constants.FLOOD_7s_LIMIT:
             punishment = Punishment.find_one({
                 'platform': self.platform.value,
                 'user_id': message.author.id,

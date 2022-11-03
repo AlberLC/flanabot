@@ -4,8 +4,8 @@ AUDIT_LOG_AGE = datetime.timedelta(hours=1)
 AUDIT_LOG_LIMIT = 5
 AUTO_WEATHER_EVERY = datetime.timedelta(hours=6)
 CHECK_PUNISHMENTS_EVERY_SECONDS = datetime.timedelta(hours=1).total_seconds()
-FLOOD_2s_LIMIT = 4
-FLOOD_7s_LIMIT = 7
+FLOOD_2s_LIMIT = 2
+FLOOD_7s_LIMIT = 4
 HEAT_PERIOD_SECONDS = datetime.timedelta(minutes=15).total_seconds()
 INSULT_PROBABILITY = 0.00166666667
 MAX_PLACE_QUERY_LENGTH = 50
