@@ -164,6 +164,20 @@ class FlanaBot(MultiBot, ABC):
     def _distribute_buttons(self, texts: Sequence[str]) -> list[list[str]]:
         pass
 
+    async def _filter_mention_ids(self, text: str | Iterable[str], message: Message) -> list[str]:
+        if isinstance(text, str):
+            words = text.split()
+        else:
+            words = text
+
+        ids = []
+        for user in message.mentions:
+            ids.append(str(user.id))
+        for role in await self.get_group_roles(message):
+            ids.append(str(role.id))
+
+        return [word for word in words if flanautils.remove_symbols(word).strip() not in ids]
+
     @staticmethod
     def _get_options(text: str, discarded_words: Iterable = ()) -> list[str]:
         options = (option for option in text.split() if not flanautils.cartesian_product_string_matching(option.lower(), discarded_words, min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT))
@@ -367,7 +381,7 @@ class FlanaBot(MultiBot, ABC):
     @admin(send_negative=True)
     async def _on_ban(self, message: Message):
         for user in await self._find_users_to_punish(message):
-            await self.ban(user, message, flanautils.words_to_time(message.text), message)
+            await self.ban(user, message, flanautils.words_to_time(await self._filter_mention_ids(message.text, message)), message)
 
     async def _on_bye(self, message: Message):
         if message.chat.is_private or self.is_bot_mentioned(message):
@@ -483,7 +497,7 @@ class FlanaBot(MultiBot, ABC):
     @admin(send_negative=True)
     async def _on_mute(self, message: Message):
         for user in await self._find_users_to_punish(message):
-            await self.mute(user, message, flanautils.words_to_time(message.text), message)
+            await self.mute(user, message, flanautils.words_to_time(await self._filter_mention_ids(message.text, message)), message)
 
     async def _on_new_message_default(self, message: Message):
         if message.is_inline:
@@ -607,7 +621,7 @@ class FlanaBot(MultiBot, ABC):
             return
 
         for user in await self._find_users_to_punish(message):
-            await self.punish(user, message, flanautils.words_to_time(message.text), message)
+            await self.punish(user, message, flanautils.words_to_time(await self._filter_mention_ids(message.text, message)), message)
 
     async def _on_ready(self):
         await super()._on_ready()
@@ -827,22 +841,10 @@ class FlanaBot(MultiBot, ABC):
         else:
             show_progress_state = True
 
-        possible_mentioned_ids = []
-        for user in message.mentions:
-            possible_mentioned_ids.append(user.name.lower())
-            possible_mentioned_ids.append(user.name.split('#')[0].lower())
-            possible_mentioned_ids.append(str(user.id))
-
-        if roles := await self.get_group_roles(message):
-            for role in roles:
-                possible_mentioned_ids.append(str(role.id))
-
         original_text_words = flanautils.remove_accents(message.text.lower())
-        original_text_words = original_text_words.replace(',', ' ').replace(';', ' ').replace('-', ' -')
-        original_text_words = flanautils.translate(
-            original_text_words,
-            {symbol: None for symbol in set(flanautils.SYMBOLS) - {'-', '.'}}
-        ).split()
+        original_text_words = flanautils.remove_symbols(original_text_words, ignore=('-', '.'), replace_with=' ').split()
+        original_text_words = await self._filter_mention_ids(original_text_words, message)
+
         # noinspection PyTypeChecker
         place_words = (
                 OrderedSet(original_text_words)
@@ -850,7 +852,6 @@ class FlanaBot(MultiBot, ABC):
                 - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['weather_chart'], min_ratio=0.85).keys()
                 - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['date'], min_ratio=0.85).keys()
                 - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['thanks'], min_ratio=0.85).keys()
-                - possible_mentioned_ids
                 - flanautils.CommonWords.get()
         )
         if not place_words:
