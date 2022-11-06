@@ -164,15 +164,21 @@ class FlanaBot(MultiBot, ABC):
     def _distribute_buttons(self, texts: Sequence[str]) -> list[list[str]]:
         pass
 
-    async def _filter_mention_ids(self, text: str | Iterable[str], message: Message) -> list[str]:
+    async def _filter_mention_ids(self, text: str | Iterable[str], message: Message, delete_names=False) -> list[str]:
         if isinstance(text, str):
             words = text.split()
         else:
             words = text
 
         ids = []
-        for user in message.mentions:
-            ids.append(str(user.id))
+        if delete_names:
+            for user in message.mentions:
+                ids.append(user.name.lower())
+                ids.append(user.name.split('#')[0].lower())
+                ids.append(str(user.id))
+        else:
+            for user in message.mentions:
+                ids.append(str(user.id))
         for role in await self.get_group_roles(message):
             ids.append(str(role.id))
 
@@ -843,7 +849,7 @@ class FlanaBot(MultiBot, ABC):
 
         original_text_words = flanautils.remove_accents(message.text.lower())
         original_text_words = flanautils.remove_symbols(original_text_words, ignore=('-', '.'), replace_with=' ').split()
-        original_text_words = await self._filter_mention_ids(original_text_words, message)
+        original_text_words = await self._filter_mention_ids(original_text_words, message, delete_names=True)
 
         # noinspection PyTypeChecker
         place_words = (
