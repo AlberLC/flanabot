@@ -787,14 +787,10 @@ class FlanaBot(MultiBot, ABC):
     async def _on_users_button_press(self, message: Message):
         await self.accept_button_event(message)
 
-        try:
-            button_role_name = message.buttons_info.pressed_text.split(maxsplit=1)[1]
-        except IndexError:
-            return
-
         pressed_button = message.buttons_info.pressed_button
         pressed_button.is_checked = not pressed_button.is_checked
-        pressed_button.text = f"{'✔' if pressed_button.is_checked else '❌'} {button_role_name}"
+        pressed_button_role_name = message.buttons_info.pressed_text.split(maxsplit=1)[1]
+        pressed_button.text = f"{'✔' if pressed_button.is_checked else '❌'} {pressed_button_role_name}"
 
         selected_role_names = [checked_button.text.split(maxsplit=1)[1] for checked_button in message.buttons_info.checked_buttons]
         user_names = [f'<@{user.id}>' for user in await self.find_users_by_roles(selected_role_names, message)]
@@ -928,7 +924,7 @@ class FlanaBot(MultiBot, ABC):
             all_y_data=[],
             current_weather=current_weather,
             day_weathers=day_weathers,
-            timezone=(timezone := next(iter(day_weathers)).timezone),
+            timezone=(timezone := day_weathers[0].timezone),
             place=place,
             view_position=datetime.datetime.now(timezone)
         )
