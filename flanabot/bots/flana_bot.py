@@ -186,7 +186,7 @@ class FlanaBot(MultiBot, ABC):
 
     @staticmethod
     def _get_options(text: str, discarded_words: Iterable = ()) -> list[str]:
-        options = (option for option in text.split() if not flanautils.cartesian_product_string_matching(option.lower(), discarded_words, min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT))
+        options = (option for option in text.split() if not flanautils.cartesian_product_string_matching(option.lower(), discarded_words, min_score=multibot_constants.PARSE_CALLBACKS_MIN_SCORE_DEFAULT))
         text = ' '.join(options)
 
         conjunctions = [f' {conjunction} ' for conjunction in flanautils.CommonWords.get('conjunctions')]
@@ -205,7 +205,7 @@ class FlanaBot(MultiBot, ABC):
         elif (
                 (message.chat.is_private or self.is_bot_mentioned(message))
                 and
-                flanautils.cartesian_product_string_matching(message.text, constants.KEYWORDS['poll'], min_ratio=multibot_constants.PARSE_CALLBACKS_MIN_RATIO_DEFAULT)
+                flanautils.cartesian_product_string_matching(message.text, constants.KEYWORDS['poll'], min_score=multibot_constants.PARSE_CALLBACKS_MIN_SCORE_DEFAULT)
                 and
                 (poll_message := self.Message.find_one({'contents.poll.is_active': True}, sort_keys=(('date', pymongo.DESCENDING),)))
         ):
@@ -854,10 +854,10 @@ class FlanaBot(MultiBot, ABC):
         # noinspection PyTypeChecker
         place_words = (
                 OrderedSet(original_text_words)
-                - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['show'], min_ratio=0.85).keys()
-                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['weather_chart'], min_ratio=0.85).keys()
-                - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['date'], min_ratio=0.85).keys()
-                - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['thanks'], min_ratio=0.85).keys()
+                - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['show'], min_score=0.85).keys()
+                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['weather_chart'], min_score=0.85).keys()
+                - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['date'], min_score=0.85).keys()
+                - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['thanks'], min_score=0.85).keys()
                 - flanautils.CommonWords.get()
         )
         if not place_words:
