@@ -99,7 +99,6 @@ class FlanaBot(PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBot, ABC):
     # ---------------------------------------------- #
     #                    HANDLERS                    #
     # ---------------------------------------------- #
-
     async def _on_bye(self, message: Message):
         if message.chat.is_private or self.is_bot_mentioned(message):
             await self.send_bye(message)

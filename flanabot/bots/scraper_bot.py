@@ -75,37 +75,6 @@ class ScraperBot(MultiBot, ABC):
         new_line = ' ' if len(medias_sended_info) == 1 else '\n'
         return f'{new_line}{medias_sended_info_joined}:'
 
-    # ---------------------------------------------- #
-    #                    HANDLERS                    #
-    # ---------------------------------------------- #
-    async def _on_no_delete_original(self, message: Message):
-        if not await self._scrape_and_send(message):
-            await self._on_recover_message(message)
-
-    async def _on_recover_message(self, message: Message):
-        pass
-
-    async def _on_scraping(self, message: Message, audio_only=False) -> OrderedSet[Media]:
-        sended_media_messages = OrderedSet()
-
-        if message.replied_message:
-            sended_media_messages += await self._scrape_and_send(message.replied_message, audio_only)
-
-        return await self._scrape_send_and_delete(message, audio_only, sended_media_messages)
-
-    async def _on_scraping_audio(self, message: Message) -> OrderedSet[Media]:
-        return await self._on_scraping(message, audio_only=True)
-
-    @reply
-    async def _on_song_info(self, message: Message):
-        song_infos = message.replied_message.song_infos if message.replied_message else []
-
-        if song_infos:
-            for song_info in song_infos:
-                await self.send_song_info(song_info, message)
-        elif message.chat.is_private or self.is_bot_mentioned(message):
-            await self._manage_exceptions(SendError('No hay información musical en ese mensaje.'), message)
-
     async def _scrape_and_send(self, message: Message, audio_only=False) -> OrderedSet[Media]:
         kwargs = {}
         if self._parse_callbacks(message.text, [RegisteredCallback(..., [['sin'], ['timeout', 'limite']])]):
@@ -175,6 +144,37 @@ class ScraperBot(MultiBot, ABC):
         await self._manage_exceptions(exceptions, message)
 
         return OrderedSet(*medias)
+
+    # ---------------------------------------------- #
+    #                    HANDLERS                    #
+    # ---------------------------------------------- #
+    async def _on_no_delete_original(self, message: Message):
+        if not await self._scrape_and_send(message):
+            await self._on_recover_message(message)
+
+    async def _on_recover_message(self, message: Message):
+        pass
+
+    async def _on_scraping(self, message: Message, audio_only=False) -> OrderedSet[Media]:
+        sended_media_messages = OrderedSet()
+
+        if message.replied_message:
+            sended_media_messages += await self._scrape_and_send(message.replied_message, audio_only)
+
+        return await self._scrape_send_and_delete(message, audio_only, sended_media_messages)
+
+    async def _on_scraping_audio(self, message: Message) -> OrderedSet[Media]:
+        return await self._on_scraping(message, audio_only=True)
+
+    @reply
+    async def _on_song_info(self, message: Message):
+        song_infos = message.replied_message.song_infos if message.replied_message else []
+
+        if song_infos:
+            for song_info in song_infos:
+                await self.send_song_info(song_info, message)
+        elif message.chat.is_private or self.is_bot_mentioned(message):
+            await self._manage_exceptions(SendError('No hay información musical en ese mensaje.'), message)
 
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
