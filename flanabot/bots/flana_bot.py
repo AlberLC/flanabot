@@ -225,7 +225,7 @@ class FlanaBot(PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBot, ABC):
         await self.delete_message(message)
         await self.send(
             f'<b>Roles de {message.author.name}:</b>',
-            self._distribute_buttons(options),
+            self._distribute_buttons(options, vertically=True),
             message,
             buttons_key=ButtonsGroup.ROLES,
             contents={'user_id': message.author.id}
@@ -247,7 +247,7 @@ class FlanaBot(PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBot, ABC):
             message.buttons_info.presser_user.roles.append(role)
             user_role_names.append(role.name)
 
-        await self.edit(self._distribute_buttons(await self._role_state_options(message, user_role_names)), message)
+        await self.edit(self._distribute_buttons(await self._role_state_options(message, user_role_names), vertically=True), message)
 
         message.buttons_info.presser_user.save()
 

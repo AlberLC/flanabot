@@ -6,7 +6,6 @@ import math
 import os
 import random
 from collections import defaultdict
-from typing import Sequence
 
 import discord
 import flanautils
@@ -68,15 +67,6 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     async def _changeable_roles(self, group_: int | str | Chat | Message) -> list[Role]:
         group_id = self.get_group_id(group_)
         return [role for role in await self.get_group_roles(group_) if role.id in CHANGEABLE_ROLES[group_id]]
-
-    # noinspection PyTypeChecker
-    def _distribute_buttons(self, texts: Sequence[str]) -> list[list[str]]:
-        texts = [f'{text[:multibot_constants.DISCORD_BUTTON_MAX_CHARACTERS - 3]}...' if len(text) > multibot_constants.DISCORD_BUTTON_MAX_CHARACTERS else text for text in texts]
-
-        if len(texts) <= multibot_constants.DISCORD_BUTTONS_MAX:
-            return flanautils.chunks(texts, 1)
-        else:
-            return flanautils.chunks(texts, multibot_constants.DISCORD_BUTTONS_MAX)
 
     async def _heat_channel(self, channel: discord.VoiceChannel):
         async def set_fire_to(channel_key: str, depends_on: str, firewall=0):

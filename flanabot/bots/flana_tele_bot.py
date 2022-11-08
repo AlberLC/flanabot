@@ -4,9 +4,8 @@ __all__ = ['whitelisted_event', 'FlanaTeleBot']
 
 import functools
 import os
-from typing import Callable, Sequence
+from typing import Callable
 
-import flanautils
 import telethon.tl.functions
 from flanautils import Media, OrderedSet
 from multibot import TelegramBot, find_message, user_client
@@ -48,10 +47,6 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
     # ----------------------------------------------------------- #
     # -------------------- PROTECTED METHODS -------------------- #
     # ----------------------------------------------------------- #
-    def _distribute_buttons(self, texts: Sequence[str]) -> list[list[str]]:
-        # noinspection PyTypeChecker
-        return flanautils.chunks(texts, 1)
-
     @user_client
     async def _get_contacts_ids(self) -> list[int]:
         async with self.user_client:
