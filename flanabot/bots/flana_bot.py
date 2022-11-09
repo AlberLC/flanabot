@@ -12,6 +12,7 @@ from flanautils import return_if_first_empty
 from multibot import BadRoleError, LimitError, MultiBot, Role, bot_mentioned, constants as multibot_constants, group, inline
 
 from flanabot import constants
+from flanabot.bots.connect_4_bot import Connect4Bot
 from flanabot.bots.penalty_bot import PenaltyBot
 from flanabot.bots.poll_bot import PollBot
 from flanabot.bots.scraper_bot import ScraperBot
@@ -22,7 +23,7 @@ from flanabot.models import Action, BotAction, ButtonsGroup, Chat, Message
 # ----------------------------------------------------------------------------------------------------- #
 # --------------------------------------------- FLANA_BOT --------------------------------------------- #
 # ----------------------------------------------------------------------------------------------------- #
-class FlanaBot(PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBot, ABC):
+class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBot, ABC):
     Chat = Chat
     Message = Message
 

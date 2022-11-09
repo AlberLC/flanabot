@@ -13,11 +13,10 @@ import pytz
 from flanautils import Media, NotFoundError, OrderedSet
 from multibot import BadRoleError, DiscordBot, Role, User, bot_mentioned, constants as multibot_constants, group
 
-import constants
+from flanabot import constants
 from flanabot.bots.flana_bot import FlanaBot
 from flanabot.models import Chat, Message, Punishment
 
-# noinspection PyTypeChecker
 CHANGEABLE_ROLES = defaultdict(list, {
     360868977754505217: [881238165476741161, 991454395663401072, 1033098591725699222],
     862823584670285835: [976660580939202610, 984269640752590868]
