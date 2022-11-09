@@ -300,7 +300,7 @@ class Connect4Bot(MultiBot, ABC):
         else:
             player_2_id = user_2.id
             player_2_name = user_2.name.split('#')[0]
-            text = f'{self.format_board(board)}\nTurno de {player_2_name}.'
+            text = f'{self.format_board(board)}\nTurno de {player_1_name}.'
 
         await self.send(
             text,
