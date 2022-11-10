@@ -28,6 +28,9 @@ class PollBot(MultiBot, ABC):
         self.register(self._on_choose, constants.KEYWORDS['random'], priority=2)
         self.register(self._on_choose, (constants.KEYWORDS['choose'], constants.KEYWORDS['random']), priority=2)
 
+        self.register(self._on_delete_all_votes, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['all'], constants.KEYWORDS['vote']))
+        self.register(self._on_delete_all_votes, (multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['all'], constants.KEYWORDS['vote']))
+
         self.register(self._on_delete_votes, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['vote']))
         self.register(self._on_delete_votes, (multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['vote']))
 
@@ -131,7 +134,19 @@ class PollBot(MultiBot, ABC):
         else:
             await self.send(random.choice(('¿Que elija el qué?', '¿Y las opciones?', '?', '🤔')), message)
 
-    @admin
+    @admin(send_negative=True)
+    async def _on_delete_all_votes(self, message: Message):
+        if message.chat.is_group and not self.is_bot_mentioned(message) or not (poll_message := await self._get_poll_message(message)):
+            return
+
+        await self.delete_message(message)
+
+        for option_name, option_votes in poll_message.contents['poll']['votes'].items():
+            poll_message.contents['poll']['votes'][option_name].clear()
+
+        await self._update_poll_buttons(poll_message)
+
+    @admin(send_negative=True)
     async def _on_delete_votes(self, message: Message):
         if message.chat.is_group and not self.is_bot_mentioned(message) or not (poll_message := await self._get_poll_message(message)):
             return
@@ -246,7 +261,7 @@ class PollBot(MultiBot, ABC):
         if not message.replied_message:
             await self.send(text, reply_to=poll_message)
 
-    @admin
+    @admin(send_negative=True)
     async def _on_voting_ban(self, message: Message):
         if message.chat.is_group and not self.is_bot_mentioned(message) or not (poll_message := await self._get_poll_message(message)):
             return
@@ -258,7 +273,7 @@ class PollBot(MultiBot, ABC):
                 poll_message.contents['poll']['banned_users_tries'][str(user.id)] = 0
         poll_message.save()
 
-    @admin
+    @admin(send_negative=True)
     async def _on_voting_unban(self, message: Message):
         if message.chat.is_group and not self.is_bot_mentioned(message) or not (poll_message := await self._get_poll_message(message)):
             return
