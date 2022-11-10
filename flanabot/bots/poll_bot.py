@@ -134,7 +134,6 @@ class PollBot(MultiBot, ABC):
         else:
             await self.send(random.choice(('¿Que elija el qué?', '¿Y las opciones?', '?', '🤔')), message)
 
-    @admin(send_negative=True)
     async def _on_delete_all_votes(self, message: Message):
         await self._on_delete_votes(message, all_=True)
 
