@@ -136,26 +136,22 @@ class PollBot(MultiBot, ABC):
 
     @admin(send_negative=True)
     async def _on_delete_all_votes(self, message: Message):
-        if message.chat.is_group and not self.is_bot_mentioned(message) or not (poll_message := await self._get_poll_message(message)):
-            return
-
-        await self.delete_message(message)
-
-        for option_name, option_votes in poll_message.contents['poll']['votes'].items():
-            poll_message.contents['poll']['votes'][option_name].clear()
-
-        await self._update_poll_buttons(poll_message)
+        await self._on_delete_votes(message, all_=True)
 
     @admin(send_negative=True)
-    async def _on_delete_votes(self, message: Message):
+    async def _on_delete_votes(self, message: Message, all_=False):
         if message.chat.is_group and not self.is_bot_mentioned(message) or not (poll_message := await self._get_poll_message(message)):
             return
 
         await self.delete_message(message)
 
-        for user in await self._find_users_to_punish(message):
+        if all_:
             for option_name, option_votes in poll_message.contents['poll']['votes'].items():
-                poll_message.contents['poll']['votes'][option_name] = [option_vote for option_vote in option_votes if option_vote[0] != user.id]
+                poll_message.contents['poll']['votes'][option_name].clear()
+        else:
+            for user in await self._find_users_to_punish(message):
+                for option_name, option_votes in poll_message.contents['poll']['votes'].items():
+                    poll_message.contents['poll']['votes'][option_name] = [option_vote for option_vote in option_votes if option_vote[0] != user.id]
 
         await self._update_poll_buttons(poll_message)
 
