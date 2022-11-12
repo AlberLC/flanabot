@@ -67,12 +67,10 @@ class Connect4Bot(MultiBot, ABC):
 
         available_positions = []
         for j in range(n_columns):
-            i = n_rows - 1
-            while i >= 0:
+            for i in range(n_rows - 1, -1, -1):
                 if board[i][j] == space_symbol:
                     available_positions.append((i, j))
                     break
-                i -= 1
 
         return available_positions
 
