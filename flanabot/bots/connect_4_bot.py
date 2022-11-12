@@ -65,16 +65,16 @@ class Connect4Bot(MultiBot, ABC):
         n_columns = message.contents['connect_4']['n_columns']
         space_symbol = message.contents['connect_4']['space_symbol']
 
-        result = []
+        available_positions = []
         for j in range(n_columns):
             i = n_rows - 1
             while i >= 0:
                 if board[i][j] == space_symbol:
-                    result.append((i, j))
+                    available_positions.append((i, j))
                     break
                 i -= 1
 
-        return result
+        return available_positions
 
     async def _check_game_finished(self, i, j, message: Message) -> bool:
         board = message.contents['connect_4']['board']
