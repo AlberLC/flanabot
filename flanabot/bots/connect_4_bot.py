@@ -56,7 +56,11 @@ class Connect4Bot(MultiBot, ABC):
                 return self.insert_piece(j, player_2_symbol, message)
 
         allowed_positions = {j for _, j in available_positions_} - banned_columns
-        return self.insert_piece(random.choice(list(allowed_positions)), player_2_symbol, message)
+        if allowed_positions:
+            j = random.choice(list(allowed_positions))
+        else:
+            j = random.choice(list(available_positions_))
+        return self.insert_piece(j, player_2_symbol, message)
 
     @staticmethod
     def _available_positions(message: Message) -> list[tuple[int, int]]:
