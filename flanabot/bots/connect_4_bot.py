@@ -74,7 +74,7 @@ class Connect4Bot(MultiBot, ABC):
 
         return available_positions
 
-    async def _check_game_finished(self, i, j, message: Message) -> bool:
+    async def _check_game_finished(self, i: int, j: int, message: Message) -> bool:
         board = message.contents['connect_4']['board']
         turns = message.contents['connect_4']['turn']
         max_turns = message.contents['connect_4']['max_turns']
@@ -101,7 +101,7 @@ class Connect4Bot(MultiBot, ABC):
             return True
 
     @staticmethod
-    def _check_winner_left(i, j, board, message: Message) -> str | None:
+    def _check_winner_left(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
         n_columns = message.contents['connect_4']['n_columns']
         space_symbol = message.contents['connect_4']['space_symbol']
 
@@ -117,7 +117,7 @@ class Connect4Bot(MultiBot, ABC):
             return board[i][j - 1]
 
     @staticmethod
-    def _check_winner_right(i, j, board, message: Message) -> str | None:
+    def _check_winner_right(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
         n_columns = message.contents['connect_4']['n_columns']
         space_symbol = message.contents['connect_4']['space_symbol']
 
@@ -133,7 +133,7 @@ class Connect4Bot(MultiBot, ABC):
             return board[i][j + 1]
 
     @staticmethod
-    def _check_winner_up(i, j, board, message: Message) -> str | None:
+    def _check_winner_up(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
         n_rows = message.contents['connect_4']['n_rows']
         space_symbol = message.contents['connect_4']['space_symbol']
 
@@ -149,7 +149,7 @@ class Connect4Bot(MultiBot, ABC):
             return board[i - 1][j]
 
     @staticmethod
-    def _check_winner_down(i, j, board, message: Message) -> str | None:
+    def _check_winner_down(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
         n_rows = message.contents['connect_4']['n_rows']
         space_symbol = message.contents['connect_4']['space_symbol']
 
@@ -165,7 +165,7 @@ class Connect4Bot(MultiBot, ABC):
             return board[i + 1][j]
 
     @staticmethod
-    def _check_winner_up_left(i, j, board, message: Message) -> str | None:
+    def _check_winner_up_left(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
         n_rows = message.contents['connect_4']['n_rows']
         n_columns = message.contents['connect_4']['n_columns']
         space_symbol = message.contents['connect_4']['space_symbol']
@@ -183,7 +183,7 @@ class Connect4Bot(MultiBot, ABC):
             return board[i - 1][j - 1]
 
     @staticmethod
-    def _check_winner_up_right(i, j, board, message: Message) -> str | None:
+    def _check_winner_up_right(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
         n_rows = message.contents['connect_4']['n_rows']
         n_columns = message.contents['connect_4']['n_columns']
         space_symbol = message.contents['connect_4']['space_symbol']
@@ -200,7 +200,7 @@ class Connect4Bot(MultiBot, ABC):
             return board[i - 1][j + 1]
 
     @staticmethod
-    def _check_winner_down_right(i, j, board, message: Message) -> str | None:
+    def _check_winner_down_right(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
         n_rows = message.contents['connect_4']['n_rows']
         n_columns = message.contents['connect_4']['n_columns']
         space_symbol = message.contents['connect_4']['space_symbol']
@@ -217,7 +217,7 @@ class Connect4Bot(MultiBot, ABC):
             return board[i + 1][j + 1]
 
     @staticmethod
-    def _check_winner_down_left(i, j, board, message: Message) -> str | None:
+    def _check_winner_down_left(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
         n_rows = message.contents['connect_4']['n_rows']
         n_columns = message.contents['connect_4']['n_columns']
         space_symbol = message.contents['connect_4']['space_symbol']
@@ -233,7 +233,7 @@ class Connect4Bot(MultiBot, ABC):
         ):
             return board[i + 1][j - 1]
 
-    def _check_winners(self, i, j, board, message: Message) -> set[str]:
+    def _check_winners(self, i: int, j: int, board: list[list[str]], message: Message) -> set[str]:
         winners = set()
 
         if winner := self._check_winner_left(i, j, board, message):
@@ -367,7 +367,7 @@ class Connect4Bot(MultiBot, ABC):
     # -------------------- PUBLIC METHODS -------------------- #
     # -------------------------------------------------------- #
     @staticmethod
-    def format_board(board) -> str:
+    def format_board(board: list[list[str]]) -> str:
         if not board or not board[0]:
             return ''
 
@@ -384,7 +384,7 @@ class Connect4Bot(MultiBot, ABC):
         )
 
     @staticmethod
-    def insert_piece(j, symbol: str, message: Message) -> tuple[int, int]:
+    def insert_piece(j: int, symbol: str, message: Message) -> tuple[int, int]:
         board = message.contents['connect_4']['board']
         n_rows = message.contents['connect_4']['n_rows']
         space_symbol = message.contents['connect_4']['space_symbol']
