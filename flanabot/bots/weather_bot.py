@@ -50,7 +50,7 @@ class WeatherBot(MultiBot, ABC):
 
         original_text_words = flanautils.remove_accents(message.text.lower())
         original_text_words = flanautils.remove_symbols(original_text_words, ignore=('-', '.'), replace_with=' ').split()
-        original_text_words = await self._filter_mention_ids(original_text_words, message, delete_names=True)
+        original_text_words = await self.filter_mention_ids(original_text_words, message, delete_names=True)
 
         # noinspection PyTypeChecker
         place_words = (

@@ -94,14 +94,14 @@ class PenaltyBot(MultiBot, ABC):
     @admin(send_negative=True)
     async def _on_ban(self, message: Message):
         for user in await self._find_users_to_punish(message):
-            await self.ban(user, message, flanautils.words_to_time(await self._filter_mention_ids(message.text, message)), message)
+            await self.ban(user, message, flanautils.words_to_time(await self.filter_mention_ids(message.text, message)), message)
 
     @group
     @bot_mentioned
     @admin(send_negative=True)
     async def _on_mute(self, message: Message):
         for user in await self._find_users_to_punish(message):
-            await self.mute(user, message, flanautils.words_to_time(await self._filter_mention_ids(message.text, message)), message)
+            await self.mute(user, message, flanautils.words_to_time(await self.filter_mention_ids(message.text, message)), message)
 
     @ignore_self_message
     async def _on_new_message_raw(self, message: Message):
@@ -118,7 +118,7 @@ class PenaltyBot(MultiBot, ABC):
             return
 
         for user in await self._find_users_to_punish(message):
-            await self.punish(user, message, flanautils.words_to_time(await self._filter_mention_ids(message.text, message)), message)
+            await self.punish(user, message, flanautils.words_to_time(await self.filter_mention_ids(message.text, message)), message)
 
     async def _on_ready(self):
         await super()._on_ready()

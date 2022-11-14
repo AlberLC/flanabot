@@ -95,7 +95,7 @@ class PollBot(MultiBot, ABC):
         else:
             buttons = list(message.contents['poll']['votes'].keys())
 
-        await self.edit(self._distribute_buttons(buttons, vertically=True), message)
+        await self.edit(self.distribute_buttons(buttons, vertically=True), message)
 
     # ---------------------------------------------- #
     #                    HANDLERS                    #
@@ -173,7 +173,7 @@ class PollBot(MultiBot, ABC):
         if final_options := [f'{option[0].upper()}{option[1:]}' for option in self._get_options(message.text, discarded_words)]:
             await self.send(
                 f"Encuesta {'multirespuesta ' if is_multiple_answer else ''}en curso...",
-                self._distribute_buttons(final_options, vertically=True),
+                self.distribute_buttons(final_options, vertically=True),
                 message,
                 buttons_key=ButtonsGroup.POLL,
                 contents={'poll': {
