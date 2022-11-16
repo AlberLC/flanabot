@@ -232,7 +232,7 @@ def write_player_turn(name: str, color: tuple[float, float, float], context: cai
     draw_text(text, point, GRAY, FONT_SIZE, True, context)
     point = (point[0] + context.text_extents(text).width + 9 * SIZE_MULTIPLIER, point[1])
     draw_text(name, point, color, FONT_SIZE, True, context)
-    point = (point[0] + context.text_extents(name).width, point[1])
+    point = (point[0] + context.text_extents(name).width + 2 * SIZE_MULTIPLIER, point[1])
     draw_text('.', point, GRAY, FONT_SIZE, True, context)
 
 
@@ -246,5 +246,5 @@ def write_winner(name: str, color: tuple[float, float, float], context: cairo.Co
     draw_text(text, TEXT_POSITION, GRAY, FONT_SIZE, True, context)
     point = (point[0] + context.text_extents(text).width + 6 * SIZE_MULTIPLIER, point[1])
     draw_text(name, point, color, FONT_SIZE, True, context)
-    point = (point[0] + context.text_extents(name).width, point[1])
+    point = (point[0] + context.text_extents(name).width + 2 * SIZE_MULTIPLIER, point[1])
     draw_text('!!!', point, GRAY, FONT_SIZE, True, context)
