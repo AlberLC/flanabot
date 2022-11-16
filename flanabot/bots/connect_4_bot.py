@@ -62,7 +62,7 @@ class Connect4Bot(MultiBot, ABC):
         if allowed_positions:
             j = random.choice(list(allowed_positions))
         else:
-            j = random.choice(list(available_positions_))
+            _, j = random.choice(available_positions_)
         return self.insert_piece(j, player_2.number, message)
 
     @staticmethod
