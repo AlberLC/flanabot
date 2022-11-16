@@ -1,13 +1,16 @@
 __all__ = ['Connect4Bot']
 
+import asyncio
 import copy
 import random
 from abc import ABC
 
+from flanautils import Media, MediaType, Source
 from multibot import MultiBot
 
+import connect_4_frontend
 from flanabot import constants
-from flanabot.models import ButtonsGroup, Message
+from flanabot.models import ButtonsGroup, Message, Player
 
 
 # ----------------------------------------------------------------------------------------------------- #
@@ -26,20 +29,20 @@ class Connect4Bot(MultiBot, ABC):
 
     def _ai_turn(self, message: Message) -> tuple[int, int]:
         board = message.contents['connect_4']['board']
-        player_2_symbol = message.contents['connect_4']['player_2_symbol']
-        player_1_symbol = message.contents['connect_4']['player_1_symbol']
+        player_1 = Player.from_dict(message.contents['connect_4']['player_1'])
+        player_2 = Player.from_dict(message.contents['connect_4']['player_2'])
 
         available_positions_ = self._available_positions(message)
 
         # check if ai can win
         for i, j in available_positions_:
-            if player_2_symbol in self._check_winners(i, j, board, message):
-                return self.insert_piece(j, player_2_symbol, message)
+            if player_2.number in self._check_winners(i, j, board):
+                return self.insert_piece(j, player_2.number, message)
 
         # check if human can win
         for i, j in available_positions_:
-            if player_1_symbol in self._check_winners(i, j, board, message):
-                return self.insert_piece(j, player_2_symbol, message)
+            if player_1.number in self._check_winners(i, j, board):
+                return self.insert_piece(j, player_2.number, message)
 
         # future possibility (above the play)
         banned_columns = set()
@@ -48,31 +51,28 @@ class Connect4Bot(MultiBot, ABC):
                 continue
 
             board_copy = copy.deepcopy(board)
-            board_copy[i][j] = player_2_symbol
-            winners = self._check_winners(i - 1, j, board_copy, message)
-            if player_1_symbol in winners:
+            board_copy[i][j] = player_2.number
+            winners = self._check_winners(i - 1, j, board_copy)
+            if player_1.number in winners:
                 banned_columns.add(j)
-            elif player_2_symbol in winners:
-                return self.insert_piece(j, player_2_symbol, message)
+            elif player_2.number in winners:
+                return self.insert_piece(j, player_2.number, message)
 
         allowed_positions = {j for _, j in available_positions_} - banned_columns
         if allowed_positions:
             j = random.choice(list(allowed_positions))
         else:
             j = random.choice(list(available_positions_))
-        return self.insert_piece(j, player_2_symbol, message)
+        return self.insert_piece(j, player_2.number, message)
 
     @staticmethod
     def _available_positions(message: Message) -> list[tuple[int, int]]:
         board = message.contents['connect_4']['board']
-        n_rows = message.contents['connect_4']['n_rows']
-        n_columns = message.contents['connect_4']['n_columns']
-        space_symbol = message.contents['connect_4']['space_symbol']
 
         available_positions = []
-        for j in range(n_columns):
-            for i in range(n_rows - 1, -1, -1):
-                if board[i][j] == space_symbol:
+        for j in range(constants.CONNECT_4_N_COLUMNS):
+            for i in range(constants.CONNECT_4_N_ROWS - 1, -1, -1):
+                if board[i][j] is None:
                     available_positions.append((i, j))
                     break
 
@@ -80,200 +80,180 @@ class Connect4Bot(MultiBot, ABC):
 
     async def _check_game_finished(self, i: int, j: int, message: Message) -> bool:
         board = message.contents['connect_4']['board']
-        turns = message.contents['connect_4']['turn']
-        max_turns = message.contents['connect_4']['max_turns']
-        player_1_symbol = message.contents['connect_4']['player_1_symbol']
-        player_2_id = message.contents['connect_4']['player_2_id']
-        player_1_name = message.contents['connect_4']['player_1_name']
-        player_2_name = message.contents['connect_4']['player_2_name']
+        turn = message.contents['connect_4']['turn']
+        player_1 = Player.from_dict(message.contents['connect_4']['player_1'])
+        player_2 = Player.from_dict(message.contents['connect_4']['player_2'])
 
-        if board[i][j] in self._check_winners(i, j, board, message):
-            if board[i][j] == player_1_symbol:
-                name = player_1_name
-            elif player_2_id == self.id:
-                name = self.name
-            else:
-                name = player_2_name
+        if board[i][j] in self._check_winners(i, j, board):
+            player = player_1 if board[i][j] == player_1.number else player_2
 
             message.contents['connect_4']['is_active'] = False
-            await self.edit(f"{self.format_board(board)}\nHa ganado {name}!!", message)
+            await self.edit(
+                Media(
+                    connect_4_frontend.make_image(board, player, highlight=(i, j), win_position=(i, j)),
+                    MediaType.IMAGE,
+                    'png',
+                    Source.LOCAL
+                ),
+                message
+            )
             return True
 
-        if turns >= max_turns:
+        if turn >= constants.CONNECT_4_N_ROWS * constants.CONNECT_4_N_COLUMNS:
             message.contents['connect_4']['is_active'] = False
-            await self.edit(f'{self.format_board(board)}\nEmpate.', message)
+            await self.edit(
+                Media(
+                    connect_4_frontend.make_image(board, highlight=(i, j), tie=True),
+                    MediaType.IMAGE,
+                    'png',
+                    Source.LOCAL
+                ),
+                message
+            )
             return True
 
     @staticmethod
-    def _check_winner_left(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
-        n_columns = message.contents['connect_4']['n_columns']
-        space_symbol = message.contents['connect_4']['space_symbol']
-
+    def _check_winner_left(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
                 (
                         2 < j and board[i][j - 3] == board[i][j - 2] == board[i][j - 1]
                         or
-                        1 < j < n_columns - 1 and board[i][j - 2] == board[i][j - 1] == board[i][j + 1]
+                        1 < j < constants.CONNECT_4_N_COLUMNS - 1 and board[i][j - 2] == board[i][j - 1] == board[i][j + 1]
                 )
                 and
-                board[i][j - 1] != space_symbol
+                board[i][j - 1] is not None
         ):
             return board[i][j - 1]
 
     @staticmethod
-    def _check_winner_right(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
-        n_columns = message.contents['connect_4']['n_columns']
-        space_symbol = message.contents['connect_4']['space_symbol']
-
+    def _check_winner_right(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
                 (
-                        j < n_columns - 3 and board[i][j + 1] == board[i][j + 2] == board[i][j + 3]
+                        j < constants.CONNECT_4_N_COLUMNS - 3 and board[i][j + 1] == board[i][j + 2] == board[i][j + 3]
                         or
-                        0 < j < n_columns - 2 and board[i][j - 1] == board[i][j + 1] == board[i][j + 2]
+                        0 < j < constants.CONNECT_4_N_COLUMNS - 2 and board[i][j - 1] == board[i][j + 1] == board[i][j + 2]
                 )
                 and
-                board[i][j + 1] != space_symbol
+                board[i][j + 1] is not None
         ):
             return board[i][j + 1]
 
     @staticmethod
-    def _check_winner_up(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
-        n_rows = message.contents['connect_4']['n_rows']
-        space_symbol = message.contents['connect_4']['space_symbol']
-
+    def _check_winner_up(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
                 (
                         2 < i and board[i - 3][j] == board[i - 2][j] == board[i - 1][j]
                         or
-                        1 < i < n_rows - 1 and board[i - 2][j] == board[i - 1][j] == board[i + 1][j]
+                        1 < i < constants.CONNECT_4_N_ROWS - 1 and board[i - 2][j] == board[i - 1][j] == board[i + 1][j]
                 )
                 and
-                board[i - 1][j] != space_symbol
+                board[i - 1][j] is not None
         ):
             return board[i - 1][j]
 
     @staticmethod
-    def _check_winner_down(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
-        n_rows = message.contents['connect_4']['n_rows']
-        space_symbol = message.contents['connect_4']['space_symbol']
-
+    def _check_winner_down(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
                 (
-                        i < n_rows - 3 and board[i + 1][j] == board[i + 2][j] == board[i + 3][j]
+                        i < constants.CONNECT_4_N_ROWS - 3 and board[i + 1][j] == board[i + 2][j] == board[i + 3][j]
                         or
-                        0 < i < n_rows - 2 and board[i - 1][j] == board[i + 1][j] == board[i + 2][j]
+                        0 < i < constants.CONNECT_4_N_ROWS - 2 and board[i - 1][j] == board[i + 1][j] == board[i + 2][j]
                 )
                 and
-                board[i + 1][j] != space_symbol
+                board[i + 1][j] is not None
         ):
             return board[i + 1][j]
 
     @staticmethod
-    def _check_winner_up_left(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
-        n_rows = message.contents['connect_4']['n_rows']
-        n_columns = message.contents['connect_4']['n_columns']
-        space_symbol = message.contents['connect_4']['space_symbol']
-
+    def _check_winner_up_left(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
                 (
                         2 < i and 2 < j and board[i - 3][j - 3] == board[i - 2][j - 2] == board[i - 1][j - 1]
                         or
-                        1 < i < n_rows - 1 and 1 < j < n_columns - 1 and board[i - 2][j - 2] == board[i - 1][j - 1] == board[i + 1][j + 1]
+                        1 < i < constants.CONNECT_4_N_ROWS - 1 and 1 < j < constants.CONNECT_4_N_COLUMNS - 1 and board[i - 2][j - 2] == board[i - 1][j - 1] == board[i + 1][j + 1]
 
                 )
                 and
-                board[i - 1][j - 1] != space_symbol
+                board[i - 1][j - 1] is not None
         ):
             return board[i - 1][j - 1]
 
     @staticmethod
-    def _check_winner_up_right(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
-        n_rows = message.contents['connect_4']['n_rows']
-        n_columns = message.contents['connect_4']['n_columns']
-        space_symbol = message.contents['connect_4']['space_symbol']
-
+    def _check_winner_up_right(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
                 (
-                        2 < i and j < n_columns - 3 and board[i - 3][j + 3] == board[i - 2][j + 2] == board[i - 1][j + 1]
+                        2 < i and j < constants.CONNECT_4_N_COLUMNS - 3 and board[i - 1][j + 1] == board[i - 2][j + 2] == board[i - 3][j + 3]
                         or
-                        1 < i < n_rows - 1 and 0 < j < n_columns - 2 and board[i - 2][j + 2] == board[i - 1][j + 1] == board[i + 1][j - 1]
+                        1 < i < constants.CONNECT_4_N_ROWS - 1 and 0 < j < constants.CONNECT_4_N_COLUMNS - 2 and board[i + 1][j - 1] == board[i - 1][j + 1] == board[i - 2][j + 2]
                 )
                 and
-                board[i - 1][j + 1] != space_symbol
+                board[i - 1][j + 1] is not None
         ):
             return board[i - 1][j + 1]
 
     @staticmethod
-    def _check_winner_down_right(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
-        n_rows = message.contents['connect_4']['n_rows']
-        n_columns = message.contents['connect_4']['n_columns']
-        space_symbol = message.contents['connect_4']['space_symbol']
-
+    def _check_winner_down_left(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
                 (
-                        i < n_rows - 3 and j < n_columns - 3 and board[i + 1][j + 1] == board[i + 2][j + 2] == board[i + 3][j + 3]
+                        i < constants.CONNECT_4_N_ROWS - 3 and 2 < j and board[i + 3][j - 3] == board[i + 2][j - 2] == board[i + 1][j - 1]
                         or
-                        0 < i < n_rows - 2 and 0 < j < n_columns - 2 and board[i - 1][j - 1] == board[i + 1][j + 1] == board[i + 2][j + 2]
+                        0 < i < constants.CONNECT_4_N_ROWS - 2 and 1 < j < constants.CONNECT_4_N_COLUMNS - 1 and board[i + 2][j - 2] == board[i + 1][j - 1] == board[i - 1][j + 1]
                 )
                 and
-                board[i + 1][j + 1] != space_symbol
-        ):
-            return board[i + 1][j + 1]
-
-    @staticmethod
-    def _check_winner_down_left(i: int, j: int, board: list[list[str]], message: Message) -> str | None:
-        n_rows = message.contents['connect_4']['n_rows']
-        n_columns = message.contents['connect_4']['n_columns']
-        space_symbol = message.contents['connect_4']['space_symbol']
-
-        if (
-                (
-                        i < n_rows - 3 and 2 < j and board[i + 1][j - 1] == board[i + 2][j - 2] == board[i + 3][j - 3]
-                        or
-                        0 < i < n_rows - 2 and 1 < j < n_columns - 1 and board[i - 1][j + 1] == board[i + 1][j - 1] == board[i + 2][j - 2]
-                )
-                and
-                board[i + 1][j - 1] != space_symbol
+                board[i + 1][j - 1] is not None
         ):
             return board[i + 1][j - 1]
 
-    def _check_winners(self, i: int, j: int, board: list[list[str]], message: Message) -> set[str]:
+    @staticmethod
+    def _check_winner_down_right(i: int, j: int, board: list[list[int | None]]) -> int | None:
+        if (
+                (
+                        i < constants.CONNECT_4_N_ROWS - 3 and j < constants.CONNECT_4_N_COLUMNS - 3 and board[i + 1][j + 1] == board[i + 2][j + 2] == board[i + 3][j + 3]
+                        or
+                        0 < i < constants.CONNECT_4_N_ROWS - 2 and 0 < j < constants.CONNECT_4_N_COLUMNS - 2 and board[i - 1][j - 1] == board[i + 1][j + 1] == board[i + 2][j + 2]
+                )
+                and
+                board[i + 1][j + 1] is not None
+        ):
+            return board[i + 1][j + 1]
+
+    def _check_winners(self, i: int, j: int, board: list[list[int | None]]) -> set[int]:
         winners = set()
 
-        if winner := self._check_winner_left(i, j, board, message):
+        if winner := self._check_winner_left(i, j, board):
             winners.add(winner)
 
-        if winner := self._check_winner_up(i, j, board, message):
-            winners.add(winner)
-            if len(winners) == 2:
-                return winners
-
-        if winner := self._check_winner_right(i, j, board, message):
+        if winner := self._check_winner_up(i, j, board):
             winners.add(winner)
             if len(winners) == 2:
                 return winners
 
-        if winner := self._check_winner_down(i, j, board, message):
+        if winner := self._check_winner_right(i, j, board):
             winners.add(winner)
             if len(winners) == 2:
                 return winners
 
-        if winner := self._check_winner_up_left(i, j, board, message):
+        if winner := self._check_winner_down(i, j, board):
             winners.add(winner)
             if len(winners) == 2:
                 return winners
 
-        if winner := self._check_winner_up_right(i, j, board, message):
+        if winner := self._check_winner_up_left(i, j, board):
             winners.add(winner)
             if len(winners) == 2:
                 return winners
 
-        if winner := self._check_winner_down_right(i, j, board, message):
+        if winner := self._check_winner_up_right(i, j, board):
             winners.add(winner)
             if len(winners) == 2:
                 return winners
 
-        if winner := self._check_winner_down_left(i, j, board, message):
+        if winner := self._check_winner_down_right(i, j, board):
+            winners.add(winner)
+            if len(winners) == 2:
+                return winners
+
+        if winner := self._check_winner_down_left(i, j, board):
             winners.add(winner)
 
         return winners
@@ -285,44 +265,26 @@ class Connect4Bot(MultiBot, ABC):
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
 
-        n_rows = 6
-        n_columns = 7
-        player_1_symbol = 'o'
-        player_2_symbol = 'x'
-        space_symbol = ' '
-        board = [[space_symbol for _ in range(n_columns)] for _ in range(n_rows)]
-        player_1_id = message.author.id
-        player_1_name = message.author.name.split('#')[0]
+        board = [[None for _ in range(constants.CONNECT_4_N_COLUMNS)] for _ in range(constants.CONNECT_4_N_ROWS)]
+        player_1 = Player(message.author.id, message.author.name.split('#')[0], 1)
         try:
             user_2 = next(user for user in message.mentions if user.id != self.id)
         except StopIteration:
-            player_2_id = self.id
-            player_2_name = self.name.split('#')[0]
-            text = self.format_board(board)
+            player_2 = Player(self.id, self.name.split('#')[0], 2)
         else:
-            player_2_id = user_2.id
-            player_2_name = user_2.name.split('#')[0]
-            text = f'{self.format_board(board)}\nTurno de {player_1_name}.'
+            player_2 = Player(user_2.id, user_2.name.split('#')[0], 2)
 
         await self.send(
-            text,
-            message,
-            buttons=self._distribute_buttons([str(n) for n in range(1, n_columns + 1)]),
+            media=Media(connect_4_frontend.make_image(board, player_1), MediaType.IMAGE, 'png', Source.LOCAL),
+            message=message,
+            buttons=self.distribute_buttons([str(n) for n in range(1, constants.CONNECT_4_N_COLUMNS + 1)]),
             buttons_key=ButtonsGroup.CONNECT_4,
             contents={'connect_4': {
                 'is_active': True,
-                'n_rows': n_rows,
-                'n_columns': n_columns,
-                'player_1_symbol': player_1_symbol,
-                'player_2_symbol': player_2_symbol,
-                'space_symbol': space_symbol,
                 'board': board,
-                'player_1_id': player_1_id,
-                'player_2_id': player_2_id,
-                'player_1_name': player_1_name,
-                'player_2_name': player_2_name,
-                'turn': 0,
-                'max_turns': n_rows * n_columns
+                'player_1': player_1.to_dict(),
+                'player_2': player_2.to_dict(),
+                'turn': 0
             }}
         )
 
@@ -330,73 +292,63 @@ class Connect4Bot(MultiBot, ABC):
         await self.accept_button_event(message)
 
         is_active = message.contents['connect_4']['is_active']
-        player_1_symbol = message.contents['connect_4']['player_1_symbol']
-        player_2_symbol = message.contents['connect_4']['player_2_symbol']
-        space_symbol = message.contents['connect_4']['space_symbol']
         board = message.contents['connect_4']['board']
-        player_1_id = message.contents['connect_4']['player_1_id']
-        player_1_name = message.contents['connect_4']['player_1_name']
-        player_2_id = message.contents['connect_4']['player_2_id']
-        player_2_name = message.contents['connect_4']['player_2_name']
+        player_1 = Player.from_dict(message.contents['connect_4']['player_1'])
+        player_2 = Player.from_dict(message.contents['connect_4']['player_2'])
         turn = message.contents['connect_4']['turn']
+
         if turn % 2 == 0:
-            current_player_id = player_1_id
-            next_player_name = player_2_name
-            current_player_symbol = player_1_symbol
+            current_player = player_1
+            next_player = player_2
         else:
-            current_player_id = player_2_id
-            next_player_name = player_1_name
-            current_player_symbol = player_2_symbol
+            current_player = player_2
+            next_player = player_1
         presser_id = message.buttons_info.presser_user.id
         column_played = int(message.buttons_info.pressed_text) - 1
 
-        if not is_active or board[0][column_played] != space_symbol or current_player_id != presser_id:
+        if not is_active or board[0][column_played] is not None or current_player.id != presser_id:
             return
 
-        i, j = self.insert_piece(column_played, current_player_symbol, message)
+        i, j = self.insert_piece(column_played, current_player.number, message)
         if await self._check_game_finished(i, j, message):
             return
 
-        if player_2_id == self.id:
+        await self.edit(
+            Media(
+                connect_4_frontend.make_image(board, next_player, highlight=(i, j)),
+                MediaType.IMAGE,
+                'png',
+                Source.LOCAL
+            ),
+            message
+        )
+
+        if player_2.id == self.id:
+            await asyncio.sleep(constants.CONNECT_4_AI_DELAY_SECONDS)
             i, j = self._ai_turn(message)
-            text = self.format_board(board)
             if await self._check_game_finished(i, j, message):
                 return
-        else:
-            text = f'{self.format_board(board)}\nTurno de {next_player_name}.'
-
-        await self.edit(text, message)
+            await self.edit(
+                Media(
+                    connect_4_frontend.make_image(board, current_player, highlight=(i, j)),
+                    MediaType.IMAGE,
+                    'png',
+                    Source.LOCAL
+                ),
+                message
+            )
 
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
     # -------------------------------------------------------- #
     @staticmethod
-    def format_board(board: list[list[str]]) -> str:
-        if not board or not board[0]:
-            return ''
-
-        n_columns = len(board[0])
-        return '\n'.join(
-            (
-                '<code>',
-                f"╔{'╦'.join(('═════',) * n_columns)}╗",
-                f"\n╠{'╬'.join(('═════',) * n_columns)}╣\n".join(f"║  {'  ║  '.join(row_elements)}  ║" for row_elements in board),
-                f"╚{'╩'.join(('═════',) * n_columns)}╝",
-                f" {' '.join(str(i).center(5) for i in range(1, n_columns + 1))} </code>"
-
-            )
-        )
-
-    @staticmethod
-    def insert_piece(j: int, symbol: str, message: Message) -> tuple[int, int]:
+    def insert_piece(j: int, player_number: int, message: Message) -> tuple[int, int]:
         board = message.contents['connect_4']['board']
-        n_rows = message.contents['connect_4']['n_rows']
-        space_symbol = message.contents['connect_4']['space_symbol']
 
-        i = n_rows - 1
+        i = constants.CONNECT_4_N_ROWS - 1
         while i >= 0:
-            if board[i][j] == space_symbol:
-                board[i][j] = symbol
+            if board[i][j] is None:
+                board[i][j] = player_number
                 break
             i -= 1
 

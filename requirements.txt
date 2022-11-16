@@ -36,6 +36,7 @@ playwright==1.17.2
 plotly==5.5.0
 pyaes==1.6.1
 pyasn1==0.4.8
+pycairo==1.21.0
 pycparser==2.21
 pydantic==1.9.0
 pyee==8.2.2
