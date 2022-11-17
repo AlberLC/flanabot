@@ -5,8 +5,8 @@ AUDIT_LOG_LIMIT = 5
 AUTO_WEATHER_EVERY = datetime.timedelta(hours=6)
 CHECK_PUNISHMENTS_EVERY_SECONDS = datetime.timedelta(hours=1).total_seconds()
 CONNECT_4_AI_DELAY_SECONDS = 1
-CONNECT_4_N_ROWS = 6
 CONNECT_4_N_COLUMNS = 7
+CONNECT_4_N_ROWS = 6
 FLOOD_2s_LIMIT = 2
 FLOOD_7s_LIMIT = 4
 HEAT_PERIOD_SECONDS = datetime.timedelta(minutes=15).total_seconds()

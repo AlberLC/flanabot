@@ -4,6 +4,8 @@ import asyncio
 import copy
 import random
 from abc import ABC
+from collections import defaultdict
+from typing import Iterable
 
 from flanautils import Media, MediaType, Source
 from multibot import MultiBot
@@ -31,8 +33,17 @@ class Connect4Bot(MultiBot, ABC):
         board = message.contents['connect_4']['board']
         player_1 = Player.from_dict(message.contents['connect_4']['player_1'])
         player_2 = Player.from_dict(message.contents['connect_4']['player_2'])
+        turn = message.contents['connect_4']['turn']
 
-        available_positions_ = self._available_positions(message)
+        available_positions_ = self._available_positions(board)
+
+        # first move forced to center
+        if turn <= 1:
+            j = constants.CONNECT_4_N_COLUMNS // 2
+            if (constants.CONNECT_4_N_ROWS - 1, j) in available_positions_:
+                return self.insert_piece(j, player_2.number, message)
+            else:
+                return self.insert_piece(random.choice((j - 1, j + 1)), player_2.number, message)
 
         # check if ai can win
         for i, j in available_positions_:
@@ -44,8 +55,23 @@ class Connect4Bot(MultiBot, ABC):
             if player_1.number in self._check_winners(i, j, board):
                 return self.insert_piece(j, player_2.number, message)
 
+        # check if after the ai plays, it will have 2 positions to win
+        for i, j in available_positions_:
+            board_copy = copy.deepcopy(board)
+            board_copy[i][j] = player_2.number
+            if self._winning_positions(board_copy)[player_2.number] >= 2:
+                return self.insert_piece(j, player_2.number, message)
+
+        # check if after the human plays, he will have 2 positions to win
+        for i, j in available_positions_:
+            board_copy = copy.deepcopy(board)
+            board_copy[i][j] = player_1.number
+            if self._winning_positions(board_copy)[player_1.number] >= 2:
+                return self.insert_piece(j, player_2.number, message)
+
         # future possibility (above the play)
-        banned_columns = set()
+        human_win_positions = []
+        ai_win_positions = []
         for i, j in available_positions_:
             if i < 1:
                 continue
@@ -54,21 +80,21 @@ class Connect4Bot(MultiBot, ABC):
             board_copy[i][j] = player_2.number
             winners = self._check_winners(i - 1, j, board_copy)
             if player_1.number in winners:
-                banned_columns.add(j)
+                human_win_positions.append((i, j))
             elif player_2.number in winners:
-                return self.insert_piece(j, player_2.number, message)
+                ai_win_positions.append((i, j))
 
-        allowed_positions = {j for _, j in available_positions_} - banned_columns
-        if allowed_positions:
-            j = random.choice(list(allowed_positions))
+        good_positions = [pos for pos in available_positions_ if pos not in human_win_positions and pos not in ai_win_positions]
+        if good_positions:
+            j = random.choice(self._best_plays(good_positions, player_2.number, board))[1]
+        elif ai_win_positions:
+            j = random.choice(self._best_plays(ai_win_positions, player_2.number, board))[1]
         else:
-            _, j = random.choice(available_positions_)
+            j = random.choice(self._best_plays(human_win_positions, player_2.number, board))[1]
         return self.insert_piece(j, player_2.number, message)
 
     @staticmethod
-    def _available_positions(message: Message) -> list[tuple[int, int]]:
-        board = message.contents['connect_4']['board']
-
+    def _available_positions(board: list[list[int | None]]) -> list[tuple[int, int]]:
         available_positions = []
         for j in range(constants.CONNECT_4_N_COLUMNS):
             for i in range(constants.CONNECT_4_N_ROWS - 1, -1, -1):
@@ -77,6 +103,131 @@ class Connect4Bot(MultiBot, ABC):
                     break
 
         return available_positions
+
+    # noinspection DuplicatedCode
+    @staticmethod
+    def _best_plays(
+        possible_positions: Iterable[tuple[int, int]],
+        player_num: int,
+        board: list[list[int | None]]
+    ) -> list[tuple[int, int]]:
+        best_plays = []
+        max_points = float('-inf')
+
+        for i, j in possible_positions:
+            points = 0
+
+            # left
+            for j_left in range(j - 1, j - 4, -1):
+                if j_left < 0:
+                    points -= 1
+                    break
+                if board[i][j_left] is not None:
+                    if board[i][j_left] == player_num:
+                        points += 1
+                    else:
+                        points -= 1
+                        break
+
+            # right
+            for j_right in range(j + 1, j + 4):
+                if j_right >= constants.CONNECT_4_N_COLUMNS:
+                    points -= 1
+                    break
+                if board[i][j_right] is not None:
+                    if board[i][j_right] == player_num:
+                        points += 1
+                    else:
+                        points -= 1
+                        break
+
+            # up
+            for i_up in range(i - 1, i - 4, -1):
+                if i_up < 0:
+                    points -= 1
+                    break
+                if board[i_up][j] is not None:
+                    if board[i_up][j] == player_num:
+                        points += 1
+                    else:
+                        points -= 1
+                        break
+
+            # down
+            for i_down in range(i + 1, i + 4):
+                if i_down >= constants.CONNECT_4_N_ROWS:
+                    points -= 1
+                    break
+                if board[i_down][j] is not None:
+                    if board[i_down][j] == player_num:
+                        points += 1
+                    else:
+                        points -= 1
+                        break
+
+            # up left
+            for n in range(1, 4):
+                i_up = i - n
+                j_left = j - n
+                if i_up < 0 or j_left < 0:
+                    points -= 1
+                    break
+                if board[i_up][j_left] is not None:
+                    if board[i_up][j_left] == player_num:
+                        points += 1
+                    else:
+                        points -= 1
+                        break
+
+            # up right
+            for n in range(1, 4):
+                i_up = i - n
+                j_right = j + n
+                if i_up < 0 or j_right >= constants.CONNECT_4_N_COLUMNS:
+                    points -= 1
+                    break
+                if board[i_up][j_right] is not None:
+                    if board[i_up][j_right] == player_num:
+                        points += 1
+                    else:
+                        points -= 1
+                        break
+
+            # down left
+            for n in range(1, 4):
+                i_down = i + n
+                j_left = j - n
+                if i_down >= constants.CONNECT_4_N_ROWS or j_left < 0:
+                    points -= 1
+                    break
+                if board[i_down][j_left] is not None:
+                    if board[i_down][j_left] == player_num:
+                        points += 1
+                    else:
+                        points -= 1
+                        break
+
+            # down right
+            for n in range(1, 4):
+                i_down = i + n
+                j_right = j + n
+                if i_down >= constants.CONNECT_4_N_ROWS or j_right >= constants.CONNECT_4_N_COLUMNS:
+                    points -= 1
+                    break
+                if board[i_down][j_right] is not None:
+                    if board[i_down][j_right] == player_num:
+                        points += 1
+                    else:
+                        points -= 1
+                        break
+
+            if points > max_points:
+                best_plays = [(i, j)]
+                max_points = points
+            elif points == max_points:
+                best_plays.append((i, j))
+
+        return best_plays
 
     async def _check_game_finished(self, i: int, j: int, message: Message) -> bool:
         board = message.contents['connect_4']['board']
@@ -257,6 +408,14 @@ class Connect4Bot(MultiBot, ABC):
             winners.add(winner)
 
         return winners
+
+    def _winning_positions(self, board: list[list[int | None]]) -> defaultdict[int, int]:
+        winning_positions = defaultdict(int)
+        for next_i, next_j in self._available_positions(board):
+            for player_number in self._check_winners(next_i, next_j, board):
+                winning_positions[player_number] += 1
+
+        return winning_positions
 
     # ---------------------------------------------- #
     #                    HANDLERS                    #
