@@ -55,16 +55,9 @@ class Connect4Bot(MultiBot, ABC):
             if player_1.number in self._check_winners(i, j, board):
                 return self.insert_piece(j, player_2.number, message)
 
-        # check if after the human plays, he will have 2 positions to win
-        for i, j in available_positions_:
-            board_copy = copy.deepcopy(board)
-            board_copy[i][j] = player_1.number
-            if self._winning_positions(board_copy)[player_1.number] >= 2:
-                return self.insert_piece(j, player_2.number, message)
-
         # future possibility (above the play)
-        human_win_positions = []
-        ai_win_positions = []
+        human_winning_positions_above = []
+        ai_winning_positions_above = []
         for i, j in available_positions_:
             if i < 1:
                 continue
@@ -72,26 +65,40 @@ class Connect4Bot(MultiBot, ABC):
             board_copy[i][j] = player_2.number
             winners = self._check_winners(i - 1, j, board_copy)
             if player_1.number in winners:
-                human_win_positions.append((i, j))
+                human_winning_positions_above.append((i, j))
             elif player_2.number in winners:
-                ai_win_positions.append((i, j))
+                ai_winning_positions_above.append((i, j))
 
         # check if after the ai plays, it will have 2 positions to win
         for i, j in available_positions_:
-            if (i, j) in human_win_positions:
+            if (i, j) in human_winning_positions_above:
                 continue
+
             board_copy = copy.deepcopy(board)
             board_copy[i][j] = player_2.number
-            if self._winning_positions(board_copy)[player_2.number] >= 2:
+            if len(self._winning_positions(board_copy)[player_2.number]) >= 2:
                 return self.insert_piece(j, player_2.number, message)
 
-        good_positions = [pos for pos in available_positions_ if pos not in human_win_positions and pos not in ai_win_positions]
+        # check if after the human plays, he will have 2 positions to win
+        for i, j in available_positions_:
+            board_copy = copy.deepcopy(board)
+            board_copy[i][j] = player_1.number
+            future_winning_positions = self._winning_positions(board_copy)[player_1.number]
+            if len(future_winning_positions) < 2:
+                continue
+            if (i, j) not in human_winning_positions_above:
+                return self.insert_piece(j, player_2.number, message)
+            for i_2, j_2 in future_winning_positions:
+                if (i_2, j_2) in available_positions_ and (i_2, j_2) not in human_winning_positions_above:
+                    return self.insert_piece(j_2, player_2.number, message)
+
+        good_positions = [pos for pos in available_positions_ if pos not in human_winning_positions_above and pos not in ai_winning_positions_above]
         if good_positions:
             j = random.choice(self._best_plays(good_positions, player_2.number, board))[1]
-        elif ai_win_positions:
-            j = random.choice(self._best_plays(ai_win_positions, player_2.number, board))[1]
+        elif ai_winning_positions_above:
+            j = random.choice(self._best_plays(ai_winning_positions_above, player_2.number, board))[1]
         else:
-            j = random.choice(self._best_plays(human_win_positions, player_2.number, board))[1]
+            j = random.choice(self._best_plays(human_winning_positions_above, player_2.number, board))[1]
         return self.insert_piece(j, player_2.number, message)
 
     @staticmethod
@@ -410,11 +417,11 @@ class Connect4Bot(MultiBot, ABC):
 
         return winners
 
-    def _winning_positions(self, board: list[list[int | None]]) -> defaultdict[int, int]:
-        winning_positions = defaultdict(int)
+    def _winning_positions(self, board: list[list[int | None]]) -> defaultdict[int, list[tuple[int, int]]]:
+        winning_positions = defaultdict(list)
         for next_i, next_j in self._available_positions(board):
             for player_number in self._check_winners(next_i, next_j, board):
-                winning_positions[player_number] += 1
+                winning_positions[player_number].append((next_i, next_j))
 
         return winning_positions
 
