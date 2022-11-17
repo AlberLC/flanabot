@@ -55,13 +55,6 @@ class Connect4Bot(MultiBot, ABC):
             if player_1.number in self._check_winners(i, j, board):
                 return self.insert_piece(j, player_2.number, message)
 
-        # check if after the ai plays, it will have 2 positions to win
-        for i, j in available_positions_:
-            board_copy = copy.deepcopy(board)
-            board_copy[i][j] = player_2.number
-            if self._winning_positions(board_copy)[player_2.number] >= 2:
-                return self.insert_piece(j, player_2.number, message)
-
         # check if after the human plays, he will have 2 positions to win
         for i, j in available_positions_:
             board_copy = copy.deepcopy(board)
@@ -75,7 +68,6 @@ class Connect4Bot(MultiBot, ABC):
         for i, j in available_positions_:
             if i < 1:
                 continue
-
             board_copy = copy.deepcopy(board)
             board_copy[i][j] = player_2.number
             winners = self._check_winners(i - 1, j, board_copy)
@@ -83,6 +75,15 @@ class Connect4Bot(MultiBot, ABC):
                 human_win_positions.append((i, j))
             elif player_2.number in winners:
                 ai_win_positions.append((i, j))
+
+        # check if after the ai plays, it will have 2 positions to win
+        for i, j in available_positions_:
+            if (i, j) in human_win_positions:
+                continue
+            board_copy = copy.deepcopy(board)
+            board_copy[i][j] = player_2.number
+            if self._winning_positions(board_copy)[player_2.number] >= 2:
+                return self.insert_piece(j, player_2.number, message)
 
         good_positions = [pos for pos in available_positions_ if pos not in human_win_positions and pos not in ai_win_positions]
         if good_positions:
