@@ -40,7 +40,7 @@ INSULTS = ('._.', 'aha', 'Aléjate de mi.', 'Ante la duda mi dedo corazón te sa
 
 KEYWORDS = {
     'choose': ('choose', 'elige', 'escoge'),
-    'connect_4': (('conecta', 'connect', 'raya'), ('4', 'cuatro', 'four')),
+    'connect_4': (('conecta', 'connect', 'ralla', 'raya'), ('4', 'cuatro', 'four')),
     'covid_chart': ('case', 'caso', 'contagiado', 'contagio', 'corona', 'coronavirus', 'covid', 'covid19', 'death',
                     'disease', 'enfermedad', 'enfermos', 'fallecido', 'incidencia', 'jacovid', 'mascarilla', 'muerte',
                     'muerto', 'pandemia', 'sick', 'virus'),
@@ -50,10 +50,10 @@ KEYWORDS = {
     'dice': ('dado', 'dice'),
     'multiple_answer': ('multi', 'multi-answer', 'multiple', 'multirespuesta'),
     'poll': ('encuesta', 'quiz'),
-    'punish': ('acaba', 'aprende', 'ataca', 'atalo', 'azota', 'boss', 'castiga', 'castigo', 'condena', 'controla',
-               'destroy', 'destroza', 'duro', 'ejecuta', 'enseña', 'escarmiento', 'execute', 'fuck', 'fusila', 'hell',
-               'humos', 'infierno', 'jefe', 'jode', 'learn', 'leccion', 'lesson', 'manda', 'purgatorio', 'sancion',
-               'shoot', 'teach', 'whip'),
+    'punish': ('acaba', 'aprende', 'ataca', 'atalo', 'azota', 'beating', 'boss', 'castiga', 'castigo', 'condena',
+               'controla', 'destroy', 'destroza', 'duro', 'ejecuta', 'enseña', 'escarmiento', 'execute', 'fuck',
+               'fusila', 'hell', 'humos', 'infierno', 'jefe', 'jode', 'learn', 'leccion', 'lesson', 'manda', 'paliza',
+               'purgatorio', 'purgatory', 'sancion', 'shoot', 'teach', 'whip'),
     'random': ('aleatorio', 'azar', 'random'),
     'scraping': ('api', 'aqui', 'busca', 'contenido', 'content', 'descarga', 'descargar', 'download', 'envia', 'habia',
                  'media', 'redes', 'scrap', 'scraping', 'search', 'send', 'social', 'sociales', 'tenia', 'video',
