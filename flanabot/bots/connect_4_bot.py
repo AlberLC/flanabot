@@ -94,7 +94,10 @@ class Connect4Bot(MultiBot, ABC):
 
         good_positions = [pos for pos in available_positions_ if pos not in human_winning_positions_above and pos not in ai_winning_positions_above]
         if good_positions:
-            j = random.choice(self._best_plays(good_positions, player_2.number, board))[1]
+            if random.random() < 0.5:
+                j = random.choice(self._best_plays(good_positions, player_2.number, board))[1]
+            else:
+                j = random.choice(good_positions)[1]
         elif ai_winning_positions_above:
             j = random.choice(self._best_plays(ai_winning_positions_above, player_2.number, board))[1]
         else:
