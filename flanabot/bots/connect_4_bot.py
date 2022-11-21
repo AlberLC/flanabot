@@ -33,17 +33,8 @@ class Connect4Bot(MultiBot, ABC):
         board = message.contents['connect_4']['board']
         player_1 = Player.from_dict(message.contents['connect_4']['player_1'])
         player_2 = Player.from_dict(message.contents['connect_4']['player_2'])
-        turn = message.contents['connect_4']['turn']
 
         available_positions_ = self._available_positions(board)
-
-        # first move forced to center
-        if turn <= 1:
-            j = constants.CONNECT_4_N_COLUMNS // 2
-            if (constants.CONNECT_4_N_ROWS - 1, j) in available_positions_:
-                return self.insert_piece(j, player_2.number, message)
-            else:
-                return self.insert_piece(random.choice((j - 1, j + 1)), player_2.number, message)
 
         # check if ai can win
         for i, j in available_positions_:
@@ -94,10 +85,7 @@ class Connect4Bot(MultiBot, ABC):
 
         good_positions = [pos for pos in available_positions_ if pos not in human_winning_positions_above and pos not in ai_winning_positions_above]
         if good_positions:
-            if random.random() < 0.5:
-                j = random.choice(self._best_plays(good_positions, player_2.number, board))[1]
-            else:
-                j = random.choice(good_positions)[1]
+            j = random.choice(self._best_plays(good_positions, player_2.number, board))[1]
         elif ai_winning_positions_above:
             j = random.choice(self._best_plays(ai_winning_positions_above, player_2.number, board))[1]
         else:
