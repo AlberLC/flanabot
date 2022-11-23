@@ -5,6 +5,7 @@ AUDIT_LOG_LIMIT = 5
 AUTO_WEATHER_EVERY = datetime.timedelta(hours=6)
 CHECK_PUNISHMENTS_EVERY_SECONDS = datetime.timedelta(hours=1).total_seconds()
 CONNECT_4_AI_DELAY_SECONDS = 1
+CONNECT_4_CENTER_COLUMN_POINTS = 2
 CONNECT_4_N_COLUMNS = 7
 CONNECT_4_N_ROWS = 6
 FLOOD_2s_LIMIT = 2
@@ -58,6 +59,7 @@ KEYWORDS = {
     'scraping': ('api', 'aqui', 'busca', 'contenido', 'content', 'descarga', 'descargar', 'download', 'envia', 'habia',
                  'media', 'redes', 'scrap', 'scraping', 'search', 'send', 'social', 'sociales', 'tenia', 'video',
                  'videos'),
+    'self': (('contigo', 'contra', 'ti'), ('mismo', 'ti')),
     'song_info': ('aqui', 'cancion', 'data', 'datos', 'info', 'informacion', 'information', 'llama', 'media', 'name',
                   'nombre', 'sonaba', 'sonando', 'song', 'sono', 'sound', 'suena', 'title', 'titulo',
                   'video'),

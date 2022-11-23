@@ -27,70 +27,100 @@ class Connect4Bot(MultiBot, ABC):
 
         self.register(self._on_connect_4, constants.KEYWORDS['connect_4'])
 
+        self.register(self._on_connect_4_vs_itself, (*constants.KEYWORDS['connect_4'], *constants.KEYWORDS['self']))
+
         self.register_button(self._on_connect_4_button_press, ButtonsGroup.CONNECT_4)
 
-    def _ai_turn(self, message: Message) -> tuple[int, int]:
-        board = message.contents['connect_4']['board']
-        player_1 = Player.from_dict(message.contents['connect_4']['player_1'])
-        player_2 = Player.from_dict(message.contents['connect_4']['player_2'])
-
+    def _ai_insert(
+        self,
+        current_player_num: int,
+        next_player_num: int,
+        board: list[list[int | None]]
+    ) -> tuple[int, int]:
         available_positions_ = self._available_positions(board)
 
-        # check if ai can win
+        # check if current player can win
         for i, j in available_positions_:
-            if player_2.number in self._check_winners(i, j, board):
-                return self.insert_piece(j, player_2.number, message)
+            if current_player_num in self._check_winners(i, j, board):
+                return self.insert_piece(j, current_player_num, board)
 
-        # check if human can win
+        # check if next player can win
         for i, j in available_positions_:
-            if player_1.number in self._check_winners(i, j, board):
-                return self.insert_piece(j, player_2.number, message)
+            if next_player_num in self._check_winners(i, j, board):
+                return self.insert_piece(j, current_player_num, board)
 
-        # future possibility (above the play)
-        human_winning_positions_above = []
-        ai_winning_positions_above = []
+        # future possibility (above the move)
+        next_player_winning_positions_above = []
+        current_player_winning_positions_above = []
         for i, j in available_positions_:
             if i < 1:
                 continue
             board_copy = copy.deepcopy(board)
-            board_copy[i][j] = player_2.number
+            board_copy[i][j] = current_player_num
             winners = self._check_winners(i - 1, j, board_copy)
-            if player_1.number in winners:
-                human_winning_positions_above.append((i, j))
-            elif player_2.number in winners:
-                ai_winning_positions_above.append((i, j))
+            if next_player_num in winners:
+                next_player_winning_positions_above.append((i, j))
+            elif current_player_num in winners:
+                current_player_winning_positions_above.append((i, j))
 
-        # check if after the ai plays, it will have 2 positions to win
+        # check if after the current player moves, it will have 2 positions to win
         for i, j in available_positions_:
-            if (i, j) in human_winning_positions_above:
+            if (i, j) in next_player_winning_positions_above:
                 continue
 
             board_copy = copy.deepcopy(board)
-            board_copy[i][j] = player_2.number
-            if len(self._winning_positions(board_copy)[player_2.number]) >= 2:
-                return self.insert_piece(j, player_2.number, message)
+            board_copy[i][j] = current_player_num
+            if len(self._winning_positions(board_copy)[current_player_num]) >= 2:
+                return self.insert_piece(j, current_player_num, board)
 
-        # check if after the human plays, he will have 2 positions to win
+        # check if after the next player moves, he will have 2 positions to win
         for i, j in available_positions_:
             board_copy = copy.deepcopy(board)
-            board_copy[i][j] = player_1.number
-            future_winning_positions = self._winning_positions(board_copy)[player_1.number]
+            board_copy[i][j] = next_player_num
+            future_winning_positions = self._winning_positions(board_copy)[next_player_num]
             if len(future_winning_positions) < 2:
                 continue
-            if (i, j) not in human_winning_positions_above:
-                return self.insert_piece(j, player_2.number, message)
+            if (i, j) not in next_player_winning_positions_above:
+                return self.insert_piece(j, current_player_num, board)
             for i_2, j_2 in future_winning_positions:
-                if (i_2, j_2) in available_positions_ and (i_2, j_2) not in human_winning_positions_above:
-                    return self.insert_piece(j_2, player_2.number, message)
+                if (i_2, j_2) in available_positions_ and (i_2, j_2) not in next_player_winning_positions_above:
+                    return self.insert_piece(j_2, current_player_num, board)
 
-        good_positions = [pos for pos in available_positions_ if pos not in human_winning_positions_above and pos not in ai_winning_positions_above]
+        good_positions = [pos for pos in available_positions_ if pos not in next_player_winning_positions_above and pos not in current_player_winning_positions_above]
         if good_positions:
-            j = random.choice(self._best_plays(good_positions, player_2.number, board))[1]
-        elif ai_winning_positions_above:
-            j = random.choice(self._best_plays(ai_winning_positions_above, player_2.number, board))[1]
+            j = random.choice(self._best_moves(good_positions, current_player_num, board))[1]
+        elif current_player_winning_positions_above:
+            j = random.choice(self._best_moves(current_player_winning_positions_above, current_player_num, board))[1]
         else:
-            j = random.choice(self._best_plays(human_winning_positions_above, player_2.number, board))[1]
-        return self.insert_piece(j, player_2.number, message)
+            j = random.choice(self._best_moves(next_player_winning_positions_above, current_player_num, board))[1]
+        return self.insert_piece(j, current_player_num, board)
+
+    async def _ai_turn(
+        self,
+        player_1: Player,
+        player_2: Player,
+        current_player: Player,
+        next_player: Player,
+        next_turn: int,
+        delay: float,
+        board: list[list[int | None]],
+        message: Message
+    ) -> bool:
+        await asyncio.sleep(delay)
+        i, j = self._ai_insert(current_player.number, next_player.number, board)
+        if await self._check_game_finished(i, j, player_1, player_2, next_turn, board, message):
+            return True
+
+        await self.edit(
+            Media(
+                connect_4_frontend.make_image(board, next_player, highlight=(i, j)),
+                MediaType.IMAGE,
+                'png',
+                Source.LOCAL
+            ),
+            message
+        )
+        return False
 
     @staticmethod
     def _available_positions(board: list[list[int | None]]) -> list[tuple[int, int]]:
@@ -105,16 +135,19 @@ class Connect4Bot(MultiBot, ABC):
 
     # noinspection DuplicatedCode
     @staticmethod
-    def _best_plays(
+    def _best_moves(
         possible_positions: Iterable[tuple[int, int]],
         player_num: int,
         board: list[list[int | None]]
     ) -> list[tuple[int, int]]:
-        best_plays = []
+        best_moves = []
         max_points = float('-inf')
 
         for i, j in possible_positions:
-            points = 0
+            if 3 <= j <= constants.CONNECT_4_N_COLUMNS - 4:
+                points = constants.CONNECT_4_CENTER_COLUMN_POINTS
+            else:
+                points = 0
 
             # left
             for j_left in range(j - 1, j - 4, -1):
@@ -221,23 +254,29 @@ class Connect4Bot(MultiBot, ABC):
                         break
 
             if points > max_points:
-                best_plays = [(i, j)]
+                best_moves = [(i, j)]
                 max_points = points
             elif points == max_points:
-                best_plays.append((i, j))
+                best_moves.append((i, j))
 
-        return best_plays
+        return best_moves
 
-    async def _check_game_finished(self, i: int, j: int, message: Message) -> bool:
-        board = message.contents['connect_4']['board']
-        turn = message.contents['connect_4']['turn']
-        player_1 = Player.from_dict(message.contents['connect_4']['player_1'])
-        player_2 = Player.from_dict(message.contents['connect_4']['player_2'])
-
+    async def _check_game_finished(
+        self,
+        i: int,
+        j: int,
+        player_1: Player,
+        player_2: Player,
+        turn: int,
+        board: list[list[int | None]],
+        message: Message
+    ) -> bool:
         if board[i][j] in self._check_winners(i, j, board):
             player = player_1 if board[i][j] == player_1.number else player_2
-
-            message.contents['connect_4']['is_active'] = False
+            try:
+                message.contents['connect_4']['is_active'] = False
+            except KeyError:
+                pass
             await self.edit(
                 Media(
                     connect_4_frontend.make_image(board, player, highlight=(i, j), win_position=(i, j)),
@@ -250,7 +289,10 @@ class Connect4Bot(MultiBot, ABC):
             return True
 
         if turn >= constants.CONNECT_4_N_ROWS * constants.CONNECT_4_N_COLUMNS:
-            message.contents['connect_4']['is_active'] = False
+            try:
+                message.contents['connect_4']['is_active'] = False
+            except KeyError:
+                pass
             await self.edit(
                 Media(
                     connect_4_frontend.make_image(board, highlight=(i, j), tie=True),
@@ -424,6 +466,7 @@ class Connect4Bot(MultiBot, ABC):
             return
 
         board = [[None for _ in range(constants.CONNECT_4_N_COLUMNS)] for _ in range(constants.CONNECT_4_N_ROWS)]
+
         player_1 = Player(message.author.id, message.author.name.split('#')[0], 1)
         try:
             user_2 = next(user for user in message.mentions if user.id != self.id)
@@ -462,13 +505,16 @@ class Connect4Bot(MultiBot, ABC):
             current_player = player_2
             next_player = player_1
         presser_id = message.buttons_info.presser_user.id
-        column_played = int(message.buttons_info.pressed_text) - 1
+        move_column = int(message.buttons_info.pressed_text) - 1
 
-        if not is_active or board[0][column_played] is not None or current_player.id != presser_id:
+        if not is_active or board[0][move_column] is not None or current_player.id != presser_id:
             return
+        message.contents['connect_4']['is_active'] = False
+        message.save()
 
-        i, j = self.insert_piece(column_played, current_player.number, message)
-        if await self._check_game_finished(i, j, message):
+        i, j = self.insert_piece(move_column, current_player.number, board)
+        turn += 1
+        if await self._check_game_finished(i, j, player_1, player_2, turn, board, message):
             return
 
         await self.edit(
@@ -482,34 +528,65 @@ class Connect4Bot(MultiBot, ABC):
         )
 
         if player_2.id == self.id:
-            await asyncio.sleep(constants.CONNECT_4_AI_DELAY_SECONDS)
-            i, j = self._ai_turn(message)
-            if await self._check_game_finished(i, j, message):
+            turn += 1
+            if await self._ai_turn(
+                    player_1,
+                    player_2,
+                    next_player,
+                    current_player,
+                    turn,
+                    constants.CONNECT_4_AI_DELAY_SECONDS,
+                    board,
+                    message
+            ):
                 return
-            await self.edit(
-                Media(
-                    connect_4_frontend.make_image(board, current_player, highlight=(i, j)),
-                    MediaType.IMAGE,
-                    'png',
-                    Source.LOCAL
-                ),
-                message
-            )
+
+        message.contents['connect_4']['turn'] = turn
+        message.contents['connect_4']['is_active'] = True
+        message.save()
+
+    async def _on_connect_4_vs_itself(self, message: Message):
+        if message.chat.is_group and not self.is_bot_mentioned(message):
+            return
+
+        board = [[None for _ in range(constants.CONNECT_4_N_COLUMNS)] for _ in range(constants.CONNECT_4_N_ROWS)]
+
+        player_1 = Player(self.id, self.name.split('#')[0], 1)
+        player_2 = Player(self.id, self.name.split('#')[0], 2)
+        current_player = player_1
+        next_player = player_2
+        turn = 0
+
+        bot_message = await self.send(
+            media=Media(connect_4_frontend.make_image(board, current_player), MediaType.IMAGE, 'png', Source.LOCAL),
+            message=message
+        )
+
+        while True:
+            turn += 1
+            if await self._ai_turn(
+                    player_1,
+                    player_2,
+                    current_player,
+                    next_player,
+                    turn,
+                    constants.CONNECT_4_AI_DELAY_SECONDS / 2,
+                    board,
+                    bot_message
+            ):
+                break
+            current_player, next_player = next_player, current_player
 
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
     # -------------------------------------------------------- #
     @staticmethod
-    def insert_piece(j: int, player_number: int, message: Message) -> tuple[int, int]:
-        board = message.contents['connect_4']['board']
-
+    def insert_piece(j: int, player_number: int, board: list[list[int | None]]) -> tuple[int, int]:
         i = constants.CONNECT_4_N_ROWS - 1
         while i >= 0:
             if board[i][j] is None:
                 board[i][j] = player_number
                 break
             i -= 1
-
-        message.contents['connect_4']['turn'] += 1
 
         return i, j
