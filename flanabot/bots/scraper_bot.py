@@ -219,7 +219,7 @@ class ScraperBot(MultiBot, ABC):
 
         return sended_media_messages, fails
 
-    @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
+    @return_if_first_empty(exclude_self_types='ScraperBot', globals_=globals())
     async def send_song_info(self, song_info: Media, message: Message):
         attributes = (
             f'Título: {song_info.title}\n' if song_info.title else '',
