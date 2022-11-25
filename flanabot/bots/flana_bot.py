@@ -256,7 +256,10 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
     @bot_mentioned
     async def _on_users(self, message: Message):
         role_names = [role.name for role in await self.get_group_roles(message.chat.group_id)]
-        role_names.remove('@everyone')
+        try:
+            role_names.remove('@everyone')
+        except ValueError:
+            pass
 
         user_names = [f'<@{user.id}>' for user in await self.find_users_by_roles([], message)]
         joined_user_names = ', '.join(user_names)
