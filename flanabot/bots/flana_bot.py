@@ -175,7 +175,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
                                 or
                                 message.replied_message.author.id != self.id
                                 or
-                                not message.replied_message.contents.get('media')
+                                not message.replied_message.data.get('media')
                         )
                         and
                         (
@@ -229,12 +229,12 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
             self.distribute_buttons(options, vertically=True),
             message,
             buttons_key=ButtonsGroup.ROLES,
-            contents={'user_id': message.author.id}
+            data={'user_id': message.author.id}
         )
 
     async def _on_roles_button_press(self, message: Message):
         await self.accept_button_event(message)
-        if message.buttons_info.presser_user.id != message.contents['user_id']:
+        if message.buttons_info.presser_user.id != message.data['user_id']:
             return
 
         role = await self.find_role(message.buttons_info.pressed_text[1:].strip(), message)
