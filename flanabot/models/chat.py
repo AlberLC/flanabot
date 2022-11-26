@@ -12,8 +12,8 @@ class Chat(MultiBotChat):
         'auto_scraping': True,
         'auto_weather_chart': False,
         'check_flood': False,
-        'delete_original': True,
-        'punish': False
+        'punish': False,
+        'scraping_delete_original': True
     }
 
     config: dict[str, bool] = field(default_factory=dict)
