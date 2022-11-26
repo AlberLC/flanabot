@@ -111,7 +111,7 @@ class Connect4Bot(MultiBot, ABC):
         if await self._check_game_finished(i, j, player_1, player_2, next_turn, board, message):
             return True
 
-        await self.edit(
+        return not await self.edit(
             Media(
                 connect_4_frontend.make_image(board, next_player, highlight=(i, j)),
                 MediaType.IMAGE,
@@ -120,7 +120,6 @@ class Connect4Bot(MultiBot, ABC):
             ),
             message
         )
-        return False
 
     @staticmethod
     def _available_positions(board: list[list[int | None]]) -> list[tuple[int, int]]:
