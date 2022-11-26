@@ -65,6 +65,14 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
         pass
 
     @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
+    async def _get_message(
+        self,
+        event: multibot_constants.MESSAGE_EVENT,
+        pull_overwrite_fields: Iterable[str] = ('_id', 'config')
+    ) -> Message:
+        return await super()._get_message(event, pull_overwrite_fields)
+
+    @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
     async def _manage_exceptions(self, exceptions: BaseException | Iterable[BaseException], context: Chat | Message):
         if not isinstance(exceptions, Iterable):
             exceptions = (exceptions,)
