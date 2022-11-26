@@ -7,12 +7,14 @@ from multibot.models import Chat as MultiBotChat
 
 @dataclass(eq=False)
 class Chat(MultiBotChat):
-    DEFAULT_CONFIG = {'check_flood': False,
-                      'delete_original': True,
-                      'insult': True,
-                      'punish': False,
-                      'scraping': True,
-                      'weather_chart': False}
+    DEFAULT_CONFIG = {
+        'auto_insult': True,
+        'auto_scraping': True,
+        'auto_weather_chart': False,
+        'check_flood': False,
+        'delete_original': True,
+        'punish': False
+    }
 
     config: dict[str, bool] = field(default_factory=dict)
 

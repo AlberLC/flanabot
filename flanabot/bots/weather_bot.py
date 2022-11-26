@@ -39,7 +39,7 @@ class WeatherBot(MultiBot, ABC):
         if message.is_inline:
             show_progress_state = False
         elif message.chat.is_group and not self.is_bot_mentioned(message):
-            if message.chat.config['weather_chart']:
+            if message.chat.config['auto_weather_chart']:
                 if BotAction.find_one({'action': Action.AUTO_WEATHER_CHART.value, 'chat': message.chat.object_id, 'date': {'$gt': datetime.datetime.now(datetime.timezone.utc) - constants.AUTO_WEATHER_EVERY}}):
                     return
                 show_progress_state = False
@@ -56,7 +56,7 @@ class WeatherBot(MultiBot, ABC):
         place_words = (
                 OrderedSet(original_text_words)
                 - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['show'], min_score=0.85).keys()
-                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['weather_chart'], min_score=0.85).keys()
+                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['weather'], min_score=0.85).keys()
                 - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['date'], min_score=0.85).keys()
                 - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['thanks'], min_score=0.85).keys()
                 - flanautils.CommonWords.get()

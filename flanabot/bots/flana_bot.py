@@ -128,9 +128,9 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
         if message.buttons_info.presser_user.is_admin is False:
             return
 
-        config = message.buttons_info.pressed_text.split()[1]
-        message.chat.config[config] = not message.chat.config[config]
-        message.buttons_info.pressed_button.text = f"{'✔' if message.chat.config[config] else '❌'} {config}"
+        config_name = message.buttons_info.pressed_text.split()[1]
+        message.chat.config[config_name] = not message.chat.config[config_name]
+        message.buttons_info.pressed_button.text = f"{'✔' if message.chat.config[config_name] else '❌'} {config_name}"
 
         await self.edit(message.buttons_info.buttons, message)
 
