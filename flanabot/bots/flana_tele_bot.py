@@ -1,6 +1,6 @@
 from __future__ import annotations  # todo0 remove when it's by default
 
-__all__ = ['whitelisted_event', 'FlanaTeleBot']
+__all__ = ['whitelisted', 'FlanaTeleBot']
 
 import functools
 import os
@@ -19,7 +19,7 @@ from flanabot.models import Message
 # ---------------------------------------------------------- #
 
 
-def whitelisted_event(func: Callable) -> Callable:
+def whitelisted(func: Callable) -> Callable:
     @functools.wraps(func)
     @find_message
     async def wrapper(self: FlanaTeleBot, message: Message):
@@ -64,11 +64,11 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
     # ---------------------------------------------- #
     #                    HANDLERS                    #
     # ---------------------------------------------- #
-    @whitelisted_event
+    @whitelisted
     async def _on_inline_query_raw(self, message: Message):
         await super()._on_inline_query_raw(message)
 
-    @whitelisted_event
+    @whitelisted
     async def _on_new_message_raw(self, message: Message):
         await super()._on_new_message_raw(message)
 
