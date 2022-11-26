@@ -585,8 +585,4 @@ class Connect4Bot(MultiBot, ABC):
         for i in range(constants.CONNECT_4_N_ROWS - 1, -1, -1):
             if board[i][j] is None:
                 board[i][j] = player_number
-                break
-        else:
-            return
-
-        return i, j
+                return i, j
