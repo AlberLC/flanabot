@@ -65,12 +65,11 @@ KEYWORDS = {
                   'video'),
     'unpunish': ('absolve', 'forgive', 'innocent', 'inocente', 'perdona', 'spare'),
     'vote': ('votacion', 'votar', 'vote', 'voting', 'voto'),
-    'weather_chart': ('atmosfera', 'atmosferico', 'calle', 'calor', 'caloret', 'clima', 'climatologia', 'cloud',
-                      'cloudless', 'cloudy', 'cold', 'congelar', 'congelado', 'denbora', 'despejado', 'diluvio', 'frio',
-                      'frost', 'hielo', 'humedad', 'llover', 'llueva', 'llueve', 'lluvia', 'nevada', 'nieva', 'nieve',
-                      'nube', 'nubes', 'nublado', 'meteorologia', 'rain', 'snow', 'snowfall', 'snowstorm', 'sol',
-                      'solano', 'storm', 'sun', 'temperatura', 'tempo', 'tiempo', 'tormenta', 'ventisca', 'weather',
-                      'wetter')
+    'weather': ('atmosfera', 'atmosferico', 'calle', 'calor', 'caloret', 'clima', 'climatologia', 'cloud', 'cloudless',
+                'cloudy', 'cold', 'congelar', 'congelado', 'denbora', 'despejado', 'diluvio', 'frio', 'frost', 'hielo',
+                'humedad', 'llover', 'llueva', 'llueve', 'lluvia', 'nevada', 'nieva', 'nieve', 'nube', 'nubes',
+                'nublado', 'meteorologia', 'rain', 'snow', 'snowfall', 'snowstorm', 'sol', 'solano', 'storm', 'sun',
+                'temperatura', 'tempo', 'tiempo', 'tormenta', 'ventisca', 'weather', 'wetter')
 }
 
 SCRAPING_PHRASES = ('Analizando...', 'Buscando...', 'Hackeando internet... 👀', 'Rebuscando en la web...',
