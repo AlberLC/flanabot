@@ -26,8 +26,8 @@ class WeatherBot(MultiBot, ABC):
     def _add_handlers(self):
         super()._add_handlers()
 
-        self.register(self._on_weather, constants.KEYWORDS['weather_chart'])
-        self.register(self._on_weather, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['weather_chart']))
+        self.register(self._on_weather, constants.KEYWORDS['weather'])
+        self.register(self._on_weather, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['weather']))
 
         self.register_button(self._on_weather_button_press, ButtonsGroup.WEATHER)
 
