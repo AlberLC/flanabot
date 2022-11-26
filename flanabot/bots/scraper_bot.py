@@ -106,7 +106,7 @@ class ScraperBot(MultiBot, ABC):
                 and
                 message.chat.is_group
                 and
-                message.chat.config['delete_original']
+                message.chat.config['scraping_delete_original']
         ):
             # noinspection PyTypeChecker
             BotAction(Action.MESSAGE_DELETED, message, affected_objects=[message, *sended_media_messages]).save()

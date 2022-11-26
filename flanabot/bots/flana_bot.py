@@ -170,7 +170,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
                         and
                         not self.is_bot_mentioned(message)
                         and
-                        not message.chat.config['scraping']
+                        not message.chat.config['auto_scraping']
                         or
                         not await self._scrape_send_and_delete(message)
                 )
@@ -190,7 +190,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
                                 self.is_bot_mentioned(message)
                                 or
                                 (
-                                        message.chat.config['insult']
+                                        message.chat.config['auto_insult']
                                         and
                                         random.random() < constants.INSULT_PROBABILITY
                                 )
