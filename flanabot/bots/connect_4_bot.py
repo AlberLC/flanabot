@@ -283,7 +283,8 @@ class Connect4Bot(MultiBot, ABC):
                     'png',
                     Source.LOCAL
                 ),
-                message
+                message,
+                buttons=[]
             )
             return True
 
@@ -299,7 +300,8 @@ class Connect4Bot(MultiBot, ABC):
                     'png',
                     Source.LOCAL
                 ),
-                message
+                message,
+                buttons=[]
             )
             return True
 
@@ -487,6 +489,7 @@ class Connect4Bot(MultiBot, ABC):
                 'turn': 0
             }}
         )
+        await self.delete_message(message)
 
     async def _on_connect_4_button_press(self, message: Message):
         await self.accept_button_event(message)
@@ -560,6 +563,7 @@ class Connect4Bot(MultiBot, ABC):
             media=Media(connect_4_frontend.make_image(board, current_player), MediaType.IMAGE, 'png', Source.LOCAL),
             message=message
         )
+        await self.delete_message(message)
 
         while True:
             turn += 1
