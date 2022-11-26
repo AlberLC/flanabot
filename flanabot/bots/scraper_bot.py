@@ -28,6 +28,7 @@ class ScraperBot(MultiBot, ABC):
         self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['message']))
         self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
         self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
+
         self.register(self._on_scraping, constants.KEYWORDS['scraping'])
 
         self.register(self._on_scraping_audio, multibot_constants.KEYWORDS['audio'])
