@@ -105,8 +105,6 @@ class ScraperBot(MultiBot, ABC):
                 and
                 message.chat.is_group
                 and
-                not message.replied_message
-                and
                 message.chat.config['delete_original']
         ):
             # noinspection PyTypeChecker
@@ -189,7 +187,7 @@ class ScraperBot(MultiBot, ABC):
             bot_state_message: Message = await self.send('Enviando...', message)
 
         if message.chat.is_group:
-            sended_info_message = await self.send(f"{message.author.name.split('#')[0]} compartió{self._medias_sended_info(medias)}", message)
+            sended_info_message = await self.send(f"{message.author.name.split('#')[0]} compartió{self._medias_sended_info(medias)}", message, reply_to=message.replied_message)
 
         for media in medias:
             if not media.content:
@@ -200,7 +198,7 @@ class ScraperBot(MultiBot, ABC):
                 message.song_infos.add(media.song_info)
                 message.save()
 
-            if bot_message := await self.send(media, message):
+            if bot_message := await self.send(media, message, reply_to=message.replied_message):
                 sended_media_messages.append(bot_message)
                 if media.song_info and bot_message:
                     bot_message.song_infos.add(media.song_info)
