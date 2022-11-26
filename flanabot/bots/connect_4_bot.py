@@ -507,7 +507,7 @@ class Connect4Bot(MultiBot, ABC):
         presser_id = message.buttons_info.presser_user.id
         move_column = int(message.buttons_info.pressed_text) - 1
 
-        if not is_active or board[0][move_column] is not None or current_player.id != presser_id:
+        if not is_active or current_player.id != presser_id or board[0][move_column] is not None:
             return
         message.data['connect_4']['is_active'] = False
         message.save()
@@ -581,12 +581,12 @@ class Connect4Bot(MultiBot, ABC):
     # -------------------- PUBLIC METHODS -------------------- #
     # -------------------------------------------------------- #
     @staticmethod
-    def insert_piece(j: int, player_number: int, board: list[list[int | None]]) -> tuple[int, int]:
-        i = constants.CONNECT_4_N_ROWS - 1
-        while i >= 0:
+    def insert_piece(j: int, player_number: int, board: list[list[int | None]]) -> tuple[int, int] | None:
+        for i in range(constants.CONNECT_4_N_ROWS - 1, -1, -1):
             if board[i][j] is None:
                 board[i][j] = player_number
                 break
-            i -= 1
+        else:
+            return
 
         return i, j
