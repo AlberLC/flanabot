@@ -73,7 +73,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
         return await super()._get_message(event, pull_overwrite_fields)
 
     @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
-    async def _manage_exceptions(self, exceptions: BaseException | Iterable[BaseException], context: Chat | Message):
+    async def _manage_exceptions(self, exceptions: Exception | Iterable[Exception], context: Chat | Message):
         if not isinstance(exceptions, Iterable):
             exceptions = (exceptions,)
 
