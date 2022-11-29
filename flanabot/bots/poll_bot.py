@@ -77,8 +77,6 @@ class PollBot(MultiBot, ABC):
                 (poll_message := self.Message.find_one({'data.poll.is_active': True}, sort_keys=(('date', pymongo.DESCENDING),)))
         ):
             return await self.get_message(poll_message.chat.id, poll_message.id)
-        else:
-            return
 
     async def _update_poll_buttons(self, message: Message):
         if message.data['poll']['is_multiple_answer']:
