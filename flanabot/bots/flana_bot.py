@@ -149,7 +149,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
             n_messages = 1
 
         await self.send(
-            self.get_formatted_last_database_message(
+            self.get_formatted_last_database_messages(
                 n_messages,
                 timezone=pytz.timezone('Europe/Madrid'),
                 simple=simple
