@@ -174,7 +174,9 @@ def highlight_cell(
 
 def make_image(
     board: list[list[int | None]],
-    player: Player = None,
+    next_turn_player: Player = None,
+    winner: Player = None,
+    loser: Player = None,
     highlight=None,
     win_position: Sequence[int] = None,
     tie=False
@@ -197,12 +199,12 @@ def make_image(
 
     if tie:
         write_tie(context)
-    elif win_position:
-        player_color = PLAYER_1_COLOR if player.number == 1 else PLAYER_2_COLOR
+    elif winner:
+        player_color = PLAYER_1_COLOR if winner.number == 1 else PLAYER_2_COLOR
         draw_winner_lines(win_position, board, player_color, context)
-        write_winner(player.name, player_color, context)
+        write_winner(winner, loser, context)
     else:
-        write_player_turn(player.name, PLAYER_1_COLOR if player.number == 1 else PLAYER_2_COLOR, context)
+        write_player_turn(next_turn_player.name, PLAYER_1_COLOR if next_turn_player.number == 1 else PLAYER_2_COLOR, context)
 
     buffer = io.BytesIO()
     surface.write_to_png(buffer)
@@ -227,12 +229,14 @@ def write_numbers(color: tuple[float, float, float], context: cairo.Context):
 
 
 def write_player_turn(name: str, color: tuple[float, float, float], context: cairo.Context):
-    point = TEXT_POSITION
     text = 'Turno de '
+    point = TEXT_POSITION
     draw_text(text, point, GRAY, FONT_SIZE, True, context)
+
     point = (point[0] + context.text_extents(text).width + 9 * SIZE_MULTIPLIER, point[1])
     draw_text(name, point, color, FONT_SIZE, True, context)
-    point = (point[0] + context.text_extents(name).width + 2 * SIZE_MULTIPLIER, point[1])
+
+    point = (point[0] + context.text_extents(name).width, point[1])
     draw_text('.', point, GRAY, FONT_SIZE, True, context)
 
 
@@ -240,11 +244,18 @@ def write_tie(context: cairo.Context):
     draw_text(f"Empate{random.choice(('.', ' :c', ' :/', ' :s'))}", TEXT_POSITION, GRAY, FONT_SIZE, True, context)
 
 
-def write_winner(name: str, color: tuple[float, float, float], context: cairo.Context):
+def write_winner(winner: Player, loser: Player, context: cairo.Context):
+    winner_color, loser_color = (PLAYER_1_COLOR, PLAYER_2_COLOR) if winner.number == 1 else (PLAYER_2_COLOR, PLAYER_1_COLOR)
+
     point = TEXT_POSITION
-    text = 'Ha ganado '
-    draw_text(text, TEXT_POSITION, GRAY, FONT_SIZE, True, context)
-    point = (point[0] + context.text_extents(text).width + 6 * SIZE_MULTIPLIER, point[1])
-    draw_text(name, point, color, FONT_SIZE, True, context)
-    point = (point[0] + context.text_extents(name).width + 2 * SIZE_MULTIPLIER, point[1])
+    draw_text(winner.name, point, winner_color, FONT_SIZE, True, context)
+
+    text = ' le ha ganado a '
+    point = (point[0] + context.text_extents(winner.name).width + 3 * SIZE_MULTIPLIER, point[1])
+    draw_text(text, point, GRAY, FONT_SIZE, True, context)
+
+    point = (point[0] + context.text_extents(text).width + 10 * SIZE_MULTIPLIER, point[1])
+    draw_text(loser.name, point, loser_color, FONT_SIZE, True, context)
+
+    point = (point[0] + context.text_extents(loser.name).width + 3 * SIZE_MULTIPLIER, point[1])
     draw_text('!!!', point, GRAY, FONT_SIZE, True, context)

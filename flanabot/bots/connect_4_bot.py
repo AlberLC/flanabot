@@ -271,14 +271,14 @@ class Connect4Bot(MultiBot, ABC):
         message: Message
     ) -> bool:
         if board[i][j] in self._check_winners(i, j, board):
-            player = player_1 if board[i][j] == player_1.number else player_2
+            winner, loser = (player_1, player_2) if board[i][j] == player_1.number else (player_2, player_1)
             try:
                 message.data['connect_4']['is_active'] = False
             except KeyError:
                 pass
             await self.edit(
                 Media(
-                    connect_4_frontend.make_image(board, player, highlight=(i, j), win_position=(i, j)),
+                    connect_4_frontend.make_image(board, winner=winner, loser=loser, highlight=(i, j), win_position=(i, j)),
                     MediaType.IMAGE,
                     'png',
                     Source.LOCAL
