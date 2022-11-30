@@ -300,11 +300,14 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
         await self.delete_message(message)
         bot_message = await self.send(
             f"<b>{len(user_names)} usuario{'' if len(user_names) == 1 else 's'}:</b>",
+            message
+        )
+        await self.edit(
+            f"<b>{len(user_names)} usuario{'' if len(user_names) == 1 else 's'}:</b>\n{joined_user_names}\n\n<b>Filtrar usuarios por roles:</b>",
             flanautils.chunks([f'❌ {role_name}' for role_name in role_names], 5),
-            message,
+            bot_message,
             buttons_key=ButtonsGroup.USERS
         )
-        await self.edit(f"<b>{len(user_names)} usuario{'' if len(user_names) == 1 else 's'}:</b>\n{joined_user_names}\n\n<b>Filtrar usuarios por roles:</b>", bot_message)
 
     async def _on_users_button_press(self, message: Message):
         await self.accept_button_event(message)
