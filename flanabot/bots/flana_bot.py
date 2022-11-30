@@ -332,7 +332,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
     async def clear_old_database_items(cls):
         await super().clear_old_database_items()
         before_date = datetime.datetime.now(datetime.timezone.utc) - multibot_constants.MESSAGE_EXPIRATION_TIME
-        BotAction.collection.delete_many({'date': {'$lte': before_date}})
+        BotAction.delete_many_raw({'date': {'$lte': before_date}})
 
     async def send_bye(self, message: Message) -> multibot_constants.ORIGINAL_MESSAGE:
         return await self.send(random.choice((*constants.BYE_PHRASES, flanautils.CommonWords.random_time_greeting())), message)
