@@ -201,12 +201,12 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
     # -------------------------------------------------------- #
-    async def is_punished(self, user: int | str | User, group_: int | str | Chat | Message):
+    async def is_punished(self, user: int | str | User, group_: int | str | Chat | Message) -> bool:
         user = await self.get_user(user, group_)
         group_id = self.get_group_id(group_)
-        return group_id in {punishment.group_id for punishment in Punishment.find({
+        return bool(Punishment.find({
             'platform': self.platform.value,
             'user_id': user.id,
             'group_id': group_id,
             'is_active': True
-        })}
+        }))
