@@ -147,7 +147,7 @@ class PollBot(MultiBot, ABC):
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
 
-        if top_number := flanautils.sum_numbers_in_text(message.text):
+        if top_number := flanautils.text_to_number(message.text):
             await self.send(random.randint(1, math.floor(top_number)), message)
         else:
             await self.send(random.choice(('¿De cuántas caras?', '¿Y el número?', '?', '🤔')), message)

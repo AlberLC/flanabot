@@ -145,7 +145,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
 
-        n_messages = flanautils.sum_numbers_in_text(message.text)
+        n_messages = flanautils.text_to_number(message.text)
         if not n_messages:
             n_messages = 1
 
@@ -170,7 +170,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
                     await self.delete_message(message)
             elif message.chat.is_group and self.is_bot_mentioned(message):
                 await self.send_negative(message)
-        elif message.chat.is_group and self.is_bot_mentioned(message) and (n_messages := flanautils.sum_numbers_in_text(message.text)):
+        elif message.chat.is_group and self.is_bot_mentioned(message) and (n_messages := flanautils.text_to_number(message.text)):
             if not message.author.is_admin:
                 await self.send_negative(message)
                 return
