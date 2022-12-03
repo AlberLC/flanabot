@@ -226,6 +226,10 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
         ):
             await self.send_insult(message)
 
+    async def _on_ready(self):
+        await super()._on_ready()
+        await flanautils.do_every(multibot_constants.CHECK_OLD_DATABASE_MESSAGES_EVERY_SECONDS, self.check_old_database_actions)
+
     @inline(False)
     async def _on_recover_message(self, message: Message):
         if message.replied_message and message.replied_message.author.id == self.id:
@@ -332,10 +336,9 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
     # -------------------------------------------------------- #
-    @classmethod
-    async def clear_old_database_items(cls):
-        await super().clear_old_database_items()
-        before_date = datetime.datetime.now(datetime.timezone.utc) - multibot_constants.MESSAGE_EXPIRATION_TIME
+    @staticmethod
+    def check_old_database_actions():
+        before_date = datetime.datetime.now(datetime.timezone.utc) - multibot_constants.DATABASE_MESSAGE_EXPIRATION_TIME
         BotAction.delete_many_raw({'date': {'$lte': before_date}})
 
     async def send_bye(self, message: Message) -> multibot_constants.ORIGINAL_MESSAGE:
