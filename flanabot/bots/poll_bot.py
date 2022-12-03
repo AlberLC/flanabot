@@ -7,7 +7,7 @@ from abc import ABC
 from typing import Iterable
 
 import flanautils
-import pymongo
+from flanautils import OrderedSet
 from multibot import MultiBot, admin, constants as multibot_constants
 
 from flanabot import constants
@@ -60,9 +60,9 @@ class PollBot(MultiBot, ABC):
         if any(char in text for char in (',', ';', *conjunctions)):
             conjunction_parts = [f'(?:[,;]*{conjunction}[,;]*)+' for conjunction in conjunctions]
             options = re.split(f"{'|'.join(conjunction_parts)}|[,;]+", text)
-            return [option.strip() for option in options if option]
+            return list(OrderedSet(stripped_option for option in options if (stripped_option := option.strip())))
         else:
-            return text.split()
+            return list(OrderedSet(text.split()))
 
     @staticmethod
     def _get_poll_message(message: Message) -> Message | None:
