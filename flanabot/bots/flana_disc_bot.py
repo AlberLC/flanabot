@@ -204,6 +204,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     async def is_punished(self, user: int | str | User, group_: int | str | Chat | Message) -> bool:
         user = await self.get_user(user, group_)
         group_id = self.get_group_id(group_)
+
         return bool(Punishment.find({
             'platform': self.platform.value,
             'user_id': user.id,
