@@ -128,7 +128,7 @@ class PollBot(MultiBot, ABC):
 
     @admin(send_negative=True)
     async def _on_delete_votes(self, message: Message, all_=False):
-        if message.chat.is_group and not self.is_bot_mentioned(message) or not (poll_message := await self._get_poll_message(message)):
+        if not (poll_message := self._get_poll_message(message)):
             return
 
         await self.delete_message(message)
@@ -217,7 +217,7 @@ class PollBot(MultiBot, ABC):
         await self._on_poll(message, is_multiple_answer=True)
 
     async def _on_stop_poll(self, message: Message):
-        if not (poll_message := await self._get_poll_message(message)):
+        if not (poll_message := self._get_poll_message(message)):
             return
 
         winners = []
@@ -246,7 +246,7 @@ class PollBot(MultiBot, ABC):
 
     @admin(send_negative=True)
     async def _on_voting_ban(self, message: Message):
-        if message.chat.is_group and not self.is_bot_mentioned(message) or not (poll_message := await self._get_poll_message(message)):
+        if message.chat.is_group and not self.is_bot_mentioned(message) or not (poll_message := self._get_poll_message(message)):
             return
 
         await self.delete_message(message)
@@ -257,7 +257,7 @@ class PollBot(MultiBot, ABC):
 
     @admin(send_negative=True)
     async def _on_voting_unban(self, message: Message):
-        if message.chat.is_group and not self.is_bot_mentioned(message) or not (poll_message := await self._get_poll_message(message)):
+        if message.chat.is_group and not self.is_bot_mentioned(message) or not (poll_message := self._get_poll_message(message)):
             return
 
         await self.delete_message(message)
