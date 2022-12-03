@@ -241,8 +241,6 @@ class PollBot(MultiBot, ABC):
         poll_message.buttons_info.data['is_active'] = False
 
         await self.edit(text, poll_message)
-        if not message.replied_message:
-            await self.send(text, reply_to=poll_message)
 
     @admin(send_negative=True)
     async def _on_voting_ban(self, message: Message):
