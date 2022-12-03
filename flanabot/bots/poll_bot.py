@@ -131,8 +131,6 @@ class PollBot(MultiBot, ABC):
         if not (poll_message := self._get_poll_message(message)):
             return
 
-        await self.delete_message(message)
-
         if all_:
             for option_name, option_votes in poll_message.buttons_info.data['votes'].items():
                 poll_message.buttons_info.data['votes'][option_name].clear()
@@ -141,6 +139,7 @@ class PollBot(MultiBot, ABC):
                 for option_name, option_votes in poll_message.buttons_info.data['votes'].items():
                     poll_message.buttons_info.data['votes'][option_name] = [option_vote for option_vote in option_votes if option_vote[0] != user.id]
 
+        await self.delete_message(message)
         await self._update_poll_buttons(poll_message)
 
     async def _on_dice(self, message: Message):
@@ -155,8 +154,6 @@ class PollBot(MultiBot, ABC):
     async def _on_poll(self, message: Message, is_multiple_answer=False):
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
-
-        await self.delete_message(message)
 
         discarded_words = {*constants.KEYWORDS['poll'], *constants.KEYWORDS['multiple_answer'], self.name.lower(), f'<@{self.id}>'}
         if final_options := [f'{option[0].upper()}{option[1:]}' for option in self._get_options(message.text, discarded_words)]:
@@ -174,6 +171,8 @@ class PollBot(MultiBot, ABC):
             )
         else:
             await self.send(random.choice(('¿Y las opciones?', '?', '🤔')), message)
+
+        await self.delete_message(message)
 
     async def _on_poll_button_press(self, message: Message):
         await self.accept_button_event(message)
