@@ -152,6 +152,7 @@ class WeatherBot(MultiBot, ABC):
             ],
             message,
             buttons_key=ButtonsGroup.WEATHER,
+            buttons_data={'weather_chart': weather_chart},
             send_as_file=False
         )
         await self.send_inline_results(message)
@@ -159,36 +160,35 @@ class WeatherBot(MultiBot, ABC):
         if bot_state_message:
             await self.delete_message(bot_state_message)
 
-        if bot_message:
-            bot_message.weather_chart = weather_chart
-            bot_message.save()
-            if not self.is_bot_mentioned(message):
-                # noinspection PyTypeChecker
-                BotAction(Action.AUTO_WEATHER_CHART, message, affected_objects=[bot_message]).save()
+        if bot_message and not self.is_bot_mentioned(message):
+            # noinspection PyTypeChecker
+            BotAction(Action.AUTO_WEATHER_CHART, message, affected_objects=[bot_message]).save()
 
     async def _on_weather_button_press(self, message: Message):
         await self.accept_button_event(message)
 
+        weather_chart = message.buttons_info.data['weather_chart']
+
         match message.buttons_info.pressed_text:
             case WeatherEmoji.ZOOM_IN.value:
-                message.weather_chart.zoom_in()
+                weather_chart.zoom_in()
             case WeatherEmoji.ZOOM_OUT.value:
-                message.weather_chart.zoom_out()
+                weather_chart.zoom_out()
             case WeatherEmoji.LEFT.value:
-                message.weather_chart.move_left()
+                weather_chart.move_left()
             case WeatherEmoji.RIGHT.value:
-                message.weather_chart.move_right()
+                weather_chart.move_right()
             case WeatherEmoji.PRECIPITATION_VOLUME.value:
-                message.weather_chart.trace_metadatas['rain_volume'].show = not message.weather_chart.trace_metadatas['rain_volume'].show
-                message.weather_chart.trace_metadatas['snow_volume'].show = not message.weather_chart.trace_metadatas['snow_volume'].show
+                weather_chart.trace_metadatas['rain_volume'].show = not weather_chart.trace_metadatas['rain_volume'].show
+                weather_chart.trace_metadatas['snow_volume'].show = not weather_chart.trace_metadatas['snow_volume'].show
             case emoji if emoji in WeatherEmoji.values:
                 trace_metadata_name = WeatherEmoji(emoji).name.lower()
-                message.weather_chart.trace_metadatas[trace_metadata_name].show = not message.weather_chart.trace_metadatas[trace_metadata_name].show
+                weather_chart.trace_metadatas[trace_metadata_name].show = not weather_chart.trace_metadatas[trace_metadata_name].show
             case _:
                 return
 
-        message.weather_chart.apply_zoom()
-        message.weather_chart.draw()
+        weather_chart.apply_zoom()
+        weather_chart.draw()
 
-        image_bytes = message.weather_chart.to_image()
+        image_bytes = weather_chart.to_image()
         await self.edit(Media(image_bytes, MediaType.IMAGE, 'jpg'), message)

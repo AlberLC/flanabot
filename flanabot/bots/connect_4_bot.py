@@ -272,38 +272,29 @@ class Connect4Bot(MultiBot, ABC):
     ) -> bool:
         if board[i][j] in self._check_winners(i, j, board):
             winner, loser = (player_1, player_2) if board[i][j] == player_1.number else (player_2, player_1)
-            try:
-                message.data['connect_4']['is_active'] = False
-            except KeyError:
-                pass
-            await self.edit(
-                Media(
-                    connect_4_frontend.make_image(board, winner=winner, loser=loser, highlight=(i, j), win_position=(i, j)),
-                    MediaType.IMAGE,
-                    'png',
-                    Source.LOCAL
-                ),
-                message,
-                buttons=[]
-            )
-            return True
+            edit_kwargs = {'winner': winner, 'loser': loser, 'win_position': (i, j)}
+        elif turn >= constants.CONNECT_4_N_ROWS * constants.CONNECT_4_N_COLUMNS:
+            edit_kwargs = {'tie': True}
+        else:
+            return False
 
-        if turn >= constants.CONNECT_4_N_ROWS * constants.CONNECT_4_N_COLUMNS:
-            try:
-                message.data['connect_4']['is_active'] = False
-            except KeyError:
-                pass
-            await self.edit(
-                Media(
-                    connect_4_frontend.make_image(board, highlight=(i, j), tie=True),
-                    MediaType.IMAGE,
-                    'png',
-                    Source.LOCAL
-                ),
-                message,
-                buttons=[]
-            )
-            return True
+        try:
+            message.buttons_info.data['is_active'] = False
+        except AttributeError:
+            pass
+
+        await self.edit(
+            Media(
+                connect_4_frontend.make_image(board, highlight=(i, j), **edit_kwargs),
+                MediaType.IMAGE,
+                'png',
+                Source.LOCAL
+            ),
+            message,
+            buttons=[]
+        )
+
+        return True
 
     @staticmethod
     def _check_winner_left(i: int, j: int, board: list[list[int | None]]) -> int | None:
@@ -481,26 +472,25 @@ class Connect4Bot(MultiBot, ABC):
             message=message,
             buttons=self.distribute_buttons([str(n) for n in range(1, constants.CONNECT_4_N_COLUMNS + 1)]),
             buttons_key=ButtonsGroup.CONNECT_4,
-            data={'connect_4': {
+            buttons_data={
                 'is_active': True,
                 'board': board,
                 'player_1': player_1.to_dict(),
                 'player_2': player_2.to_dict(),
                 'turn': 0
-            }}
+            }
         )
         await self.delete_message(message)
 
     async def _on_connect_4_button_press(self, message: Message):
         await self.accept_button_event(message)
 
-        is_active = message.data['connect_4']['is_active']
-        board = message.data['connect_4']['board']
-        player_1 = Player.from_dict(message.data['connect_4']['player_1'])
-        player_2 = Player.from_dict(message.data['connect_4']['player_2'])
-        turn = message.data['connect_4']['turn']
+        is_active = message.buttons_info.data['is_active']
+        board = message.buttons_info.data['board']
+        player_1 = Player.from_dict(message.buttons_info.data['player_1'])
+        player_2 = Player.from_dict(message.buttons_info.data['player_2'])
 
-        if turn % 2 == 0:
+        if message.buttons_info.data['turn'] % 2 == 0:
             current_player = player_1
             next_player = player_2
         else:
@@ -511,12 +501,11 @@ class Connect4Bot(MultiBot, ABC):
 
         if not is_active or current_player.id != presser_id or board[0][move_column] is not None:
             return
-        message.data['connect_4']['is_active'] = False
-        message.save()
+        message.buttons_info.data['is_active'] = False
 
         i, j = self.insert_piece(move_column, current_player.number, board)
-        turn += 1
-        if await self._check_game_finished(i, j, player_1, player_2, turn, board, message):
+        message.buttons_info.data['turn'] += 1
+        if await self._check_game_finished(i, j, player_1, player_2, message.buttons_info.data['turn'], board, message):
             return
 
         await self.edit(
@@ -530,22 +519,20 @@ class Connect4Bot(MultiBot, ABC):
         )
 
         if player_2.id == self.id:
-            turn += 1
+            message.buttons_info.data['turn'] += 1
             if await self._ai_turn(
                     player_1,
                     player_2,
                     next_player,
                     current_player,
-                    turn,
+                    message.buttons_info.data['turn'],
                     constants.CONNECT_4_AI_DELAY_SECONDS,
                     board,
                     message
             ):
                 return
 
-        message.data['connect_4']['turn'] = turn
-        message.data['connect_4']['is_active'] = True
-        message.save()
+        message.buttons_info.data['is_active'] = True
 
     async def _on_connect_4_vs_itself(self, message: Message):
         if message.chat.is_group and not self.is_bot_mentioned(message):

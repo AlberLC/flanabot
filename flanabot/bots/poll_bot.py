@@ -64,34 +64,25 @@ class PollBot(MultiBot, ABC):
         else:
             return text.split()
 
-    async def _get_poll_message(self, message: Message) -> Message | None:
-        if poll_message := message.replied_message:
-            if poll_message.data.get('poll') is None:
-                return
+    @staticmethod
+    def _get_poll_message(message: Message) -> Message | None:
+        if (poll_message := message.replied_message) and poll_message.buttons_info and poll_message.buttons_info.key == ButtonsGroup.POLL:
             return poll_message
-        elif (
-                (message.chat.is_private or self.is_bot_mentioned(message))
-                and
-                flanautils.cartesian_product_string_matching(message.text, constants.KEYWORDS['poll'], min_score=multibot_constants.PARSE_CALLBACKS_MIN_SCORE_DEFAULT)
-                and
-                (poll_message := self.Message.find_one({'data.poll.is_active': True}, sort_keys=(('date', pymongo.DESCENDING),)))
-        ):
-            return await self.get_message(poll_message.chat.id, poll_message.id)
 
     async def _update_poll_buttons(self, message: Message):
-        if message.data['poll']['is_multiple_answer']:
-            total_votes = len({option_vote[0] for option_votes in message.data['poll']['votes'].values() if option_votes for option_vote in option_votes})
+        if message.buttons_info.data['is_multiple_answer']:
+            total_votes = len({option_vote[0] for option_votes in message.buttons_info.data['votes'].values() if option_votes for option_vote in option_votes})
         else:
-            total_votes = sum(len(option_votes) for option_votes in message.data['poll']['votes'].values())
+            total_votes = sum(len(option_votes) for option_votes in message.buttons_info.data['votes'].values())
 
         if total_votes:
             buttons = []
-            for option, option_votes in message.data['poll']['votes'].items():
+            for option, option_votes in message.buttons_info.data['votes'].items():
                 ratio = f'{len(option_votes)}/{total_votes}'
                 names = f"({', '.join(option_vote[1] for option_vote in option_votes)})" if option_votes else ''
                 buttons.append(f'{option} ➜ {ratio} {names}')
         else:
-            buttons = list(message.data['poll']['votes'].keys())
+            buttons = list(message.buttons_info.data['votes'].keys())
 
         await self.edit(self.distribute_buttons(buttons, vertically=True), message)
 
@@ -143,12 +134,12 @@ class PollBot(MultiBot, ABC):
         await self.delete_message(message)
 
         if all_:
-            for option_name, option_votes in poll_message.data['poll']['votes'].items():
-                poll_message.data['poll']['votes'][option_name].clear()
+            for option_name, option_votes in poll_message.buttons_info.data['votes'].items():
+                poll_message.buttons_info.data['votes'][option_name].clear()
         else:
             for user in await self._find_users_to_punish(message):
-                for option_name, option_votes in poll_message.data['poll']['votes'].items():
-                    poll_message.data['poll']['votes'][option_name] = [option_vote for option_vote in option_votes if option_vote[0] != user.id]
+                for option_name, option_votes in poll_message.buttons_info.data['votes'].items():
+                    poll_message.buttons_info.data['votes'][option_name] = [option_vote for option_vote in option_votes if option_vote[0] != user.id]
 
         await self._update_poll_buttons(poll_message)
 
@@ -174,27 +165,26 @@ class PollBot(MultiBot, ABC):
                 self.distribute_buttons(final_options, vertically=True),
                 message,
                 buttons_key=ButtonsGroup.POLL,
-                data={'poll': {
+                buttons_data={
                     'is_active': True,
                     'is_multiple_answer': is_multiple_answer,
                     'votes': {option: [] for option in final_options},
                     'banned_users_tries': {}
-                }}
+                }
             )
         else:
             await self.send(random.choice(('¿Y las opciones?', '?', '🤔')), message)
 
     async def _on_poll_button_press(self, message: Message):
         await self.accept_button_event(message)
-        if not message.data['poll']['is_active']:
+        if not message.buttons_info.data['is_active']:
             return
 
         presser_id = message.buttons_info.presser_user.id
         presser_name = message.buttons_info.presser_user.name.split('#')[0]
-        if (presser_id_str := str(presser_id)) in message.data['poll']['banned_users_tries']:
-            message.data['poll']['banned_users_tries'][presser_id_str] += 1
-            message.save()
-            if message.data['poll']['banned_users_tries'][presser_id_str] == 3:
+        if (presser_id_str := str(presser_id)) in message.buttons_info.data['banned_users_tries']:
+            message.buttons_info.data['banned_users_tries'][presser_id_str] += 1
+            if message.buttons_info.data['banned_users_tries'][presser_id_str] == 3:
                 await self.send(random.choice((
                     f'Deja de dar por culo {presser_name} que no puedes votar aqui',
                     f'No es pesao {presser_name}, que no tienes permitido votar aqui',
@@ -206,13 +196,13 @@ class PollBot(MultiBot, ABC):
             return
 
         option_name = results[0] if (results := re.findall('(.*?) ➜.+', message.buttons_info.pressed_text)) else message.buttons_info.pressed_text
-        selected_option_votes = message.data['poll']['votes'][option_name]
+        selected_option_votes = message.buttons_info.data['votes'][option_name]
 
         if [presser_id, presser_name] in selected_option_votes:
             selected_option_votes.remove([presser_id, presser_name])
         else:
-            if not message.data['poll']['is_multiple_answer']:
-                for option_votes in message.data['poll']['votes'].values():
+            if not message.buttons_info.data['is_multiple_answer']:
+                for option_votes in message.buttons_info.data['votes'].values():
                     try:
                         option_votes.remove([presser_id, presser_name])
                     except ValueError:
@@ -232,7 +222,7 @@ class PollBot(MultiBot, ABC):
 
         winners = []
         max_votes = 1
-        for option, votes in poll_message.data['poll']['votes'].items():
+        for option, votes in poll_message.buttons_info.data['votes'].items():
             if len(votes) > max_votes:
                 winners = [option]
                 max_votes = len(votes)
@@ -248,7 +238,7 @@ class PollBot(MultiBot, ABC):
             case _:
                 text = 'Encuesta finalizada.'
 
-        poll_message.data['poll']['is_active'] = False
+        poll_message.buttons_info.data['is_active'] = False
 
         await self.edit(text, poll_message)
         if not message.replied_message:
@@ -262,9 +252,8 @@ class PollBot(MultiBot, ABC):
         await self.delete_message(message)
 
         for user in await self._find_users_to_punish(message):
-            if str(user.id) not in poll_message.data['poll']['banned_users_tries']:
-                poll_message.data['poll']['banned_users_tries'][str(user.id)] = 0
-        poll_message.save()
+            if str(user.id) not in poll_message.buttons_info.data['banned_users_tries']:
+                poll_message.buttons_info.data['banned_users_tries'][str(user.id)] = 0
 
     @admin(send_negative=True)
     async def _on_voting_unban(self, message: Message):
@@ -275,10 +264,9 @@ class PollBot(MultiBot, ABC):
 
         for user in await self._find_users_to_punish(message):
             try:
-                del poll_message.data['poll']['banned_users_tries'][str(user.id)]
+                del poll_message.buttons_info.data['banned_users_tries'][str(user.id)]
             except KeyError:
                 pass
-        poll_message.save()
 
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
