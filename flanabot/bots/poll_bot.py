@@ -106,14 +106,14 @@ class PollBot(MultiBot, ABC):
                     n1 = flanautils.cast_number(options[i - 1])
                 except ValueError:
                     try:
-                        n1 = flanautils.words_to_numbers(options[i - 1], ignore_no_numbers=False)
+                        n1 = flanautils.text_to_number(options[i - 1], ignore_no_numbers=False)
                     except KeyError:
                         continue
                 try:
                     n2 = flanautils.cast_number(options[i + 1])
                 except ValueError:
                     try:
-                        n2 = flanautils.words_to_numbers(options[i + 1], ignore_no_numbers=False)
+                        n2 = flanautils.text_to_number(options[i + 1], ignore_no_numbers=False)
                     except KeyError:
                         continue
                 if options[i] in ('al', 'to'):
