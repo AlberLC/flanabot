@@ -51,6 +51,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
         self.register(self._on_new_message_default, default=True)
 
         self.register(self._on_recover_message, multibot_constants.KEYWORDS['reset'])
+        self.register(self._on_recover_message, multibot_constants.KEYWORDS['message'])
         self.register(self._on_recover_message, (multibot_constants.KEYWORDS['reset'], multibot_constants.KEYWORDS['message']))
 
         self.register(self._on_roles, multibot_constants.KEYWORDS['permission'])
