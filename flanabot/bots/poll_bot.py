@@ -198,13 +198,13 @@ class PollBot(MultiBot, ABC):
         option_name = results[0] if (results := re.findall('(.*?) ➜.+', message.buttons_info.pressed_text)) else message.buttons_info.pressed_text
         selected_option_votes = message.buttons_info.data['votes'][option_name]
 
-        if [presser_id, presser_name] in selected_option_votes:
-            selected_option_votes.remove([presser_id, presser_name])
+        if (presser_id, presser_name) in selected_option_votes:
+            selected_option_votes.remove((presser_id, presser_name))
         else:
             if not message.buttons_info.data['is_multiple_answer']:
                 for option_votes in message.buttons_info.data['votes'].values():
                     try:
-                        option_votes.remove([presser_id, presser_name])
+                        option_votes.remove((presser_id, presser_name))
                     except ValueError:
                         pass
                     else:
