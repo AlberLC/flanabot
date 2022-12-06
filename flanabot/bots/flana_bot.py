@@ -170,17 +170,21 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
                     await self.delete_message(message)
             elif message.chat.is_group and self.is_bot_mentioned(message):
                 await self.send_negative(message)
-        elif message.chat.is_group and self.is_bot_mentioned(message) and (n_messages := flanautils.text_to_number(message.text)):
+        elif (
+                (message.chat.is_private or self.is_bot_mentioned(message))
+                and
+                (n_messages := flanautils.text_to_number(message.text))
+        ):
             if not message.author.is_admin:
                 await self.send_negative(message)
                 return
 
             if n_messages <= 0:
-                await self._manage_exceptions(ValueError(), message)
+                await self.delete_message(message)
                 return
 
             try:
-                await self.clear(n_messages, message.chat)
+                await self.clear(n_messages + 1, message.chat)
             except LimitError as e:
                 await self._manage_exceptions(e, message)
 
