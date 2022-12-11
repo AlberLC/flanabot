@@ -5,7 +5,6 @@ import datetime
 import math
 import os
 import random
-from collections import defaultdict
 
 import discord
 import flanautils
@@ -16,31 +15,6 @@ from multibot import BadRoleError, DiscordBot, Role, User, bot_mentioned, consta
 from flanabot import constants
 from flanabot.bots.flana_bot import FlanaBot
 from flanabot.models import Chat, Message, Punishment
-
-CHANGEABLE_ROLES = defaultdict(list, {
-    360868977754505217: [881238165476741161, 991454395663401072, 1033098591725699222],
-    862823584670285835: [976660580939202610, 984269640752590868]
-})
-HEAT_NAMES = [
-    'Canal Congelado',
-    'Canal Fresquito',
-    'Canal Templaillo',
-    'Canal Calentito',
-    'Canal Caloret',
-    'Canal Caliente',
-    'Canal Olor a Vasco',
-    'Canal Verano Cordobés al Sol',
-    'Canal Al rojo vivo',
-    'Canal Ardiendo',
-    'Canal INFIERNO'
-]
-CHANNEL_IDS = {
-    'A': 493529846027386900,
-    'B': 493529881125060618,
-    'C': 493530483045564417,
-    'D': 829032476949217302,
-    'E': 829032505645596742
-}
 
 
 # ---------------------------------------------------------------------------------------------------- #
@@ -65,7 +39,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
 
     async def _changeable_roles(self, group_: int | str | Chat | Message) -> list[Role]:
         group_id = self.get_group_id(group_)
-        return [role for role in await self.get_group_roles(group_) if role.id in CHANGEABLE_ROLES[group_id]]
+        return [role for role in await self.get_group_roles(group_) if role.id in constants.CHANGEABLE_ROLES[group_id]]
 
     async def _heat_channel(self, channel: discord.VoiceChannel):
         async def set_fire_to(channel_key: str, depends_on: str, firewall=0):
@@ -86,8 +60,8 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             await channels[channel_key]['object'].edit(name=new_name_)
 
         channels = {}
-        for key in CHANNEL_IDS:
-            channel_ = flanautils.find(channel.guild.voice_channels, condition=lambda c: c.id == CHANNEL_IDS[key])
+        for key in constants.DISCORD_HOT_CHANNEL_IDS:
+            channel_ = flanautils.find(channel.guild.voice_channels, condition=lambda c: c.id == constants.DISCORD_HOT_CHANNEL_IDS[key])
             channels[key] = {
                 'object': channel_,
                 'original_name': channel_.name,
@@ -103,18 +77,18 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 if not self.heat_level:
                     return
                 self.heat_level -= 0.5
-                if self.heat_level > len(HEAT_NAMES) - 1:
+                if self.heat_level > len(constants.DISCORD_HEAT_NAMES) - 1:
                     self.heat_level = float(int(self.heat_level))
 
             if not self.heat_level.is_integer():
                 continue
 
             i = int(self.heat_level)
-            if i < len(HEAT_NAMES):
+            if i < len(constants.DISCORD_HEAT_NAMES):
                 n_fires = 0
-                new_name = HEAT_NAMES[i]
+                new_name = constants.DISCORD_HEAT_NAMES[i]
             else:
-                n_fires = i - len(HEAT_NAMES) + 1
+                n_fires = i - len(constants.DISCORD_HEAT_NAMES) + 1
                 n_fires = round(math.log(n_fires + 4, 1.2) - 8)
                 new_name = '🔥' * n_fires
             channels['C']['n_fires'] = n_fires
@@ -186,9 +160,9 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         (await self._create_user_from_discord_user(member)).save()
 
     async def _on_voice_state_update(self, _: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
-        if getattr(before.channel, 'id', None) == CHANNEL_IDS['C']:
+        if getattr(before.channel, 'id', None) == constants.DISCORD_HOT_CHANNEL_IDS['C']:
             channel = before.channel
-        elif getattr(after.channel, 'id', None) == CHANNEL_IDS['C']:
+        elif getattr(after.channel, 'id', None) == constants.DISCORD_HOT_CHANNEL_IDS['C']:
             channel = after.channel
         else:
             return

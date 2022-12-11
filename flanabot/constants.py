@@ -1,4 +1,7 @@
 import datetime
+from collections import defaultdict
+
+from multibot import Platform
 
 AUDIT_LOG_AGE = datetime.timedelta(hours=1)
 AUDIT_LOG_LIMIT = 5
@@ -8,6 +11,7 @@ CONNECT_4_AI_DELAY_SECONDS = 1
 CONNECT_4_CENTER_COLUMN_POINTS = 2
 CONNECT_4_N_COLUMNS = 7
 CONNECT_4_N_ROWS = 6
+
 FLOOD_2s_LIMIT = 2
 FLOOD_7s_LIMIT = 4
 HEAT_PERIOD_SECONDS = datetime.timedelta(minutes=15).total_seconds()
@@ -19,6 +23,41 @@ RECOVERY_DELETED_MESSAGE_BEFORE = datetime.timedelta(hours=1)
 
 BYE_PHRASES = ('Adiós.', 'adio', 'adioh', 'adios', 'adió', 'adiós', 'agur', 'bye', 'byyeeee', 'chao', 'hasta la vista',
                'hasta luego', 'hasta nunca', ' hasta pronto', 'hasta la próxima', 'nos vemos', 'taluego')
+
+CHANGEABLE_ROLES = defaultdict(
+    lambda: defaultdict(list),
+    {
+        Platform.DISCORD: defaultdict(
+            list,
+            {
+                360868977754505217: [881238165476741161, 991454395663401072, 1033098591725699222],
+                862823584670285835: [976660580939202610, 984269640752590868]
+            }
+        )
+    }
+)
+
+DISCORD_HEAT_NAMES = [
+    'Canal Congelado',
+    'Canal Fresquito',
+    'Canal Templaillo',
+    'Canal Calentito',
+    'Canal Caloret',
+    'Canal Caliente',
+    'Canal Olor a Vasco',
+    'Canal Verano Cordobés al Sol',
+    'Canal Al rojo vivo',
+    'Canal Ardiendo',
+    'Canal INFIERNO'
+]
+
+DISCORD_HOT_CHANNEL_IDS = {
+    'A': 493529846027386900,
+    'B': 493529881125060618,
+    'C': 493530483045564417,
+    'D': 829032476949217302,
+    'E': 829032505645596742
+}
 
 HELLO_PHRASES = ('alo', 'aloh', 'buenas', 'Hola.', 'hello', 'hey', 'hi', 'hola', 'holaaaa', 'holaaaaaaa', 'ola',
                  'ola k ase', 'pa ti mi cola', 'saludos')
