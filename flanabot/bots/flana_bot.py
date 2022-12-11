@@ -68,7 +68,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
         self.register_button(self._on_users_button_press, ButtonsGroup.USERS)
 
     async def _changeable_roles(self, group_: int | str | Chat | Message) -> list[Role]:
-        pass
+        return []
 
     @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
     async def _get_message(
@@ -125,8 +125,8 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
             return
 
         buttons_texts = [(f"{'✔' if v else '❌'} {k}", v) for k, v in message.chat.config.items()]
-        await self.delete_message(message)
         await self.send('<b>Estos son los ajustes del chat:</b>\n\n', flanautils.chunks(buttons_texts, 3), message, buttons_key=ButtonsGroup.CONFIG)
+        await self.delete_message(message)
 
     async def _on_config_button_press(self, message: Message):
         await self.accept_button_event(message)
@@ -266,7 +266,6 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
         if not (options := await self._role_state_options(message, user_role_names)):
             return
 
-        await self.delete_message(message)
         await self.send(
             f'<b>Roles de {message.author.name}:</b>',
             self.distribute_buttons(options, vertically=True),
@@ -274,6 +273,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
             buttons_key=ButtonsGroup.ROLES,
             buttons_data={'user_id': message.author.id}
         )
+        await self.delete_message(message)
 
     async def _on_roles_button_press(self, message: Message):
         await self.accept_button_event(message)
@@ -298,7 +298,9 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
     @group
     @bot_mentioned
     async def _on_users(self, message: Message):
-        role_names = [role.name for role in await self.get_group_roles(message.chat.group_id)]
+        if not (role_names := [role.name for role in await self.get_group_roles(message.chat.group_id)]):
+            return
+
         try:
             role_names.remove('@everyone')
         except ValueError:
@@ -306,7 +308,6 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
 
         user_names = [f'<@{user.id}>' for user in await self.find_users_by_roles([], message)]
         joined_user_names = ', '.join(user_names)
-        await self.delete_message(message)
         bot_message = await self.send(
             f"<b>{len(user_names)} usuario{'' if len(user_names) == 1 else 's'}:</b>",
             message
@@ -317,6 +318,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
             bot_message,
             buttons_key=ButtonsGroup.USERS
         )
+        await self.delete_message(message)
 
     async def _on_users_button_press(self, message: Message):
         await self.accept_button_event(message)
