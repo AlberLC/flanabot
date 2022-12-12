@@ -26,9 +26,9 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         self.heating = False
         self.heat_level = 0.0
 
-    # ----------------------------------------------------------- #
-    # -------------------- PROTECTED METHODS -------------------- #
-    # ----------------------------------------------------------- #
+    # -------------------------------------------------------- #
+    # ------------------- PROTECTED METHODS ------------------ #
+    # -------------------------------------------------------- #
     def _add_handlers(self):
         super()._add_handlers()
         self.client.add_listener(self._on_member_join, 'on_member_join')
