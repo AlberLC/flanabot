@@ -78,7 +78,13 @@ class ScraperBot(MultiBot, ABC):
 
     async def _scrape_and_send(self, message: Message, audio_only=False) -> OrderedSet[Media]:
         kwargs = {}
-        if self._parse_callbacks(message.text, [RegisteredCallback(..., [['sin'], ['timeout', 'limite']])]):
+        if self._parse_callbacks(
+                message.text,
+                [
+                    RegisteredCallback(..., [['sin'], ['timeout', 'limite']]),
+                    RegisteredCallback(..., 'completo entero full todo')
+                ]
+        ):
             kwargs['timeout_for_media'] = None
         if not (medias := await self._search_medias(message, audio_only, **kwargs)):
             return OrderedSet()
