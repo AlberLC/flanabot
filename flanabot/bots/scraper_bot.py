@@ -226,7 +226,8 @@ class ScraperBot(MultiBot, ABC):
         if fails and sended_info_message:
             if fails == len(medias):
                 await self.delete_message(sended_info_message)
-                await self.delete_message(user_text_bot_message)
+                if user_text_bot_message:
+                    await self.delete_message(user_text_bot_message)
 
         if bot_state_message:
             await self.delete_message(bot_state_message)
