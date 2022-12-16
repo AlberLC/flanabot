@@ -9,7 +9,7 @@ from typing import Iterable
 import flanautils
 from flanaapis import instagram, reddit, tiktok, twitter, yt_dlp_wrapper
 from flanautils import Media, MediaType, OrderedSet, return_if_first_empty
-from multibot import MultiBot, RegisteredCallback, SendError, constants as multibot_constants, reply
+from multibot import MultiBot, RegisteredCallback, SendError, bot_mentioned, constants as multibot_constants, reply
 
 from flanabot import constants
 from flanabot.models import Action, BotAction, Message
@@ -163,6 +163,7 @@ class ScraperBot(MultiBot, ABC):
     async def _on_recover_message(self, message: Message):
         pass
 
+    @bot_mentioned
     async def _on_scraping(self, message: Message, audio_only=False) -> OrderedSet[Media]:
         sended_media_messages = OrderedSet()
 
