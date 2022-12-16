@@ -51,3 +51,4 @@ ujson==5.6.0
 urllib3==1.26.13
 uvicorn==0.20.0
 yarl==1.8.2
+yt-dlp==2022.11.11
