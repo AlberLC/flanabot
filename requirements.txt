@@ -3,7 +3,6 @@ aiosignal==1.3.1
 anyio==3.6.2
 async-timeout==4.0.2
 attrs==22.1.0
-beautifulsoup4==4.11.1
 certifi==2022.12.7
 charset-normalizer==2.1.1
 click==8.1.3
@@ -12,8 +11,8 @@ cryptg==0.4.0
 discord.py==2.1.0
 dnspython==2.2.1
 fastapi==0.88.0
-flanaapis
-flanautils
+flanaapis==1.5.10
+flanautils==1.6.7
 frozenlist==1.3.3
 greenlet==2.0.1
 h11==0.14.0
@@ -23,7 +22,7 @@ iso8601==1.1.0
 jellyfish==0.9.0
 kaleido==0.2.1
 mpmath==1.2.1
-multibot
+multibot==1.8.3
 multidict==6.0.3
 Pillow==9.3.0
 playwright==1.28.0
@@ -39,16 +38,14 @@ pytz==2022.6
 requests==2.28.1
 rsa==4.9
 sniffio==1.3.0
-soupsieve==2.3.2.post1
 starlette==0.22.0
 sympy==1.11.1
 Telethon==1.26.0
 tenacity==8.1.0
-TikTokApi==4.1.0
+TikTokApi==5.2.2
 twitchio==2.5.0
 typing_extensions==4.4.0
 ujson==5.6.0
 urllib3==1.26.13
 uvicorn==0.20.0
 yarl==1.8.2
-yt-dlp==2022.11.11
