@@ -38,6 +38,10 @@ class ScraperBot(MultiBot, ABC):
         self.register(self._on_song_info, constants.KEYWORDS['song_info'])
 
     @staticmethod
+    def _find_ids(text: str):
+        return twitter.find_ids(text), instagram.find_ids(text), reddit.find_ids(text), tiktok.find_download_urls(text)
+
+    @staticmethod
     def _medias_sended_info(medias: Iterable[Media]) -> str:
         medias_count = defaultdict(lambda: defaultdict(int))
         for media in medias:
@@ -120,10 +124,7 @@ class ScraperBot(MultiBot, ABC):
     async def _search_medias(self, message: Message, audio_only=False, timeout_for_media: int | float = None) -> OrderedSet[Media]:
         medias = OrderedSet()
 
-        tweet_ids = twitter.find_ids(message.text)
-        instagram_ids = instagram.find_ids(message.text)
-        reddit_ids = reddit.find_ids(message.text)
-        tiktok_download_urls = tiktok.find_download_urls(message.text)
+        tweet_ids, instagram_ids, reddit_ids, tiktok_download_urls = self._find_ids(message.text)
         media_urls = ()
 
         if (
@@ -191,12 +192,16 @@ class ScraperBot(MultiBot, ABC):
         fails = 0
         bot_state_message: Message | None = None
         sended_info_message: Message | None = None
+        user_text_bot_message: Message | None = None
 
         if not message.is_inline:
             bot_state_message: Message = await self.send('Enviando...', message)
 
         if message.chat.is_group:
             sended_info_message = await self.send(f"{message.author.name.split('#')[0]} compartió{self._medias_sended_info(medias)}", message, reply_to=message.replied_message)
+            user_text = ' '.join(word for word in message.text.split() if not any(self._find_ids(word)) and not flanautils.find_urls(word))
+            if user_text:
+                user_text_bot_message = await self.send(user_text, message, reply_to=message.replied_message)
 
         for media in medias:
             if not media.content:
@@ -221,6 +226,8 @@ class ScraperBot(MultiBot, ABC):
         if fails and sended_info_message:
             if fails == len(medias):
                 await self.delete_message(sended_info_message)
+                await self.delete_message(user_text_bot_message)
+
         if bot_state_message:
             await self.delete_message(bot_state_message)
 
