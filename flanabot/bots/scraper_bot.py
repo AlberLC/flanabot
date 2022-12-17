@@ -134,7 +134,7 @@ class ScraperBot(MultiBot, ABC):
         media_urls = ()
 
         if (
-                not any((tweet_ids, instagram_ids, reddit_ids, tiktok_download_urls))
+                not any((tweet_ids, instagram_ids, reddit_ids, tiktok_users_and_ids, tiktok_download_urls))
                 and
                 not (media_urls := flanautils.find_urls(message.text))
         ):
@@ -207,7 +207,7 @@ class ScraperBot(MultiBot, ABC):
 
         if message.chat.is_group:
             sended_info_message = await self.send(f"{message.author.name.split('#')[0]} compartió{self._medias_sended_info(medias)}", message, reply_to=message.replied_message)
-            user_text = ' '.join(word for word in message.text.split() if not any(await self._find_ids(word)) and not flanautils.find_urls(word))
+            user_text = ' '.join([word for word in message.text.split() if not any(await self._find_ids(word)) and not flanautils.find_urls(word)])
             if user_text:
                 user_text_bot_message = await self.send(user_text, message, reply_to=message.replied_message)
 
