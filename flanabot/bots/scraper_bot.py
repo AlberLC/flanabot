@@ -38,8 +38,14 @@ class ScraperBot(MultiBot, ABC):
         self.register(self._on_song_info, constants.KEYWORDS['song_info'])
 
     @staticmethod
-    def _find_ids(text: str):
-        return twitter.find_ids(text), instagram.find_ids(text), reddit.find_ids(text), tiktok.find_download_urls(text)
+    async def _find_ids(text: str):
+        return (
+            twitter.find_ids(text),
+            instagram.find_ids(text),
+            reddit.find_ids(text),
+            await tiktok.find_users_and_ids(text),
+            tiktok.find_download_urls(text)
+        )
 
     @staticmethod
     def _medias_sended_info(medias: Iterable[Media]) -> str:
@@ -124,7 +130,7 @@ class ScraperBot(MultiBot, ABC):
     async def _search_medias(self, message: Message, audio_only=False, timeout_for_media: int | float = None) -> OrderedSet[Media]:
         medias = OrderedSet()
 
-        tweet_ids, instagram_ids, reddit_ids, tiktok_download_urls = self._find_ids(message.text)
+        tweet_ids, instagram_ids, reddit_ids, tiktok_users_and_ids, tiktok_download_urls = await self._find_ids(message.text)
         media_urls = ()
 
         if (
@@ -140,7 +146,7 @@ class ScraperBot(MultiBot, ABC):
             twitter.get_medias(tweet_ids, audio_only),
             instagram.get_medias(instagram_ids, audio_only),
             reddit.get_medias(reddit_ids, audio_only, 'h264', 'mp4', timeout_for_media),
-            tiktok.get_download_url_medias(tiktok_download_urls, audio_only),
+            tiktok.get_medias(tiktok_users_and_ids, tiktok_download_urls, audio_only, 'h264', 'mp4', timeout_for_media),
             yt_dlp_wrapper.get_medias(media_urls, audio_only, 'h264', 'mp4', timeout_for_media),
             return_exceptions=True
         )
@@ -201,7 +207,7 @@ class ScraperBot(MultiBot, ABC):
 
         if message.chat.is_group:
             sended_info_message = await self.send(f"{message.author.name.split('#')[0]} compartió{self._medias_sended_info(medias)}", message, reply_to=message.replied_message)
-            user_text = ' '.join(word for word in message.text.split() if not any(self._find_ids(word)) and not flanautils.find_urls(word))
+            user_text = ' '.join(word for word in message.text.split() if not any(await self._find_ids(word)) and not flanautils.find_urls(word))
             if user_text:
                 user_text_bot_message = await self.send(user_text, message, reply_to=message.replied_message)
 
