@@ -53,7 +53,7 @@ class PollBot(MultiBot, ABC):
 
     @staticmethod
     def _get_options(text: str, discarded_words: Iterable = ()) -> list[str]:
-        options = (option for option in text.split() if not flanautils.cartesian_product_string_matching(option.lower(), discarded_words, min_score=multibot_constants.PARSER_MIN_SCORE_DEFAULT))
+        options = (option for option in text.split() if not flanautils.cartesian_product_string_matching(option.lower(), discarded_words, multibot_constants.PARSER_MIN_SCORE_DEFAULT))
         text = ' '.join(options)
 
         conjunctions = [f' {conjunction} ' for conjunction in flanautils.CommonWords.get('conjunctions')]
