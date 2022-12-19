@@ -108,8 +108,14 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         except AttributeError:
             raise BadRoleError(str(self._punish))
 
-    async def _search_medias(self, message: Message, audio_only=False, timeout_for_media: int | float = 15) -> OrderedSet[Media]:
-        return await super()._search_medias(message, audio_only, timeout_for_media)
+    async def _search_medias(
+        self,
+        message: Message,
+        audio_only=False,
+        force_gif_download=False,
+        timeout_for_media: int | float = 15
+    ) -> OrderedSet[Media]:
+        return await super()._search_medias(message, audio_only, force_gif_download, timeout_for_media)
 
     async def _unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         user_id = self.get_user_id(user)
