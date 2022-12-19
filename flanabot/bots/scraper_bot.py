@@ -211,7 +211,16 @@ class ScraperBot(MultiBot, ABC):
                          and
                          not flanautils.find_urls(word)
                          and
-                         not flanautils.cartesian_product_string_matching(word, (*multibot_constants.KEYWORDS['audio'], *constants.KEYWORDS['scraping']), multibot_constants.PARSER_MIN_SCORE_DEFAULT)
+                         not flanautils.cartesian_product_string_matching(
+                             word,
+                             (
+                                 *multibot_constants.KEYWORDS['audio'],
+                                 *multibot_constants.KEYWORDS['delete'],
+                                 *multibot_constants.KEYWORDS['negate'],
+                                 *constants.KEYWORDS['scraping']
+                             ),
+                             multibot_constants.PARSER_MIN_SCORE_DEFAULT
+                         )
                  )]
             )
             if user_text:
