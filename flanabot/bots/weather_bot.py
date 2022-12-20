@@ -85,8 +85,7 @@ class WeatherBot(MultiBot, ABC):
         if not place:
             if bot_state_message:
                 await self.delete_message(bot_state_message)
-                await self._manage_exceptions(PlaceNotFoundError(place_query), message)
-            return
+            raise PlaceNotFoundError(place_query)
 
         if bot_state_message:
             bot_state_message = await self.edit(f'Obteniendo datos del tiempo para "{place_query}"...', bot_state_message)

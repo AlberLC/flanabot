@@ -10,7 +10,7 @@ import pymongo
 import pytz
 from flanaapis import InstagramLoginError, MediaNotFoundError, PlaceNotFoundError
 from flanautils import return_if_first_empty
-from multibot import BadRoleError, LimitError, MultiBot, Role, bot_mentioned, constants as multibot_constants, group, inline, owner
+from multibot import BadRoleError, MultiBot, Role, bot_mentioned, constants as multibot_constants, group, inline, owner
 
 from flanabot import constants
 from flanabot.bots.connect_4_bot import Connect4Bot
@@ -79,7 +79,13 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
         return await super()._get_message(event, pull_overwrite_fields)
 
     @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
-    async def _manage_exceptions(self, exceptions: Exception | Iterable[Exception], context: Chat | Message):
+    async def _manage_exceptions(
+        self,
+        exceptions: Exception | Iterable[Exception],
+        context: Chat | Message,
+        reraise=False,
+        print_traceback=False
+    ):
         if not isinstance(exceptions, Iterable):
             exceptions = (exceptions,)
 
@@ -95,7 +101,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
             except PlaceNotFoundError as e:
                 await self.send_error(f'No he podido encontrar "{e}" {random.choice(multibot_constants.SAD_EMOJIS)}', context)
             except Exception as e:
-                await super()._manage_exceptions(e, context)
+                await super()._manage_exceptions(e, context, reraise, print_traceback)
 
     async def _role_state_options(self, group_: int | str | Chat | Message, activated_user_role_names: list[str]) -> list[str]:
         options = []
@@ -183,10 +189,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
                 await self.delete_message(message)
                 return
 
-            try:
-                await self.clear(n_messages + 1, message.chat)
-            except LimitError as e:
-                await self._manage_exceptions(e, message)
+            await self.clear(n_messages + 1, message.chat)
 
     async def _on_hello(self, message: Message):
         if message.chat.is_private or self.is_bot_mentioned(message):

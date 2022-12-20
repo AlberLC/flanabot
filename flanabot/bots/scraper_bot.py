@@ -176,7 +176,7 @@ class ScraperBot(MultiBot, ABC):
         await self.delete_message(bot_state_message)
 
         medias, exceptions = flanautils.filter_exceptions(gather_result.result())
-        await self._manage_exceptions(exceptions, message)
+        await self._manage_exceptions(exceptions, message, print_traceback=True)
 
         return OrderedSet(*medias)
 
@@ -214,7 +214,7 @@ class ScraperBot(MultiBot, ABC):
             for song_info in song_infos:
                 await self.send_song_info(song_info, message)
         elif message.chat.is_private or self.is_bot_mentioned(message):
-            await self._manage_exceptions(SendError('No hay información musical en ese mensaje.'), message)
+            raise SendError('No hay información musical en ese mensaje.')
 
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #

@@ -6,7 +6,7 @@ from abc import ABC
 
 import flanautils
 from flanautils import TimeUnits
-from multibot import BadRoleError, MultiBot, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message
+from multibot import MultiBot, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message
 
 from flanabot import constants
 from flanabot.models import Chat, Message, Punishment
@@ -73,12 +73,8 @@ class PenaltyBot(MultiBot, ABC):
                 'group_id': message.chat.group_id
             })
             punishment_seconds = (getattr(punishment, 'level', 0) + 2) ** constants.PUNISHMENT_INCREMENT_EXPONENT
-            try:
-                await self.punish(message.author.id, message.chat.group_id, punishment_seconds, message)
-            except BadRoleError as e:
-                await self._manage_exceptions(e, message)
-            else:
-                await self.send(f'Castigado durante {TimeUnits(seconds=punishment_seconds).to_words()}.', message)
+            await self.punish(message.author.id, message.chat.group_id, punishment_seconds, message)
+            await self.send(f'Castigado durante {TimeUnits(seconds=punishment_seconds).to_words()}.', message)
 
     async def _punish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         pass
@@ -188,16 +184,9 @@ class PenaltyBot(MultiBot, ABC):
         punishment.pull_from_database(overwrite_fields=('level',), exclude_fields=('until',))
         punishment.level += 1
 
-        try:
-            await self._punish(punishment.user_id, punishment.group_id)
-        except BadRoleError as e:
-            if message and message.chat.original_object:
-                await self._manage_exceptions(e, message)
-            else:
-                raise e
-        else:
-            punishment.save(pull_exclude_fields=('until',))
-            await self._unpenalize_later(punishment, self._unpunish, message)
+        await self._punish(punishment.user_id, punishment.group_id)
+        punishment.save(pull_exclude_fields=('until',))
+        await self._unpenalize_later(punishment, self._unpunish, message)
 
     async def unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         # noinspection PyTypeChecker
