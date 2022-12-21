@@ -27,8 +27,10 @@ class ScraperBot(MultiBot, ABC):
         super()._add_handlers()
 
         self.register(self._on_force_scraping, constants.KEYWORDS['force'])
-        self.register(self._on_force_scraping, constants.KEYWORDS['scraping'])
         self.register(self._on_force_scraping, (constants.KEYWORDS['force'], constants.KEYWORDS['scraping']))
+
+        self.register(self._on_force_scraping_audio, (constants.KEYWORDS['force'], multibot_constants.KEYWORDS['audio']))
+        self.register(self._on_force_scraping_audio, (constants.KEYWORDS['force'], multibot_constants.KEYWORDS['audio'], constants.KEYWORDS['scraping']))
 
         self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete']))
         self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['message']))
@@ -88,7 +90,7 @@ class ScraperBot(MultiBot, ABC):
         new_line = ' ' if len(medias_sended_info) == 1 else '\n'
         return f'{new_line}{medias_sended_info_joined}:'
 
-    async def _scrape_and_send(self, message: Message, audio_only=False, force_gif_download=False) -> OrderedSet[Media]:
+    async def _scrape_and_send(self, message: Message, force=False, audio_only=False) -> OrderedSet[Media]:
         kwargs = {}
         if self._parse_callbacks(
                 message.text,
@@ -98,7 +100,7 @@ class ScraperBot(MultiBot, ABC):
                 ]
         ):
             kwargs['timeout_for_media'] = None
-        if not (medias := await self._search_medias(message, audio_only, force_gif_download, **kwargs)):
+        if not (medias := await self._search_medias(message, force, audio_only, **kwargs)):
             return OrderedSet()
 
         sended_media_messages, _ = await self.send_medias(medias, message)
@@ -111,14 +113,14 @@ class ScraperBot(MultiBot, ABC):
     async def _scrape_send_and_delete(
         self,
         message: Message,
+        force=False,
         audio_only=False,
-        force_gif_download=False,
         sended_media_messages: OrderedSet[Media] = None
     ) -> OrderedSet[Media]:
         if sended_media_messages is None:
             sended_media_messages = OrderedSet()
 
-        sended_media_messages += await self._scrape_and_send(message, audio_only, force_gif_download)
+        sended_media_messages += await self._scrape_and_send(message, force, audio_only)
 
         if (
                 sended_media_messages
@@ -136,8 +138,8 @@ class ScraperBot(MultiBot, ABC):
     async def _search_medias(
         self,
         message: Message,
+        force=False,
         audio_only=False,
-        force_gif_download=False,
         timeout_for_media: int | float = None
     ) -> OrderedSet[Media]:
         medias = OrderedSet()
@@ -184,7 +186,10 @@ class ScraperBot(MultiBot, ABC):
     #                    HANDLERS                    #
     # ---------------------------------------------- #
     async def _on_force_scraping(self, message: Message) -> OrderedSet[Media]:
-        return await self._on_scraping(message, force_gif_download=True)
+        return await self._on_scraping(message, force=True)
+
+    async def _on_force_scraping_audio(self, message: Message) -> OrderedSet[Media]:
+        return await self._on_scraping(message, force=True, audio_only=True)
 
     async def _on_no_delete_original(self, message: Message):
         if not await self._scrape_and_send(message):
@@ -193,15 +198,15 @@ class ScraperBot(MultiBot, ABC):
     async def _on_recover_message(self, message: Message):
         pass
 
-    async def _on_scraping(self, message: Message, audio_only=False, force_gif_download=False) -> OrderedSet[Media]:
+    async def _on_scraping(self, message: Message, force=False, audio_only=False) -> OrderedSet[Media]:
         sended_media_messages = OrderedSet()
         if not message.chat.config['auto_scraping'] and not self.is_bot_mentioned(message):
             return sended_media_messages
 
         if message.replied_message:
-            sended_media_messages += await self._scrape_and_send(message.replied_message, audio_only, force_gif_download)
+            sended_media_messages += await self._scrape_and_send(message.replied_message, force, audio_only)
 
-        return await self._scrape_send_and_delete(message, audio_only, force_gif_download, sended_media_messages)
+        return await self._scrape_send_and_delete(message, force, audio_only, sended_media_messages)
 
     async def _on_scraping_audio(self, message: Message) -> OrderedSet[Media]:
         return await self._on_scraping(message, audio_only=True)

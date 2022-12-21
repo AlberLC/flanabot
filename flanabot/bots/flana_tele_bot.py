@@ -55,11 +55,11 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
     async def _search_medias(
         self,
         message: Message,
+        force=False,
         audio_only=False,
-        force_gif_download=False,
         timeout_for_media: int | float = 15
     ) -> OrderedSet[Media]:
-        return await super()._search_medias(message, audio_only, force_gif_download, timeout_for_media)
+        return await super()._search_medias(message, force, audio_only, timeout_for_media)
 
     @user_client
     async def _update_whitelist(self):
