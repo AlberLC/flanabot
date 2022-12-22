@@ -5,7 +5,7 @@ __all__ = ['Message']
 from dataclasses import dataclass, field
 
 from flanautils import Media, OrderedSet
-from multibot.models import Message as MultiBotMessage, User
+from multibot import Message as MultiBotMessage, User
 
 from flanabot.models.chat import Chat
 

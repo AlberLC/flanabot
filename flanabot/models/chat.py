@@ -2,7 +2,7 @@ __all__ = ['Chat']
 
 from dataclasses import dataclass, field
 
-from multibot.models import Chat as MultiBotChat
+from multibot import Chat as MultiBotChat
 
 
 @dataclass(eq=False)

@@ -3,7 +3,7 @@ __all__ = ['Punishment']
 from dataclasses import dataclass
 from typing import Any
 
-from multibot.models import Penalty
+from multibot import Penalty
 
 
 @dataclass(eq=False)
