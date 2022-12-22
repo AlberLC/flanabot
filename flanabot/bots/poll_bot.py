@@ -70,19 +70,21 @@ class PollBot(MultiBot, ABC):
             return poll_message
 
     async def _update_poll_buttons(self, message: Message):
-        if message.buttons_info.data['is_multiple_answer']:
-            total_votes = len({option_vote[0] for option_votes in message.buttons_info.data['votes'].values() if option_votes for option_vote in option_votes})
+        poll_data = message.data['poll']
+
+        if poll_data['is_multiple_answer']:
+            total_votes = len({option_vote[0] for option_votes in poll_data['votes'].values() if option_votes for option_vote in option_votes})
         else:
-            total_votes = sum(len(option_votes) for option_votes in message.buttons_info.data['votes'].values())
+            total_votes = sum(len(option_votes) for option_votes in poll_data['votes'].values())
 
         if total_votes:
             buttons = []
-            for option, option_votes in message.buttons_info.data['votes'].items():
+            for option, option_votes in poll_data['votes'].items():
                 ratio = f'{len(option_votes)}/{total_votes}'
                 names = f"({', '.join(option_vote[1] for option_vote in option_votes)})" if option_votes else ''
                 buttons.append(f'{option} ➜ {ratio} {names}')
         else:
-            buttons = list(message.buttons_info.data['votes'].keys())
+            buttons = list(poll_data['votes'].keys())
 
         await self.edit(self.distribute_buttons(buttons, vertically=True), message)
 
@@ -131,13 +133,15 @@ class PollBot(MultiBot, ABC):
         if not (poll_message := self._get_poll_message(message)):
             return
 
+        poll_data = poll_message.data['poll']
+
         if all_:
-            for option_name, option_votes in poll_message.buttons_info.data['votes'].items():
-                poll_message.buttons_info.data['votes'][option_name].clear()
+            for option_name, option_votes in poll_data['votes'].items():
+                poll_data['votes'][option_name].clear()
         else:
             for user in await self._find_users_to_punish(message):
-                for option_name, option_votes in poll_message.buttons_info.data['votes'].items():
-                    poll_message.buttons_info.data['votes'][option_name] = [option_vote for option_vote in option_votes if option_vote[0] != user.id]
+                for option_name, option_votes in poll_data['votes'].items():
+                    poll_data['votes'][option_name] = [option_vote for option_vote in option_votes if option_vote[0] != user.id]
 
         await self.delete_message(message)
         await self._update_poll_buttons(poll_message)
@@ -162,11 +166,13 @@ class PollBot(MultiBot, ABC):
                 self.distribute_buttons(final_options, vertically=True),
                 message,
                 buttons_key=ButtonsGroup.POLL,
-                buttons_data={
-                    'is_active': True,
-                    'is_multiple_answer': is_multiple_answer,
-                    'votes': {option: [] for option in final_options},
-                    'banned_users_tries': {}
+                data={
+                    'poll': {
+                        'is_active': True,
+                        'is_multiple_answer': is_multiple_answer,
+                        'votes': {option: [] for option in final_options},
+                        'banned_users_tries': {}
+                    }
                 }
             )
         else:
@@ -176,39 +182,42 @@ class PollBot(MultiBot, ABC):
 
     async def _on_poll_button_press(self, message: Message):
         await self.accept_button_event(message)
-        if not message.buttons_info.data['is_active']:
+
+        poll_data = message.data['poll']
+
+        if not poll_data['is_active']:
             return
 
         presser_id = message.buttons_info.presser_user.id
         presser_name = message.buttons_info.presser_user.name.split('#')[0]
-        if (presser_id_str := str(presser_id)) in message.buttons_info.data['banned_users_tries']:
-            message.buttons_info.data['banned_users_tries'][presser_id_str] += 1
-            if message.buttons_info.data['banned_users_tries'][presser_id_str] == 3:
+        if (presser_id_str := str(presser_id)) in poll_data['banned_users_tries']:
+            poll_data['banned_users_tries'][presser_id_str] += 1
+            if poll_data['banned_users_tries'][presser_id_str] == 3:
                 await self.send(random.choice((
                     f'Deja de dar por culo {presser_name} que no puedes votar aqui',
                     f'No es pesao {presser_name}, que no tienes permitido votar aqui',
                     f'Deja de pulsar botones que no puedes votar aqui {presser_name}',
                     f'{presser_name} deja de intentar votar aqui que no puedes',
-                    f'Te han prohibido votar aquì {presser_name}.',
+                    f'Te han prohibido votar aquí {presser_name}.',
                     f'No puedes votar aquí, {presser_name}.'
                 )), reply_to=message)
             return
 
         option_name = results[0] if (results := re.findall('(.*?) ➜.+', message.buttons_info.pressed_text)) else message.buttons_info.pressed_text
-        selected_option_votes = message.buttons_info.data['votes'][option_name]
+        selected_option_votes = poll_data['votes'][option_name]
 
-        if (presser_id, presser_name) in selected_option_votes:
-            selected_option_votes.remove((presser_id, presser_name))
+        if [presser_id, presser_name] in selected_option_votes:
+            selected_option_votes.remove([presser_id, presser_name])
         else:
-            if not message.buttons_info.data['is_multiple_answer']:
-                for option_votes in message.buttons_info.data['votes'].values():
+            if not poll_data['is_multiple_answer']:
+                for option_votes in poll_data['votes'].values():
                     try:
-                        option_votes.remove((presser_id, presser_name))
+                        option_votes.remove([presser_id, presser_name])
                     except ValueError:
                         pass
                     else:
                         break
-            selected_option_votes.append((presser_id, presser_name))
+            selected_option_votes.append([presser_id, presser_name])
 
         await self._update_poll_buttons(message)
 
@@ -221,7 +230,7 @@ class PollBot(MultiBot, ABC):
 
         winners = []
         max_votes = 1
-        for option, votes in poll_message.buttons_info.data['votes'].items():
+        for option, votes in poll_message.data['poll']['votes'].items():
             if len(votes) > max_votes:
                 winners = [option]
                 max_votes = len(votes)
@@ -237,7 +246,7 @@ class PollBot(MultiBot, ABC):
             case _:
                 text = 'Encuesta finalizada.'
 
-        poll_message.buttons_info.data['is_active'] = False
+        poll_message.data['poll']['is_active'] = False
 
         await self.edit(text, poll_message)
 
@@ -249,8 +258,8 @@ class PollBot(MultiBot, ABC):
         await self.delete_message(message)
 
         for user in await self._find_users_to_punish(message):
-            if str(user.id) not in poll_message.buttons_info.data['banned_users_tries']:
-                poll_message.buttons_info.data['banned_users_tries'][str(user.id)] = 0
+            if str(user.id) not in poll_message.data['poll']['banned_users_tries']:
+                poll_message.data['poll']['banned_users_tries'][str(user.id)] = 0
 
     @admin(send_negative=True)
     async def _on_voting_unban(self, message: Message):
@@ -261,7 +270,7 @@ class PollBot(MultiBot, ABC):
 
         for user in await self._find_users_to_punish(message):
             try:
-                del poll_message.buttons_info.data['banned_users_tries'][str(user.id)]
+                del poll_message.data['poll']['banned_users_tries'][str(user.id)]
             except KeyError:
                 pass
 

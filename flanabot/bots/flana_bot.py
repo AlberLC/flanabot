@@ -274,13 +274,13 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
             self.distribute_buttons(options, vertically=True),
             message,
             buttons_key=ButtonsGroup.ROLES,
-            buttons_data={'user_id': message.author.id}
+            data={'user_id': message.author.id}
         )
         await self.delete_message(message)
 
     async def _on_roles_button_press(self, message: Message):
         await self.accept_button_event(message)
-        if message.buttons_info.presser_user.id != message.buttons_info.data['user_id']:
+        if message.buttons_info.presser_user.id != message.data['user_id']:
             return
 
         role = await self.find_role(message.buttons_info.pressed_text[1:].strip(), message)

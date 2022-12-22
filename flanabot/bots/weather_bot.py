@@ -151,7 +151,7 @@ class WeatherBot(MultiBot, ABC):
             ],
             message,
             buttons_key=ButtonsGroup.WEATHER,
-            buttons_data={'weather_chart': weather_chart},
+            data={'weather_chart': weather_chart},
             send_as_file=False
         )
         await self.send_inline_results(message)
@@ -166,7 +166,7 @@ class WeatherBot(MultiBot, ABC):
     async def _on_weather_button_press(self, message: Message):
         await self.accept_button_event(message)
 
-        weather_chart = message.buttons_info.data['weather_chart']
+        weather_chart = message.data['weather_chart']
 
         match message.buttons_info.pressed_text:
             case WeatherEmoji.ZOOM_IN.value:

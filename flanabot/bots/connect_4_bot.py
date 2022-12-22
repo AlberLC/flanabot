@@ -279,7 +279,7 @@ class Connect4Bot(MultiBot, ABC):
             return False
 
         try:
-            message.buttons_info.data['is_active'] = False
+            message.data['is_active'] = False
         except AttributeError:
             pass
 
@@ -472,12 +472,14 @@ class Connect4Bot(MultiBot, ABC):
             message=message,
             buttons=self.distribute_buttons([str(n) for n in range(1, constants.CONNECT_4_N_COLUMNS + 1)]),
             buttons_key=ButtonsGroup.CONNECT_4,
-            buttons_data={
-                'is_active': True,
-                'board': board,
-                'player_1': player_1.to_dict(),
-                'player_2': player_2.to_dict(),
-                'turn': 0
+            data={
+                'connect_4': {
+                    'is_active': True,
+                    'board': board,
+                    'player_1': player_1.to_dict(),
+                    'player_2': player_2.to_dict(),
+                    'turn': 0
+                }
             }
         )
         await self.delete_message(message)
@@ -485,12 +487,14 @@ class Connect4Bot(MultiBot, ABC):
     async def _on_connect_4_button_press(self, message: Message):
         await self.accept_button_event(message)
 
-        is_active = message.buttons_info.data['is_active']
-        board = message.buttons_info.data['board']
-        player_1 = Player.from_dict(message.buttons_info.data['player_1'])
-        player_2 = Player.from_dict(message.buttons_info.data['player_2'])
+        connect_4_data = message.data['connect_4']
 
-        if message.buttons_info.data['turn'] % 2 == 0:
+        is_active = connect_4_data['is_active']
+        board = connect_4_data['board']
+        player_1 = Player.from_dict(connect_4_data['player_1'])
+        player_2 = Player.from_dict(connect_4_data['player_2'])
+
+        if connect_4_data['turn'] % 2 == 0:
             current_player = player_1
             next_player = player_2
         else:
@@ -501,11 +505,11 @@ class Connect4Bot(MultiBot, ABC):
 
         if not is_active or current_player.id != presser_id or board[0][move_column] is not None:
             return
-        message.buttons_info.data['is_active'] = False
+        connect_4_data['is_active'] = False
 
         i, j = self.insert_piece(move_column, current_player.number, board)
-        message.buttons_info.data['turn'] += 1
-        if await self._check_game_finished(i, j, player_1, player_2, message.buttons_info.data['turn'], board, message):
+        connect_4_data['turn'] += 1
+        if await self._check_game_finished(i, j, player_1, player_2, connect_4_data['turn'], board, message):
             return
 
         await self.edit(
@@ -519,20 +523,20 @@ class Connect4Bot(MultiBot, ABC):
         )
 
         if player_2.id == self.id:
-            message.buttons_info.data['turn'] += 1
+            connect_4_data['turn'] += 1
             if await self._ai_turn(
                     player_1,
                     player_2,
                     next_player,
                     current_player,
-                    message.buttons_info.data['turn'],
+                    connect_4_data['turn'],
                     constants.CONNECT_4_AI_DELAY_SECONDS,
                     board,
                     message
             ):
                 return
 
-        message.buttons_info.data['is_active'] = True
+        connect_4_data['is_active'] = True
 
     async def _on_connect_4_vs_itself(self, message: Message):
         if message.chat.is_group and not self.is_bot_mentioned(message):
