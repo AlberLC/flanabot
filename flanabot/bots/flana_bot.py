@@ -181,7 +181,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
                 and
                 (n_messages := flanautils.text_to_number(message.text))
         ):
-            if not message.author.is_admin:
+            if message.author.is_admin is False:
                 await self.send_negative(message)
                 return
 
