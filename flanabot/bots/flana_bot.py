@@ -217,7 +217,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
                                 or
                                 message.replied_message.author.id != self.id
                                 or
-                                not message.replied_message.data.get('media')
+                                not message.replied_message.medias
                         )
                         and
                         (
