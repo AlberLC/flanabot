@@ -75,6 +75,8 @@ class Connect4Bot(MultiBot, ABC):
 
         # check if after the next player moves, he will have 2 positions to win
         for i, j in available_positions_:
+            if (i, j) in current_player_winning_positions_above:
+                continue
             board_copy = copy.deepcopy(board)
             board_copy[i][j] = next_player_num
             future_winning_positions = self._winning_positions(board_copy)[next_player_num]
