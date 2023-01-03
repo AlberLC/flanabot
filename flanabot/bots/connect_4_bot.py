@@ -55,6 +55,7 @@ class Connect4Bot(MultiBot, ABC):
         for i, j in available_positions_:
             if i < 1:
                 continue
+
             board_copy = copy.deepcopy(board)
             board_copy[i][j] = current_player_num
             winners = self._check_winners(i - 1, j, board_copy)
@@ -77,11 +78,13 @@ class Connect4Bot(MultiBot, ABC):
         for i, j in available_positions_:
             if (i, j) in current_player_winning_positions_above:
                 continue
+
             board_copy = copy.deepcopy(board)
             board_copy[i][j] = next_player_num
             future_winning_positions = self._winning_positions(board_copy)[next_player_num]
             if len(future_winning_positions) < 2:
                 continue
+
             if (i, j) not in next_player_winning_positions_above:
                 return self.insert_piece(j, current_player_num, board)
             for i_2, j_2 in future_winning_positions:
