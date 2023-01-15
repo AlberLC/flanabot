@@ -36,6 +36,8 @@ class ScraperBot(MultiBot, ABC):
         self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
         self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
 
+        self.register(self._on_no_scraping, (multibot_constants.KEYWORDS['negate'], constants.KEYWORDS['scraping']))
+
         self.register(self._on_scraping, constants.KEYWORDS['scraping'])
 
         self.register(self._on_scraping_audio, multibot_constants.KEYWORDS['audio'])
@@ -216,6 +218,9 @@ class ScraperBot(MultiBot, ABC):
     async def _on_no_delete_original(self, message: Message):
         if not await self._scrape_and_send(message):
             await self._on_recover_message(message)
+
+    async def _on_no_scraping(self, message: Message):
+        pass
 
     async def _on_recover_message(self, message: Message):
         pass
