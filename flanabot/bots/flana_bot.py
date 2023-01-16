@@ -1,5 +1,6 @@
 __all__ = ['FlanaBot']
 
+import asyncio
 import datetime
 import random
 from abc import ABC
@@ -170,10 +171,15 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
     @inline(False)
     async def _on_delete(self, message: Message):
         if message.replied_message:
-            if message.replied_message.author.id == self.id:
-                await self.delete_message(message.replied_message)
+            if (
+                    self.is_bot_mentioned(message)
+                    and
+                    (message.author.is_admin or message.replied_message.author.id == self.id)
+            ):
                 if message.chat.is_group:
                     await self.delete_message(message)
+                await asyncio.sleep(flanautils.text_to_time(message.text).total_seconds())
+                await self.delete_message(message.replied_message)
             elif message.chat.is_group and self.is_bot_mentioned(message):
                 await self.send_negative(message)
         elif (
