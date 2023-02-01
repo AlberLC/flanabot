@@ -10,7 +10,7 @@ import discord
 import flanautils
 import pytz
 from flanautils import Media, NotFoundError, OrderedSet
-from multibot import BadRoleError, DiscordBot, Role, User, bot_mentioned, constants as multibot_constants, group
+from multibot import BadRoleError, DiscordBot, Platform, Role, User, bot_mentioned, constants as multibot_constants, group
 
 from flanabot import constants
 from flanabot.bots.flana_bot import FlanaBot
@@ -39,7 +39,8 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
 
     async def _changeable_roles(self, group_: int | str | Chat | Message) -> list[Role]:
         group_id = self.get_group_id(group_)
-        return [role for role in await self.get_group_roles(group_) if role.id in constants.CHANGEABLE_ROLES[group_id]]
+        r = await self.get_group_roles(group_)
+        return [role for role in r if role.id in constants.CHANGEABLE_ROLES[Platform.DISCORD][group_id]]
 
     async def _heat_channel(self, channel: discord.VoiceChannel):
         async def set_fire_to(channel_key: str, depends_on: str, firewall=0):
