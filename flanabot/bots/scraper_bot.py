@@ -157,9 +157,8 @@ class ScraperBot(MultiBot, ABC):
             if not any(ids) and flanautils.find_urls(text_part):
                 if force:
                     media_urls.append(text_part)
-                else:
-                    if not any(domain.lower() in text_part for domain in multibot_constants.GIF_DOMAINS):
-                        media_urls.append(text_part)
+                elif not any(domain.lower() in text_part for domain in multibot_constants.GIF_DOMAINS):
+                    media_urls.append(text_part)
 
         if not any(ids) and not media_urls:
             return medias
