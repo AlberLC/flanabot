@@ -11,7 +11,6 @@ CONNECT_4_AI_DELAY_SECONDS = 1
 CONNECT_4_CENTER_COLUMN_POINTS = 2
 CONNECT_4_N_COLUMNS = 7
 CONNECT_4_N_ROWS = 6
-
 FLOOD_2s_LIMIT = 2
 FLOOD_7s_LIMIT = 4
 HEAT_PERIOD_SECONDS = datetime.timedelta(minutes=15).total_seconds()
@@ -20,6 +19,7 @@ MAX_PLACE_QUERY_LENGTH = 50
 PUNISHMENT_INCREMENT_EXPONENT = 6
 PUNISHMENTS_RESET_TIME = datetime.timedelta(weeks=2)
 RECOVERY_DELETED_MESSAGE_BEFORE = datetime.timedelta(hours=1)
+SCRAPING_TIMEOUT_SECONDS = 7
 
 BYE_PHRASES = ('Adiós.', 'adio', 'adioh', 'adios', 'adió', 'adiós', 'agur', 'bye', 'byyeeee', 'chao', 'hasta la vista',
                'hasta luego', 'hasta nunca', ' hasta pronto', 'hasta la próxima', 'nos vemos', 'taluego')

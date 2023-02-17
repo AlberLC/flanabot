@@ -114,7 +114,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         message: Message,
         force=False,
         audio_only=False,
-        timeout_for_media: int | float = 15
+        timeout_for_media: int | float = constants.SCRAPING_TIMEOUT_SECONDS
     ) -> OrderedSet[Media]:
         return await super()._search_medias(message, force, audio_only, timeout_for_media)
 
