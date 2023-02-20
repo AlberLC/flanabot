@@ -54,4 +54,4 @@ urllib3==1.26.13
 uvicorn==0.20.0
 websockets==10.4
 yarl==1.8.2
-yt-dlp==2023.1.6
+yt-dlp==2023.2.17
