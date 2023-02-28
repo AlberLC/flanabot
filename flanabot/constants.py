@@ -38,7 +38,6 @@ CHANGEABLE_ROLES = defaultdict(
 )
 
 DISCORD_HEAT_NAMES = [
-    'Canal Congelado',
     'Canal Fresquito',
     'Canal Templaillo',
     'Canal Calentito',
@@ -97,7 +96,7 @@ KEYWORDS = {
                'purgatorio', 'purgatory', 'sancion', 'shoot', 'teach', 'whip'),
     'random': ('aleatorio', 'azar', 'random'),
     'scraping': ('busca', 'contenido', 'content', 'descarga', 'descargar', 'descargues', 'download', 'envia', 'scrap',
-                 'scrapea', 'scraping', 'search', 'send'),
+                 'scrapea', 'scrapees', 'scraping', 'search', 'send'),
     'self': (('contigo', 'contra', 'ti'), ('mismo', 'ti')),
     'song_info': ('aqui', 'cancion', 'data', 'datos', 'info', 'informacion', 'information', 'llama', 'media', 'name',
                   'nombre', 'sonaba', 'sonando', 'song', 'sono', 'sound', 'suena', 'title', 'titulo', 'video'),

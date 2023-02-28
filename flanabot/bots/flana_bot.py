@@ -212,7 +212,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
                         and
                         not message.chat.config['auto_scraping']
                         or
-                        not await self._scrape_send_and_delete(message)
+                        not await self._on_scraping(message, scrape_replied=False)
                 )
                 and
                 (
