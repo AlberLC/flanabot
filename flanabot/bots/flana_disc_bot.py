@@ -61,9 +61,9 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             await channels[channel_key]['object'].edit(name=new_name_)
 
         channels = {}
-        for key in constants.DISCORD_HOT_CHANNEL_IDS:
-            channel_ = flanautils.find(channel.guild.voice_channels, condition=lambda c: c.id == constants.DISCORD_HOT_CHANNEL_IDS[key])
-            channels[key] = {
+        for letter, channel_id in constants.DISCORD_HOT_CHANNEL_IDS.items():
+            channel_ = flanautils.find(channel.guild.voice_channels, condition=lambda c: c.id == channel_id)
+            channels[letter] = {
                 'object': channel_,
                 'original_name': channel_.name,
                 'n_fires': 0
@@ -85,7 +85,10 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 continue
 
             i = int(self.heat_level)
-            if i < len(constants.DISCORD_HEAT_NAMES):
+            if not i:
+                n_fires = 0
+                new_name = channels['C']['original_name']
+            elif i < len(constants.DISCORD_HEAT_NAMES):
                 n_fires = 0
                 new_name = constants.DISCORD_HEAT_NAMES[i]
             else:
