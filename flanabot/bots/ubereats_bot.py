@@ -20,9 +20,7 @@ from flanabot.models import Chat, Message
 class UberEatsBot(MultiBot, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tasks: dict = {
-            7749879: None
-        }
+        self.tasks = {}
 
     # -------------------------------------------------------- #
     # ------------------- PROTECTED METHODS ------------------ #
