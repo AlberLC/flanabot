@@ -113,13 +113,13 @@ class UberEatsBot(MultiBot, ABC):
     async def start_ubereats(self, chat: Chat, send_code_now=True):
         chat.config['ubereats'] = True
         chat.save()
-        if self.tasks[chat.id]:
-            self.tasks[chat.id].cancel()
+        if (task := self.tasks.get(chat.id)) and not task.done():
+            task.cancel()
         self.tasks[chat.id] = await flanautils.do_every(chat.ubereats_seconds, self.send_ubereats_code, chat, do_first_now=send_code_now)
 
     def stop_ubereats(self, chat: Chat):
         chat.config['ubereats'] = False
         chat.save()
-        if self.tasks[chat.id]:
-            self.tasks[chat.id].cancel()
-            self.tasks[chat.id] = None
+        if (task := self.tasks.get(chat.id)) and not task.done():
+            task.cancel()
+            del self.tasks[chat.id]
