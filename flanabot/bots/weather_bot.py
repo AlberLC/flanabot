@@ -40,7 +40,7 @@ class WeatherBot(MultiBot, ABC):
             show_progress_state = False
         elif message.chat.is_group and not self.is_bot_mentioned(message):
             if message.chat.config['auto_weather_chart']:
-                if BotAction.find_one({'action': Action.AUTO_WEATHER_CHART.value, 'chat': message.chat.object_id, 'date': {'$gt': datetime.datetime.now(datetime.timezone.utc) - constants.AUTO_WEATHER_EVERY}}):
+                if BotAction.find_one({'platform': self.platform.value, 'action': Action.AUTO_WEATHER_CHART.value, 'chat': message.chat.object_id, 'date': {'$gt': datetime.datetime.now(datetime.timezone.utc) - constants.AUTO_WEATHER_EVERY}}):
                     return
                 show_progress_state = False
             else:
@@ -161,7 +161,7 @@ class WeatherBot(MultiBot, ABC):
 
         if bot_message and not self.is_bot_mentioned(message):
             # noinspection PyTypeChecker
-            BotAction(Action.AUTO_WEATHER_CHART, message, affected_objects=[bot_message]).save()
+            BotAction(self.platform.value, Action.AUTO_WEATHER_CHART, message, affected_objects=[bot_message]).save()
 
     async def _on_weather_button_press(self, message: Message):
         await self.accept_button_event(message)

@@ -246,9 +246,15 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
     @inline(False)
     async def _on_recover_message(self, message: Message):
         if message.replied_message and message.replied_message.author.id == self.id:
-            message_deleted_bot_action = BotAction.find_one({'action': Action.MESSAGE_DELETED.value, 'chat': message.chat.object_id, 'affected_objects': message.replied_message.object_id})
+            message_deleted_bot_action = BotAction.find_one({
+                'platform': self.platform.value,
+                'action': Action.MESSAGE_DELETED.value,
+                'chat': message.chat.object_id,
+                'affected_objects': message.replied_message.object_id
+            })
         elif self.is_bot_mentioned(message):
             message_deleted_bot_action = BotAction.find_one({
+                'platform': self.platform.value,
                 'action': Action.MESSAGE_DELETED.value,
                 'chat': message.chat.object_id,
                 'date': {'$gt': datetime.datetime.now(datetime.timezone.utc) - constants.RECOVERY_DELETED_MESSAGE_BEFORE}

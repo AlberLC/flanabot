@@ -174,7 +174,7 @@ class ScraperBot(MultiBot, ABC):
                 message.chat.config['scraping_delete_original']
         ):
             # noinspection PyTypeChecker
-            BotAction(Action.MESSAGE_DELETED, message, affected_objects=[message, *sended_media_messages]).save()
+            BotAction(self.platform.value, Action.MESSAGE_DELETED, message, affected_objects=[message, *sended_media_messages]).save()
             await self.delete_message(message)
 
         return sended_media_messages

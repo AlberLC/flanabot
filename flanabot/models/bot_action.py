@@ -4,7 +4,7 @@ import datetime
 from dataclasses import dataclass, field
 
 from flanautils import DCMongoBase, FlanaBase
-from multibot.models.user import User
+from multibot import Platform, User
 
 from flanabot.models.chat import Chat
 from flanabot.models.enums import Action
@@ -17,6 +17,7 @@ class BotAction(DCMongoBase, FlanaBase):
     unique_keys = 'message'
     nullable_unique_keys = 'message'
 
+    platform: Platform = None
     action: Action = None
     message: Message = None
     author: User = None
