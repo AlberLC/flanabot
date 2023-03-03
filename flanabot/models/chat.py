@@ -13,10 +13,14 @@ class Chat(MultiBotChat):
         'auto_weather_chart': False,
         'check_flood': False,
         'punish': False,
-        'scraping_delete_original': True
+        'scraping_delete_original': True,
+        'ubereats': False
     }
 
-    config: dict[str, bool] = field(default_factory=dict)
+    config: dict = field(default_factory=dict)
+    ubereats_cookies: list[dict] = field(default_factory=list)
+    ubereats_last_code: str = None
+    ubereats_seconds: int = 86700
 
     def __post_init__(self):
         super().__post_init__()

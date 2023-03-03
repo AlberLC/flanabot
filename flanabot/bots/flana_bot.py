@@ -18,6 +18,7 @@ from flanabot.bots.connect_4_bot import Connect4Bot
 from flanabot.bots.penalty_bot import PenaltyBot
 from flanabot.bots.poll_bot import PollBot
 from flanabot.bots.scraper_bot import ScraperBot
+from flanabot.bots.ubereats_bot import UberEatsBot
 from flanabot.bots.weather_bot import WeatherBot
 from flanabot.models import Action, BotAction, ButtonsGroup, Chat, Message
 
@@ -25,7 +26,7 @@ from flanabot.models import Action, BotAction, ButtonsGroup, Chat, Message
 # ----------------------------------------------------------------------------------------------------- #
 # --------------------------------------------- FLANA_BOT --------------------------------------------- #
 # ----------------------------------------------------------------------------------------------------- #
-class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBot, ABC):
+class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, WeatherBot, MultiBot, ABC):
     Chat = Chat
     Message = Message
 
@@ -75,7 +76,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
     async def _get_message(
         self,
         event: multibot_constants.MESSAGE_EVENT,
-        pull_overwrite_fields: Iterable[str] = ('_id', 'config')
+        pull_overwrite_fields: Iterable[str] = ('_id', 'config', 'ubereats_seconds')
     ) -> Message:
         return await super()._get_message(event, pull_overwrite_fields)
 
@@ -125,13 +126,29 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
         if message.chat.is_private or self.is_bot_mentioned(message):
             await self.send_bye(message)
 
-    @group
-    @bot_mentioned
     async def _on_config(self, message: Message):
-        if not message.chat.config:
+        if message.chat.is_private:
+            config_names = ('auto_insult', 'auto_scraping', 'scraping_delete_original', 'ubereats')
+        elif self.is_bot_mentioned(message):
+            config_names = (
+                'auto_insult',
+                'auto_scraping',
+                'auto_weather_chart',
+                'check_flood',
+                'punish',
+                'scraping_delete_original'
+            )
+        else:
             return
 
-        buttons_texts = [(f"{'✔' if v else '❌'} {k}", v) for k, v in message.chat.config.items()]
+        buttons_texts = []
+        for k, v in message.chat.config.items():
+            if k not in config_names:
+                continue
+            if k == 'ubereats':
+                k = f"ubereats (cada {flanautils.TimeUnits(seconds=message.chat.ubereats_seconds).to_words()})"
+            buttons_texts.append((f"{'✔' if v else '❌'} {k}", v))
+
         await self.send('<b>Estos son los ajustes del chat:</b>\n\n', flanautils.chunks(buttons_texts, 3), message, buttons_key=ButtonsGroup.CONFIG)
         await self.delete_message(message)
 
@@ -143,7 +160,15 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
 
         config_name = message.buttons_info.pressed_text.split()[1]
         message.chat.config[config_name] = not message.chat.config[config_name]
-        message.buttons_info.pressed_button.text = f"{'✔' if message.chat.config[config_name] else '❌'} {config_name}"
+        if config_name == 'ubereats':
+            if message.chat.config[config_name]:
+                await self.start_ubereats(message.chat)
+            else:
+                self.stop_ubereats(message.chat)
+            button_text = f"ubereats (cada {flanautils.TimeUnits(seconds=message.chat.ubereats_seconds).to_words()})"
+        else:
+            button_text = config_name
+        message.buttons_info.pressed_button.text = f"{'✔' if message.chat.config[config_name] else '❌'} {button_text}"
 
         await self.edit(message.buttons_info.buttons, message)
 
@@ -242,6 +267,14 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
     async def _on_ready(self):
         await super()._on_ready()
         await flanautils.do_every(multibot_constants.CHECK_OLD_DATABASE_MESSAGES_EVERY_SECONDS, self.check_old_database_actions)
+        for chat in Chat.find({
+            'platform': self.platform.value,
+            "config.ubereats": {"$exists": True, "$eq": True},
+            "ubereats_cookies": {"$exists": True, "$ne": []}
+        }):
+            chat = await self.get_chat(chat.id)
+            chat.pull_from_database(overwrite_fields=('ubereats_seconds',))
+            await self.start_ubereats(chat, send_code_now=False)
 
     @inline(False)
     async def _on_recover_message(self, message: Message):
