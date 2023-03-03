@@ -357,10 +357,9 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, WeatherBot, MultiBo
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
     # -------------------------------------------------------- #
-    @staticmethod
-    def check_old_database_actions():
+    def check_old_database_actions(self):
         before_date = datetime.datetime.now(datetime.timezone.utc) - multibot_constants.DATABASE_MESSAGE_EXPIRATION_TIME
-        BotAction.delete_many_raw({'date': {'$lte': before_date}})
+        BotAction.delete_many_raw({'platform': self.platform.value, 'date': {'$lte': before_date}})
 
     async def send_bye(self, message: Message) -> multibot_constants.ORIGINAL_MESSAGE:
         return await self.send(random.choice((*constants.BYE_PHRASES, flanautils.CommonWords.random_time_greeting())), message)
