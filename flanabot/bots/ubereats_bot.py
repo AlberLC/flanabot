@@ -32,40 +32,41 @@ class UberEatsBot(MultiBot, ABC):
 
     @staticmethod
     async def _scrape_code(chat: Chat) -> str:
-        async with playwright.async_api.async_playwright() as playwright_:
-            async with await playwright_.chromium.launch() as browser:
-                context: playwright.async_api.BrowserContext = await browser.new_context()
-                await context.add_cookies(chat.ubereats_cookies)
-                page = await context.new_page()
-                await page.goto('https://www.myunidays.com/ES/es-ES/partners/ubereats/access/online')
+        with flanautils.suppress_low_level_stderr():
+            async with playwright.async_api.async_playwright() as playwright_:
+                async with await playwright_.chromium.launch() as browser:
+                    context: playwright.async_api.BrowserContext = await browser.new_context()
+                    await context.add_cookies(chat.ubereats_cookies)
+                    page = await context.new_page()
+                    await page.goto('https://www.myunidays.com/ES/es-ES/partners/ubereats/access/online')
 
-                if button := await page.query_selector("button[class='button highlight']"):
-                    await button.click()
-                else:
-                    await page.click("'Revelar código'")
-                while len(context.pages) != 2:
-                    await asyncio.sleep(0.5)
-                page = context.pages[1]
-
-                if not (new_code_button := await page.query_selector("button[class='getNewCode button secondary']")):
-                    new_code_button = await page.query_selector("'Obtener nuevo código'")
-                if new_code_button and await new_code_button.is_enabled():
-                    await new_code_button.click()
-                await page.wait_for_load_state('networkidle')
-
-                if code_input := await page.query_selector("input[class='code toCopy']"):
-                    code = await code_input.input_value()
-                else:
-                    if button := await page.query_selector("button[class='copy button quarternary']"):
+                    if button := await page.query_selector("button[class='button highlight']"):
                         await button.click()
                     else:
-                        await page.click("'Copiar'")
-                    code = pyperclip.paste()
+                        await page.click("'Revelar código'")
+                    while len(context.pages) != 2:
+                        await asyncio.sleep(0.5)
+                    page = context.pages[1]
 
-                chat.ubereats_cookies = await context.cookies('https://www.myunidays.com')
-                chat.save()
+                    if not (new_code_button := await page.query_selector("button[class='getNewCode button secondary']")):
+                        new_code_button = await page.query_selector("'Obtener nuevo código'")
+                    if new_code_button and await new_code_button.is_enabled():
+                        await new_code_button.click()
+                    await page.wait_for_load_state('networkidle')
 
-                return code
+                    if code_input := await page.query_selector("input[class='code toCopy']"):
+                        code = await code_input.input_value()
+                    else:
+                        if button := await page.query_selector("button[class='copy button quarternary']"):
+                            await button.click()
+                        else:
+                            await page.click("'Copiar'")
+                        code = pyperclip.paste()
+
+                    chat.ubereats_cookies = await context.cookies('https://www.myunidays.com')
+                    chat.save()
+
+                    return code
 
     # ---------------------------------------------- #
     #                    HANDLERS                    #
