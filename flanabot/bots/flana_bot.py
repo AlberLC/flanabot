@@ -164,7 +164,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             if message.chat.config[config_name]:
                 await self.start_ubereats(message.chat)
             else:
-                self.stop_ubereats(message.chat)
+                await self.stop_ubereats(message.chat)
             button_text = f"ubereats (cada {flanautils.TimeUnits(seconds=message.chat.ubereats_seconds).to_words()})"
         else:
             button_text = config_name
