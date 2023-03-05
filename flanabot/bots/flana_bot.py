@@ -155,7 +155,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
     async def _on_config_button_press(self, message: Message):
         await self.accept_button_event(message)
 
-        if message.buttons_info.presser_user.is_admin is False:
+        if message.buttons_info.presser_user.is_admin is False or not message.buttons_info.pressed_button:
             return
 
         config_name = message.buttons_info.pressed_text.split()[1]
