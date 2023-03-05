@@ -18,8 +18,8 @@ class Chat(MultiBotChat):
     }
 
     config: dict = field(default_factory=dict)
-    ubereats_cookies: list[dict] = field(default_factory=list)
-    ubereats_last_code: str = None
+    ubereats_cookies: list[list[dict]] = field(default_factory=list)
+    ubereats_last_codes: list[str] = field(default_factory=list)
     ubereats_seconds: int = 86700
 
     def __post_init__(self):

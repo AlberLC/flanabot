@@ -273,7 +273,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             "ubereats_cookies": {"$exists": True, "$ne": []}
         }):
             chat = await self.get_chat(chat.id)
-            chat.pull_from_database(overwrite_fields=('ubereats_seconds',))
+            chat.pull_from_database(overwrite_fields=('_id', 'config', 'ubereats_cookies', 'ubereats_seconds'))
             await self.start_ubereats(chat, send_code_now=False)
 
     @inline(False)
