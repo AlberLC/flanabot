@@ -32,6 +32,14 @@ class UberEatsBot(MultiBot, ABC):
 
         self.register(self._on_ubereats, 'ubereats', priority=2)
 
+    async def _cancel_scraping_task(self, chat: Chat):
+        if not (task := self.tasks.get(chat.id)) or task.done():
+            return
+
+        await self._close_playwright()
+        task.cancel()
+        del self.tasks[chat.id]
+
     async def _close_playwright(self):
         if self.browser:
             await self.browser.close()
@@ -119,17 +127,12 @@ class UberEatsBot(MultiBot, ABC):
         await self.send(f'{warning_text}  <code>{code}</code>', chat, silent=True)
 
     async def start_ubereats(self, chat: Chat, send_code_now=True):
+        await self._cancel_scraping_task(chat)
         chat.config['ubereats'] = True
         chat.save()
-        if (task := self.tasks.get(chat.id)) and not task.done():
-            await self._close_playwright()
-            task.cancel()
         self.tasks[chat.id] = await flanautils.do_every(chat.ubereats_seconds, self.send_ubereats_code, chat, do_first_now=send_code_now)
 
     async def stop_ubereats(self, chat: Chat):
+        await self._cancel_scraping_task(chat)
         chat.config['ubereats'] = False
         chat.save()
-        if (task := self.tasks.get(chat.id)) and not task.done():
-            await self._close_playwright()
-            task.cancel()
-            del self.tasks[chat.id]
