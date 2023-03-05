@@ -166,13 +166,7 @@ class ScraperBot(MultiBot, ABC):
 
         sended_media_messages += await self._scrape_and_send(message, force, full, audio_only, send_user_context, keywords)
 
-        if (
-                sended_media_messages
-                and
-                message.chat.is_group
-                and
-                message.chat.config['scraping_delete_original']
-        ):
+        if sended_media_messages and message.chat.config['scraping_delete_original']:
             # noinspection PyTypeChecker
             BotAction(self.platform.value, Action.MESSAGE_DELETED, message, affected_objects=[message, *sended_media_messages]).save()
             await self.delete_message(message)
