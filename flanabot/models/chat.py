@@ -1,5 +1,6 @@
 __all__ = ['Chat']
 
+import datetime
 from dataclasses import dataclass, field
 
 from multibot import Chat as MultiBotChat
@@ -21,6 +22,7 @@ class Chat(MultiBotChat):
     ubereats_cookies: list[list[dict]] = field(default_factory=list)
     ubereats_last_codes: list[str] = field(default_factory=list)
     ubereats_seconds: int = 86700
+    ubereats_next_execution: datetime.datetime = None
 
     def __post_init__(self):
         super().__post_init__()

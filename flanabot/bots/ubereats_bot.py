@@ -148,6 +148,7 @@ class UberEatsBot(MultiBot, ABC):
             await self.send(f'{warning_text}  <code>{code}</code>', chat, silent=True)
 
         chat.ubereats_last_codes = new_codes
+        chat.ubereats_next_execution = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=chat.ubereats_seconds)
         chat.save()
 
     async def start_ubereats(self, chat: Chat, send_code_now=True):
