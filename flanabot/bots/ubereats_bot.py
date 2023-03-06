@@ -118,7 +118,7 @@ class UberEatsBot(MultiBot, ABC):
         time = flanautils.text_to_time(message.text)
         if not time:
             bot_state_message = await self.send(random.choice(constants.SCRAPING_PHRASES), message)
-            await self.send_ubereats_code(message.chat)
+            await self.send_ubereats_code(message.chat, update_next_execution=False)
             await self.delete_message(bot_state_message)
             return
 
@@ -136,7 +136,7 @@ class UberEatsBot(MultiBot, ABC):
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
     # -------------------------------------------------------- #
-    async def send_ubereats_code(self, chat: Chat):
+    async def send_ubereats_code(self, chat: Chat, update_next_execution=True):
         new_codes = []
         for code in await self._scrape_codes(chat):
             new_codes.append(code)
@@ -148,7 +148,8 @@ class UberEatsBot(MultiBot, ABC):
             await self.send(f'{warning_text}  <code>{code}</code>', chat, silent=True)
 
         chat.ubereats_last_codes = new_codes
-        chat.ubereats_next_execution = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=chat.ubereats_seconds)
+        if update_next_execution:
+            chat.ubereats_next_execution = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=chat.ubereats_seconds)
         chat.save()
 
     async def start_ubereats(self, chat: Chat, send_code_now=True):
