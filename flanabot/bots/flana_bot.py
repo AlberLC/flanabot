@@ -275,14 +275,13 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             chat = await self.get_chat(chat.id)
             chat.pull_from_database(overwrite_fields=('_id', 'config', 'ubereats_cookies', 'ubereats_seconds'))
             if (
-                    not chat.ubereats_next_execution
-                    or
-                    (delta_time := chat.ubereats_next_execution - datetime.datetime.now(datetime.timezone.utc)) <= datetime.timedelta()
+                    chat.ubereats_next_execution
+                    and
+                    (delta_time := chat.ubereats_next_execution - datetime.datetime.now(datetime.timezone.utc)) > datetime.timedelta()
             ):
-                await self.start_ubereats(chat)
-            else:
-                # noinspection PyUnboundLocalVariable
                 await flanautils.do_later(delta_time, self.start_ubereats, chat)
+            else:
+                await self.start_ubereats(chat)
 
     @inline(False)
     async def _on_recover_message(self, message: Message):
