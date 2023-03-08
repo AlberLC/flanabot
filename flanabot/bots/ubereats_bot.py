@@ -55,9 +55,9 @@ class UberEatsBot(MultiBot, ABC):
         for i, cookies in enumerate(chat.ubereats['cookies']):
             for _ in range(3):
                 try:
-                    self.task_contexts[chat.id]['browser'] = await self.task_contexts[chat.id]['playwright'].chromium.launch(headless=False)
+                    self.task_contexts[chat.id]['browser'] = await self.task_contexts[chat.id]['playwright'].chromium.launch()
                     context: playwright.async_api.BrowserContext = await self.task_contexts[chat.id]['browser'].new_context(
-                        storageState={'cookies': cookies},
+                        storage_state={'cookies': cookies},
                         user_agent=flanautils.USER_AGENT
                     )
 
@@ -93,7 +93,7 @@ class UberEatsBot(MultiBot, ABC):
 
                     chat.ubereats['cookies'][i] = await context.cookies('https://www.myunidays.com')
 
-                except playwright.async_api.Error:
+                except (playwright.async_api.Error, Exception) as e:
                     pass
                 else:
                     break
