@@ -52,8 +52,7 @@ class UberEatsBot(MultiBot, ABC):
 
         self.task_contexts[chat.id]['playwright'] = await playwright.async_api.async_playwright().start()
 
-        chat.pull_from_database(overwrite_fields=('ubereats_cookies',))
-        for i, cookies in enumerate(chat.ubereats_cookies):
+        for i, cookies in enumerate(chat.ubereats['cookies']):
             for _ in range(3):
                 try:
                     self.task_contexts[chat.id]['browser'] = await self.task_contexts[chat.id]['playwright'].chromium.launch()
@@ -90,7 +89,7 @@ class UberEatsBot(MultiBot, ABC):
                         code = pyperclip.paste()
                     codes.append(code)
 
-                    chat.ubereats_cookies[i] = await context.cookies('https://www.myunidays.com')
+                    chat.ubereats['cookies'][i] = await context.cookies('https://www.myunidays.com')
 
                 except playwright.async_api.Error:
                     pass
@@ -103,8 +102,6 @@ class UberEatsBot(MultiBot, ABC):
         if playwright_ := self.task_contexts[chat.id]['playwright']:
             await playwright_.stop()
 
-        chat.save()
-
         return codes
 
     # ---------------------------------------------- #
@@ -112,7 +109,7 @@ class UberEatsBot(MultiBot, ABC):
     # ---------------------------------------------- #
     @group(False)
     async def _on_ubereats(self, message: Message):
-        if not message.chat.ubereats_cookies:
+        if not message.chat.ubereats['cookies']:
             return
 
         time = flanautils.text_to_time(message.text)
@@ -127,7 +124,7 @@ class UberEatsBot(MultiBot, ABC):
             return
 
         seconds = int(time.total_seconds())
-        message.chat.ubereats_seconds = seconds
+        message.chat.ubereats['seconds'] = seconds
         message.save()
         period = flanautils.TimeUnits(seconds=seconds)
         await self.send(f'A partir de ahora te enviaré un código de UberEats cada <b>{period.to_words()}</b>.', message)
@@ -137,28 +134,30 @@ class UberEatsBot(MultiBot, ABC):
     # -------------------- PUBLIC METHODS -------------------- #
     # -------------------------------------------------------- #
     async def send_ubereats_code(self, chat: Chat, update_next_execution=True):
+        chat.pull_from_database(overwrite_fields=('ubereats',))
+
         new_codes = []
         for code in await self._scrape_codes(chat):
             new_codes.append(code)
 
-            if code in chat.ubereats_last_codes:
+            if code in chat.ubereats['last_codes']:
                 warning_text = '<i>Código ya enviado anteriormente:</i>'
             else:
                 warning_text = ''
             await self.send(f'{warning_text}  <code>{code}</code>', chat, silent=True)
+        chat.ubereats['last_codes'] = new_codes
 
-        chat.ubereats_last_codes = new_codes
         if update_next_execution:
-            chat.ubereats_next_execution = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=chat.ubereats_seconds)
+            chat.ubereats['next_execution'] = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=chat.ubereats['seconds'])
         chat.save()
 
     async def start_ubereats(self, chat: Chat, send_code_now=True):
         await self._cancel_scraping_task(chat)
         chat.config['ubereats'] = True
-        chat.save(pull_overwrite_fields=('ubereats_cookies',))
-        self.task_contexts[chat.id]['task'] = await flanautils.do_every(chat.ubereats_seconds, self.send_ubereats_code, chat, do_first_now=send_code_now)
+        chat.save(pull_overwrite_fields=('ubereats',))
+        self.task_contexts[chat.id]['task'] = await flanautils.do_every(chat.ubereats['seconds'], self.send_ubereats_code, chat, do_first_now=send_code_now)
 
     async def stop_ubereats(self, chat: Chat):
         await self._cancel_scraping_task(chat)
         chat.config['ubereats'] = False
-        chat.save(pull_overwrite_fields=('ubereats_cookies',))
+        chat.save(pull_overwrite_fields=('ubereats',))

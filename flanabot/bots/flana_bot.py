@@ -76,7 +76,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
     async def _get_message(
         self,
         event: multibot_constants.MESSAGE_EVENT,
-        pull_overwrite_fields: Iterable[str] = ('_id', 'config', 'ubereats_seconds')
+        pull_overwrite_fields: Iterable[str] = ('_id', 'config', 'ubereats')
     ) -> Message:
         return await super()._get_message(event, pull_overwrite_fields)
 
@@ -146,7 +146,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             if k not in config_names:
                 continue
             if k == 'ubereats':
-                k = f"ubereats (cada {flanautils.TimeUnits(seconds=message.chat.ubereats_seconds).to_words()})"
+                k = f"ubereats (cada {flanautils.TimeUnits(seconds=message.chat.ubereats['seconds']).to_words()})"
             buttons_texts.append((f"{'✔' if v else '❌'} {k}", v))
 
         await self.send('<b>Estos son los ajustes del chat:</b>\n\n', flanautils.chunks(buttons_texts, 3), message, buttons_key=ButtonsGroup.CONFIG)
@@ -165,7 +165,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
                 await self.start_ubereats(message.chat)
             else:
                 await self.stop_ubereats(message.chat)
-            button_text = f"ubereats (cada {flanautils.TimeUnits(seconds=message.chat.ubereats_seconds).to_words()})"
+            button_text = f"ubereats (cada {flanautils.TimeUnits(seconds=message.chat.ubereats['seconds']).to_words()})"
         else:
             button_text = config_name
         message.buttons_info.pressed_button.text = f"{'✔' if message.chat.config[config_name] else '❌'} {button_text}"
@@ -269,15 +269,15 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         await flanautils.do_every(multibot_constants.CHECK_OLD_DATABASE_MESSAGES_EVERY_SECONDS, self.check_old_database_actions)
         for chat in Chat.find({
             'platform': self.platform.value,
-            "config.ubereats": {"$exists": True, "$eq": True},
-            "ubereats_cookies": {"$exists": True, "$ne": []}
+            'config.ubereats': {"$exists": True, "$eq": True},
+            'ubereats.cookies': {"$exists": True, "$ne": []}
         }):
             chat = await self.get_chat(chat.id)
-            chat.pull_from_database(overwrite_fields=('_id', 'config', 'ubereats_cookies', 'ubereats_seconds'))
+            chat.pull_from_database(overwrite_fields=('_id', 'config', 'ubereats'))
             if (
-                    chat.ubereats_next_execution
+                    chat.ubereats['next_execution']
                     and
-                    (delta_time := chat.ubereats_next_execution - datetime.datetime.now(datetime.timezone.utc)) > datetime.timedelta()
+                    (delta_time := chat.ubereats['next_execution'] - datetime.datetime.now(datetime.timezone.utc)) > datetime.timedelta()
             ):
                 await flanautils.do_later(delta_time, self.start_ubereats, chat)
             else:
