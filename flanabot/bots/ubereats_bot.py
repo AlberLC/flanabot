@@ -87,17 +87,16 @@ class UberEatsBot(MultiBot, ABC):
                                 continue
                             page = context.pages[1]
 
-                            last_code = await get_code()
+                            code = await get_code()
                             if not (new_code_button := await page.query_selector("button[class='getNewCode button secondary']")):
                                 new_code_button = await page.query_selector("'Obtener nuevo código'")
                             if new_code_button and await new_code_button.is_enabled():
                                 await new_code_button.click()
                                 for _ in range(5):
-                                    if (code := await get_code()) != last_code:
+                                    if (new_code := await get_code()) != code:
+                                        code = new_code
                                         break
                                     await asyncio.sleep(0.5)
-                            else:
-                                code = last_code
                             codes.append(code)
 
                             chat.ubereats['cookies'][i] = await context.cookies('https://www.myunidays.com')
