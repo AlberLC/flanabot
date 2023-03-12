@@ -96,6 +96,8 @@ class UberEatsBot(MultiBot, ABC):
                                     if (code := await get_code()) != last_code:
                                         break
                                     await asyncio.sleep(0.5)
+                            else:
+                                code = last_code
                             codes.append(code)
 
                             chat.ubereats['cookies'][i] = await context.cookies('https://www.myunidays.com')
