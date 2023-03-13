@@ -100,6 +100,7 @@ KEYWORDS = {
     'self': (('contigo', 'contra', 'ti'), ('mismo', 'ti')),
     'song_info': ('cancion', 'data', 'datos', 'info', 'informacion', 'information', 'sonaba', 'sonando', 'song', 'sono',
                   'sound', 'suena'),
+    'tunnel': ('canal', 'channel', 'tunel', 'tunnel'),
     'unpunish': ('absolve', 'forgive', 'innocent', 'inocente', 'perdona', 'spare'),
     'vote': ('votacion', 'votar', 'vote', 'voting', 'voto'),
     'weather': ('atmosfera', 'atmosferico', 'calle', 'calor', 'caloret', 'clima', 'climatologia', 'cloud', 'cloudless',
