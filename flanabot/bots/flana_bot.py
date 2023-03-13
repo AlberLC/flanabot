@@ -222,7 +222,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
     async def _on_deactivate_tunnel(self, message: Message):
         self.tunnel_chat = None
         self.owner_chat = None
-        await self.send('Túnel desactivado.', message)
+        await self.send('Túnel cerrado.', message)
 
     @inline(False)
     async def _on_delete(self, message: Message):
