@@ -144,7 +144,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         if (chat := await self.get_chat(chat_id_or_name)) or (chat := await self.get_chat(await self.get_user(chat_id_or_name))):
             self.tunnel_chat = chat
             self.owner_chat = await self.get_chat(self.owner_id) or await self.get_chat(await self.get_user(self.owner_id))
-            await self.send(f"Túnel abierto con <code>{chat.name}{f' ({chat.group_name})' if chat.group_name else ''}</code>.", message)
+            await self.send(f"Túnel abierto con <b>{chat.name}{f' ({chat.group_name})' if chat.group_name else ''}</b>.", message)
         else:
             await self.send_error('Chat inválido.', message)
 
@@ -399,9 +399,9 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             if message.text:
                 await self.send(message.text, self.tunnel_chat)
             else:
-                await self.send('No puedo enviar un mensaje sin texto.', self.tunnel_chat)
+                await self.send('No puedo enviar un mensaje sin texto.', message)
         elif message.chat == self.tunnel_chat:
-            await self.send(message.text if message.text else '<mensaje sin texto>', self.owner_chat)
+            await self.send(f"<b>{message.author.name.split('#')[0]}:</b>  {message.text}", self.owner_chat)
 
     @group
     @bot_mentioned
