@@ -80,7 +80,7 @@ class ScraperBot(MultiBot, ABC):
             self._parse_callbacks(
                 text,
                 [
-                    RegisteredCallback(..., [['sin'], ['timeout', 'limite']]),
+                    RegisteredCallback(..., (('sin',), ('timeout', 'limite'))),
                     RegisteredCallback(..., multibot_constants.KEYWORDS['all'])
                 ]
             )
