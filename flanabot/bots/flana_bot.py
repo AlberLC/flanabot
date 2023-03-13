@@ -11,7 +11,7 @@ import pymongo
 import pytz
 from flanaapis import InstagramLoginError, MediaNotFoundError, PlaceNotFoundError
 from flanautils import return_if_first_empty
-from multibot import BadRoleError, MultiBot, Role, bot_mentioned, constants as multibot_constants, group, inline, owner
+from multibot import BadRoleError, MultiBot, RegisteredCallback, Role, bot_mentioned, constants as multibot_constants, group, inline, owner
 
 from flanabot import constants
 from flanabot.bots.connect_4_bot import Connect4Bot
@@ -30,11 +30,18 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
     Chat = Chat
     Message = Message
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tunnel_chat = None
+        self.owner_chat = None
+
     # -------------------------------------------------------- #
     # ------------------- PROTECTED METHODS ------------------ #
     # -------------------------------------------------------- #
     def _add_handlers(self):
         super()._add_handlers()
+
+        self.register(self._on_activate_tunnel, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['tunnel']))
 
         self.register(self._on_bye, multibot_constants.KEYWORDS['bye'])
 
@@ -44,6 +51,8 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         self.register(self._on_database_messages, (multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message']))
 
         self.register(self._on_database_messages_simple, (multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['simple']))
+
+        self.register(self._on_deactivate_tunnel, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['tunnel']))
 
         self.register(self._on_delete, multibot_constants.KEYWORDS['delete'])
         self.register(self._on_delete, (multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
@@ -62,6 +71,8 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         self.register(self._on_roles, (multibot_constants.KEYWORDS['change'], multibot_constants.KEYWORDS['permission']))
         self.register(self._on_roles, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['role']))
         self.register(self._on_roles, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['role']))
+
+        self.register(self._on_tunnel_message, always=True)
 
         self.register(self._on_users, multibot_constants.KEYWORDS['user'])
 
@@ -122,6 +133,21 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
     # ---------------------------------------------- #
     #                    HANDLERS                    #
     # ---------------------------------------------- #
+    async def _on_activate_tunnel(self, message: Message):
+        keywords = (*multibot_constants.KEYWORDS['activate'], *constants.KEYWORDS['tunnel'])
+        try:
+            chat_id_or_name = next(part for part in flanautils.remove_accents(message.text.lower()).split() if not flanautils.cartesian_product_string_matching(part, keywords, multibot_constants.PARSER_MIN_SCORE_DEFAULT))
+        except StopIteration:
+            return
+
+        chat_id_or_name = flanautils.cast_number(chat_id_or_name, raise_exception=False)
+        if (chat := await self.get_chat(chat_id_or_name)) or (chat := await self.get_chat(await self.get_user(chat_id_or_name))):
+            self.tunnel_chat = chat
+            self.owner_chat = await self.get_chat(self.owner_id) or await self.get_chat(await self.get_user(self.owner_id))
+            await self.send(f"Túnel abierto con <code>{chat.name}{f' ({chat.group_name})' if chat.group_name else ''}</code>.", message)
+        else:
+            await self.send_error('Chat inválido.', message)
+
     async def _on_bye(self, message: Message):
         if message.chat.is_private or self.is_bot_mentioned(message):
             await self.send_bye(message)
@@ -192,6 +218,11 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
     async def _on_database_messages_simple(self, message: Message):
         await self._on_database_messages(message, simple=True)
+
+    async def _on_deactivate_tunnel(self, message: Message):
+        self.tunnel_chat = None
+        self.owner_chat = None
+        await self.send('Túnel desactivado.', message)
 
     @inline(False)
     async def _on_delete(self, message: Message):
@@ -349,6 +380,28 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         await self.edit(self.distribute_buttons(await self._role_state_options(message, user_role_names), vertically=True), message)
 
         message.buttons_info.presser_user.save()
+
+    async def _on_tunnel_message(self, message: Message):
+        if (
+                not self.tunnel_chat
+                or
+                self._parse_callbacks(
+                    message.text,
+                    [
+                        RegisteredCallback(..., (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['tunnel'])),
+                        RegisteredCallback(..., (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['tunnel']))
+                    ]
+                )
+        ):
+            return
+
+        if message.chat.is_private and message.author.id == self.owner_id:
+            if message.text:
+                await self.send(message.text, self.tunnel_chat)
+            else:
+                await self.send('No puedo enviar un mensaje sin texto.', self.tunnel_chat)
+        elif message.chat == self.tunnel_chat:
+            await self.send(message.text if message.text else '<mensaje sin texto>', self.owner_chat)
 
     @group
     @bot_mentioned
