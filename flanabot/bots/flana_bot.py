@@ -395,12 +395,12 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         ):
             return
 
-        if message.chat.is_private and message.author.id == self.owner_id:
+        if message.chat == self.tunnel_chat:
             if message.text:
                 await self.send(message.text, self.tunnel_chat)
             else:
                 await self.send('No puedo enviar un mensaje sin texto.', message)
-        elif message.chat == self.tunnel_chat:
+        elif message.author.id == self.owner_id and message.chat.is_private:
             await self.send(f"<b>{message.author.name.split('#')[0]}:</b>  {message.text}", self.owner_chat)
 
     @group
