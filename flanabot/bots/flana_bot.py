@@ -259,7 +259,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
     async def _on_new_message_default(self, message: Message):
         if message.is_inline:
-            await self._scrape_and_send(message)
+            await self._on_scraping(message)
         elif (
                 (
                         message.chat.is_group
@@ -271,26 +271,28 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
                         not await self._on_scraping(message, scrape_replied=False)
                 )
                 and
+                message.author.id != self.owner_id
+                and
                 (
-                        message.author.id != self.owner_id
+                        not message.replied_message
+                        or
+                        message.replied_message.author.id != self.id
+                        or
+                        not message.replied_message.medias
+                )
+                and
+                (
+                        self.is_bot_mentioned(message)
+                        or
+                        message.chat.config['auto_insult']
                         and
-                        (
-                                not message.replied_message
-                                or
-                                message.replied_message.author.id != self.id
-                                or
-                                not message.replied_message.medias
-                        )
-                        and
-                        (
-                                self.is_bot_mentioned(message)
-                                or
-                                (
-                                        message.chat.config['auto_insult']
-                                        and
-                                        random.random() < constants.INSULT_PROBABILITY
-                                )
-                        )
+                        random.random() < constants.INSULT_PROBABILITY
+                )
+                and
+                (
+                        not self.tunnel_chat
+                        or
+                        self.tunnel_chat != message.chat
                 )
         ):
             await self.send_insult(message)
