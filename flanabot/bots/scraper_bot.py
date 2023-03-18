@@ -25,23 +25,14 @@ class ScraperBot(MultiBot, ABC):
     def _add_handlers(self):
         super()._add_handlers()
 
-        self.register(lambda message: self._on_scraping(message, force=True), constants.KEYWORDS['force'])
-        self.register(lambda message: self._on_scraping(message, force=True), (constants.KEYWORDS['force'], constants.KEYWORDS['scraping']))
-
-        self.register(lambda message: self._on_scraping(message, force=True, audio_only=True), (constants.KEYWORDS['force'], multibot_constants.KEYWORDS['audio']))
-        self.register(lambda message: self._on_scraping(message, force=True, audio_only=True), (constants.KEYWORDS['force'], multibot_constants.KEYWORDS['audio'], constants.KEYWORDS['scraping']))
-
-        self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete']))
-        self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['message']))
-        self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
-        self.register(self._on_no_delete_original, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_scraping, constants.KEYWORDS['scraping'])
+        self.register(self._on_scraping, constants.KEYWORDS['force'])
+        self.register(self._on_scraping, multibot_constants.KEYWORDS['audio'])
+        self.register(lambda message: self._on_scraping(message, delete=False), (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete']))
+        self.register(lambda message: self._on_scraping(message, delete=False), (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['message']))
+        self.register(lambda message: self._on_scraping(message, delete=False), (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
 
         self.register(self._on_no_scraping, (multibot_constants.KEYWORDS['negate'], constants.KEYWORDS['scraping']))
-
-        self.register(self._on_scraping, constants.KEYWORDS['scraping'])
-
-        self.register(lambda message: self._on_scraping(message, audio_only=True), multibot_constants.KEYWORDS['audio'])
-        self.register(lambda message: self._on_scraping(message, audio_only=True), (multibot_constants.KEYWORDS['audio'], constants.KEYWORDS['scraping']))
 
         self.register(self._on_song_info, constants.KEYWORDS['song_info'])
 
@@ -56,7 +47,7 @@ class ScraperBot(MultiBot, ABC):
         )
 
     @staticmethod
-    def _get_keywords(delete=True, force=False, audio_only=False) -> list[str]:
+    def _get_keywords(delete=True, force=False, full=False, audio_only=False) -> list[str]:
         keywords = list(constants.KEYWORDS['scraping'])
 
         if not delete:
@@ -70,21 +61,13 @@ class ScraperBot(MultiBot, ABC):
         if force:
             keywords += constants.KEYWORDS['force']
 
+        if full:
+            keywords += ['sin', 'timeout', 'limite', *multibot_constants.KEYWORDS['all']]
+
         if audio_only:
             keywords += multibot_constants.KEYWORDS['audio']
 
         return keywords
-
-    def _is_full_scraping(self, text: str) -> bool:
-        return bool(
-            self._parse_callbacks(
-                text,
-                [
-                    RegisteredCallback(..., (('sin',), ('timeout', 'limite'))),
-                    RegisteredCallback(..., multibot_constants.KEYWORDS['all'])
-                ]
-            )
-        )
 
     @staticmethod
     def _medias_sended_info(medias: Iterable[Media]) -> str:
@@ -245,12 +228,6 @@ class ScraperBot(MultiBot, ABC):
     # ---------------------------------------------- #
     #                    HANDLERS                    #
     # ---------------------------------------------- #
-    async def _on_no_delete_original(self, message: Message) -> OrderedSet[Message] | None:
-        if sended_media_messages := await self._on_scraping(message, delete=False):
-            return sended_media_messages
-
-        await self._on_recover_message(message)
-
     async def _on_no_scraping(self, message: Message):
         pass
 
@@ -261,17 +238,45 @@ class ScraperBot(MultiBot, ABC):
         self,
         message: Message,
         delete=True,
-        force=False,
-        audio_only=False,
+        force: bool = None,
+        full: bool = None,
+        audio_only: bool = None,
         scrape_replied=True,
     ) -> OrderedSet[Message]:
         sended_media_messages = OrderedSet()
         if not message.chat.config['auto_scraping'] and not self.is_bot_mentioned(message):
             return sended_media_messages
 
-        keywords = self._get_keywords(delete, force, audio_only)
-        if full := self._is_full_scraping(message.text):
-            keywords += ['sin', 'timeout', 'limite', *multibot_constants.KEYWORDS['all']]
+        if force is None:
+            force = bool(
+                flanautils.cartesian_product_string_matching(
+                    message.text,
+                    constants.KEYWORDS['force'],
+                    multibot_constants.PARSER_MIN_SCORE_DEFAULT
+                )
+            )
+
+        if full is None:
+            full = bool(
+                self._parse_callbacks(
+                    message.text,
+                    [
+                        RegisteredCallback(..., (('sin',), ('timeout', 'limite'))),
+                        RegisteredCallback(..., multibot_constants.KEYWORDS['all'])
+                    ]
+                )
+            )
+
+        if audio_only is None:
+            audio_only = bool(
+                flanautils.cartesian_product_string_matching(
+                    message.text,
+                    multibot_constants.KEYWORDS['audio'],
+                    multibot_constants.PARSER_MIN_SCORE_DEFAULT
+                )
+            )
+
+        keywords = self._get_keywords(delete, force, full, audio_only)
 
         if scrape_replied and message.replied_message:
             sended_media_messages += await self._scrape_and_send(
@@ -291,9 +296,13 @@ class ScraperBot(MultiBot, ABC):
             'sended_media_messages': sended_media_messages
         }
         if delete:
-            return await self._scrape_send_and_delete(**kwargs)
+            sended_media_messages |= await self._scrape_send_and_delete(**kwargs)
         else:
-            return await self._scrape_and_send(**kwargs)
+            sended_media_messages |= await self._scrape_and_send(**kwargs)
+            if not sended_media_messages:
+                await self._on_recover_message(message)
+
+        return sended_media_messages
 
     @reply
     async def _on_song_info(self, message: Message):
