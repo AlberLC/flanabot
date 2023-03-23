@@ -47,7 +47,7 @@ class UberEatsBot(MultiBot, ABC):
         if playwright_ := self.task_contexts[chat.id]['playwright']:
             await playwright_.stop()
 
-    async def _scrape_codes(self, chat: Chat) -> list[str]:
+    async def _scrape_codes(self, chat: Chat) -> list[str | None]:
         async def get_code() -> str:
             if code_input := await page.query_selector("input[class='code toCopy']"):
                 return await code_input.input_value()
@@ -58,7 +58,7 @@ class UberEatsBot(MultiBot, ABC):
                     await page.click("'Copiar'")
                 return pyperclip.paste()
 
-        codes = []
+        codes: list[str | None] = [None] * len(chat.ubereats['cookies'])
 
         async with playwright.async_api.async_playwright() as playwright_:
             self.task_contexts[chat.id]['playwright'] = playwright_
@@ -97,7 +97,7 @@ class UberEatsBot(MultiBot, ABC):
                                         code = new_code
                                         break
                                     await asyncio.sleep(0.5)
-                            codes.append(code)
+                            codes[i] = code
 
                             chat.ubereats['cookies'][i] = await context.cookies('https://www.myunidays.com')
                     except playwright.async_api.Error:
@@ -139,19 +139,24 @@ class UberEatsBot(MultiBot, ABC):
     async def send_ubereats_code(self, chat: Chat, update_next_execution=True):
         chat.pull_from_database(overwrite_fields=('ubereats',))
 
-        new_codes = []
-        for code in await self._scrape_codes(chat):
-            new_codes.append(code)
-
-            if code in chat.ubereats['last_codes']:
-                warning_text = '<i>Código ya enviado anteriormente:</i>  '
+        codes = await self._scrape_codes(chat)
+        for i, code in enumerate(codes):
+            if code:
+                if code in chat.ubereats['last_codes']:
+                    warning_text = '<i>Código ya enviado anteriormente:</i>  '
+                else:
+                    warning_text = ''
+                await self.send(f'{warning_text}<code>{code}</code>', chat, silent=True)
             else:
-                warning_text = ''
-            await self.send(f'{warning_text}<code>{code}</code>', chat, silent=True)
-        chat.ubereats['last_codes'] = new_codes
+                try:
+                    codes[i] = chat.ubereats['last_codes'][i]
+                except IndexError:
+                    codes[i] = None
+        chat.ubereats['last_codes'] = codes
 
         if update_next_execution:
             chat.ubereats['next_execution'] = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=chat.ubereats['seconds'])
+
         chat.save()
 
     async def start_ubereats(self, chat: Chat, send_code_now=True):
