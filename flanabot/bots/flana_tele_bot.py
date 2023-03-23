@@ -21,11 +21,11 @@ from flanabot.models import Message
 def whitelisted(func: Callable) -> Callable:
     @functools.wraps(func)
     @find_message
-    async def wrapper(self: FlanaTeleBot, message: Message):
+    async def wrapper(self: FlanaTeleBot, message: Message, *args, **kwargs):
         if message.author.id not in self.whitelist_ids:
             return
 
-        return await func(self, message)
+        return await func(self, message, *args, **kwargs)
 
     return wrapper
 
