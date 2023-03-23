@@ -11,7 +11,7 @@ import pymongo
 import pytz
 from flanaapis import InstagramLoginError, MediaNotFoundError, PlaceNotFoundError
 from flanautils import return_if_first_empty
-from multibot import BadRoleError, MultiBot, RegisteredCallback, Role, bot_mentioned, constants as multibot_constants, group, inline, owner
+from multibot import BadRoleError, MultiBot, RegisteredCallback, Role, User, bot_mentioned, constants as multibot_constants, group, inline, owner
 
 from flanabot import constants
 from flanabot.bots.connect_4_bot import Connect4Bot
@@ -456,12 +456,16 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         before_date = datetime.datetime.now(datetime.timezone.utc) - multibot_constants.DATABASE_MESSAGE_EXPIRATION_TIME
         BotAction.delete_many_raw({'platform': self.platform.value, 'date': {'$lte': before_date}})
 
-    async def send_bye(self, message: Message) -> multibot_constants.ORIGINAL_MESSAGE:
-        return await self.send(random.choice((*constants.BYE_PHRASES, flanautils.CommonWords.random_time_greeting())), message)
+    async def send_bye(self, chat: int | str | User | Chat | Message) -> multibot_constants.ORIGINAL_MESSAGE:
+        chat = await self.get_chat(chat)
+        return await self.send(random.choice((*constants.BYE_PHRASES, flanautils.CommonWords.random_time_greeting())), chat)
 
-    async def send_hello(self, message: Message) -> multibot_constants.ORIGINAL_MESSAGE:
-        return await self.send(random.choice((*constants.HELLO_PHRASES, flanautils.CommonWords.random_time_greeting())), message)
+    async def send_hello(self, chat: int | str | User | Chat | Message) -> multibot_constants.ORIGINAL_MESSAGE:
+        chat = await self.get_chat(chat)
+        return await self.send(random.choice((*constants.HELLO_PHRASES, flanautils.CommonWords.random_time_greeting())), chat)
 
-    async def send_insult(self, message: Message) -> multibot_constants.ORIGINAL_MESSAGE | None:
-        await self.typing_delay(message)
-        return await self.send(random.choice(constants.INSULTS), message)
+    async def send_insult(self, chat: int | str | User | Chat | Message) -> multibot_constants.ORIGINAL_MESSAGE | None:
+        chat = await self.get_chat(chat)
+        async with await self.typing(chat):
+            await asyncio.sleep(random.randint(1, 3))
+            return await self.send(random.choice(constants.INSULTS), chat)
