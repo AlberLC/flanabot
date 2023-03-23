@@ -144,7 +144,8 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         chat_id_or_name = flanautils.cast_number(chat_id_or_name, raise_exception=False)
         if (chat := await self.get_chat(chat_id_or_name)) or (chat := await self.get_chat(await self.get_user(chat_id_or_name))):
             self.tunnel_chat = chat
-            self.owner_chat = await self.get_chat(self.owner_id) or await self.get_chat(await self.get_user(self.owner_id))
+            if not self.owner_chat:
+                self.owner_chat = await self.get_chat(self.owner_id) or await self.get_chat(await self.get_user(self.owner_id))
             await self.send(f"Túnel abierto con <b>{chat.name}{f' ({chat.group_name})' if chat.group_name else ''}</b>.", message)
         else:
             await self.send_error('Chat inválido.', message)
@@ -220,7 +221,6 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
     async def _on_deactivate_tunnel(self, message: Message):
         self.tunnel_chat = None
-        self.owner_chat = None
         await self.send('Túnel cerrado.', message)
 
     @inline(False)
@@ -260,7 +260,9 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
 
-        self.owner_chat = await self.get_chat(self.owner_id) or await self.get_chat(await self.get_user(self.owner_id))
+        if not self.owner_chat:
+            self.owner_chat = await self.get_chat(self.owner_id) or await self.get_chat(await self.get_user(self.owner_id))
+
         await self.send(
             '<b>Necesita ayuda:</b>\n'
             '<b>User:</b>\n'
