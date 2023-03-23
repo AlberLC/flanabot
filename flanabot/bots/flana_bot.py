@@ -276,6 +276,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             f'    <b>group_name:</b> <code>{message.chat.group_name}</code>',
             self.owner_chat
         )
+        await self.send('Se ha notificado a Flanagan. Se pondrá en contacto contigo cuando pueda.', message)
 
     async def _on_new_message_default(self, message: Message):
         if message.is_inline:
