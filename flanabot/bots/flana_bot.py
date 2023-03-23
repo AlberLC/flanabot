@@ -58,6 +58,8 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
         self.register(self._on_hello, multibot_constants.KEYWORDS['hello'])
 
+        self.register(self._on_help, multibot_constants.KEYWORDS['help'])
+
         self.register(self._on_new_message_default, default=True)
 
         self.register(self._on_recover_message, multibot_constants.KEYWORDS['reset'])
@@ -253,6 +255,27 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
     async def _on_hello(self, message: Message):
         if message.chat.is_private or self.is_bot_mentioned(message):
             await self.send_hello(message)
+
+    async def _on_help(self, message: Message):
+        if message.chat.is_group and not self.is_bot_mentioned(message):
+            return
+
+        self.owner_chat = await self.get_chat(self.owner_id) or await self.get_chat(await self.get_user(self.owner_id))
+        await self.send(
+            '<b>Necesita ayuda:</b>\n'
+            '<b>User:</b>\n'
+            f'    <b>id:</b> <code>{message.author.id}</code>\n'
+            f'    <b>name:</b> <code>{message.author.name}</code>\n'
+            f'    <b>is_admin:<b> <code>{message.author.is_admin}</code>\n'
+            f'    <b>is_bot:</b> <code>{message.author.is_bot}</code>\n'
+            '\n'
+            '<b>Chat:</b>\n'
+            f'    <b>id:</b> <code>{message.chat.id}</code>\n'
+            f'    <b>name:</b> <code>{message.chat.name}</code>\n'
+            f'    <b>group_id:</b> <code>{message.chat.group_id}</code>\n'
+            f'    <b>group_name:</b> <code>{message.chat.group_name}</code>',
+            self.owner_chat
+        )
 
     async def _on_new_message_default(self, message: Message):
         if message.is_inline:
