@@ -144,10 +144,10 @@ class UberEatsBot(MultiBot, ABC):
             new_codes.append(code)
 
             if code in chat.ubereats['last_codes']:
-                warning_text = '<i>Código ya enviado anteriormente:</i>'
+                warning_text = '<i>Código ya enviado anteriormente:</i>  '
             else:
                 warning_text = ''
-            await self.send(f'{warning_text}  <code>{code}</code>', chat, silent=True)
+            await self.send(f'{warning_text}<code>{code}</code>', chat, silent=True)
         chat.ubereats['last_codes'] = new_codes
 
         if update_next_execution:
