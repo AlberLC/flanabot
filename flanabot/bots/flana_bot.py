@@ -214,6 +214,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             ),
             message
         )
+        await self.delete_message(message)
 
     async def _on_deactivate_tunnel(self, message: Message):
         self.tunnel_chat = None
