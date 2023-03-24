@@ -3,6 +3,7 @@ __all__ = ['FlanaBot']
 import asyncio
 import datetime
 import random
+import time
 from abc import ABC
 from typing import Iterable
 
@@ -34,6 +35,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         super().__init__(*args, **kwargs)
         self.tunnel_chat = None
         self.owner_chat = None
+        self.help_calls = {}
 
     # -------------------------------------------------------- #
     # ------------------- PROTECTED METHODS ------------------ #
@@ -257,8 +259,19 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             await self.send_hello(message)
 
     async def _on_help(self, message: Message):
-        if message.chat.is_group and not self.is_bot_mentioned(message):
+        now = datetime.timedelta(seconds=time.time())
+        if (
+                message.chat.is_group
+                and
+                not self.is_bot_mentioned(message)
+                or
+                self.help_calls.get(message.chat.id)
+                and
+                now - self.help_calls[message.chat.id] <= datetime.timedelta(minutes=1)
+        ):
             return
+
+        self.help_calls[message.chat.id] = now
 
         if not self.owner_chat:
             self.owner_chat = await self.get_chat(self.owner_id) or await self.get_chat(await self.get_user(self.owner_id))
