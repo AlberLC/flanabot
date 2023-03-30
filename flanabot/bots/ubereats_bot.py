@@ -8,7 +8,6 @@ from collections import defaultdict
 
 import flanautils
 import playwright.async_api
-import pyperclip
 from multibot import MultiBot, group
 
 import constants
@@ -49,14 +48,7 @@ class UberEatsBot(MultiBot, ABC):
 
     async def _scrape_codes(self, chat: Chat) -> list[str | None]:
         async def get_code() -> str:
-            if code_input := await page.query_selector("input[class='code toCopy']"):
-                return await code_input.input_value()
-            else:
-                if button_ := await page.query_selector("button[class='copy button quarternary']"):
-                    await button_.click()
-                else:
-                    await page.click("'Copiar'")
-                return pyperclip.paste()
+            return await page.input_value("input[class='code toCopy']")
 
         codes: list[str | None] = [None] * len(chat.ubereats['cookies'])
 
@@ -71,6 +63,7 @@ class UberEatsBot(MultiBot, ABC):
                                 storage_state={'cookies': cookies},
                                 user_agent=flanautils.USER_AGENT
                             )
+                            context.set_default_timeout(1000)
 
                             page = await context.new_page()
                             await page.goto('https://www.myunidays.com/ES/es-ES/partners/ubereats/access/online')
@@ -86,11 +79,12 @@ class UberEatsBot(MultiBot, ABC):
                             else:
                                 continue
                             page = context.pages[1]
+                            page.wait_for_load_state()
 
                             code = await get_code()
                             if not (new_code_button := await page.query_selector("button[class='getNewCode button secondary']")):
-                                new_code_button = await page.query_selector("'Obtener nuevo código'")
-                            if new_code_button and await new_code_button.is_enabled():
+                                new_code_button = page.locator("'Obtener nuevo código'")
+                            if await new_code_button.is_enabled():
                                 await new_code_button.click()
                                 for _ in range(5):
                                     if (new_code := await get_code()) != code:
