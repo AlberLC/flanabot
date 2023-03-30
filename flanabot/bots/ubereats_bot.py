@@ -95,7 +95,7 @@ class UberEatsBot(MultiBot, ABC):
 
                             chat.ubereats['cookies'][i] = await context.cookies('https://www.myunidays.com')
                     except playwright.async_api.Error:
-                        pass
+                        await asyncio.sleep(1)
                     else:
                         break
 
