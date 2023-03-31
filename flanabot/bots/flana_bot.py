@@ -233,10 +233,8 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
                     and
                     (message.author.is_admin or message.replied_message.author.id == self.id)
             ):
-                if message.chat.is_group:
-                    await self.delete_message(message)
-                await asyncio.sleep(flanautils.text_to_time(message.text).total_seconds())
-                await self.delete_message(message.replied_message)
+                await flanautils.do_later(flanautils.text_to_time(message.text).total_seconds(), self.delete_message, message.replied_message)
+                await self.delete_message(message)
             elif message.chat.is_group and self.is_bot_mentioned(message):
                 await self.send_negative(message)
         elif (
