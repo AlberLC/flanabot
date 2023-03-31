@@ -63,7 +63,7 @@ class UberEatsBot(MultiBot, ABC):
                                 storage_state={'cookies': cookies},
                                 user_agent=flanautils.USER_AGENT
                             )
-                            context.set_default_timeout(1000)
+                            context.set_default_timeout(3000)
 
                             page = await context.new_page()
                             await page.goto('https://www.myunidays.com/ES/es-ES/partners/ubereats/access/online')
@@ -79,7 +79,7 @@ class UberEatsBot(MultiBot, ABC):
                             else:
                                 continue
                             page = context.pages[1]
-                            page.wait_for_load_state()
+                            await page.wait_for_load_state()
 
                             code = await get_code()
                             if not (new_code_button := await page.query_selector("button[class='getNewCode button secondary']")):
