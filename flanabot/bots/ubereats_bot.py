@@ -61,12 +61,25 @@ class UberEatsBot(MultiBot, ABC):
                             self.task_contexts[chat.id]['browser'] = browser
                             context: playwright.async_api.BrowserContext = await browser.new_context(
                                 storage_state={'cookies': cookies},
-                                user_agent=flanautils.USER_AGENT
+                                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.49 Safari/537.36',
+                                screen={
+                                    'width': 1920,
+                                    'height': 1080
+                                },
+                                viewport={
+                                    'width': 1280,
+                                    'height': 720
+                                },
+                                device_scale_factor=1,
+                                is_mobile=False,
+                                has_touch=False,
+                                default_browser_type='chromium',
+                                locale='es-ES'
                             )
                             context.set_default_timeout(3000)
 
                             page = await context.new_page()
-                            await page.goto('https://www.myunidays.com/ES/es-ES/partners/ubereats/access/online')
+                            await page.goto('https://www.myunidays.com/ES/es-ES/partners/ubereats/access/online', timeout=30000)
 
                             if button := await page.query_selector("button[class='button highlight']"):
                                 await button.click()
