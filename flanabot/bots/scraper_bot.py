@@ -1,13 +1,14 @@
 __all__ = ['ScraperBot']
 
 import asyncio
+import datetime
 import random
 from abc import ABC
 from collections import defaultdict
 from typing import Iterable
 
 import flanautils
-from flanaapis import RedditMediaNotFoundError, instagram, reddit, tiktok, twitter, yt_dlp_wrapper
+from flanaapis import InstagramMediaNotFoundError, RedditMediaNotFoundError, instagram, reddit, tiktok, twitter, yt_dlp_wrapper
 from flanautils import Media, MediaType, OrderedSet, return_if_first_empty
 from multibot import MultiBot, RegisteredCallback, SendError, constants as multibot_constants, reply
 
@@ -19,11 +20,21 @@ from flanabot.models import Action, BotAction, Message
 # --------------------------------------------- SCRAPER_BOT --------------------------------------------- #
 # ------------------------------------------------------------------------------------------------------- #
 class ScraperBot(MultiBot, ABC):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.owner_chat = None
+        self.instagram_ban_date = None
+
     # -------------------------------------------------------- #
     # ------------------- PROTECTED METHODS ------------------ #
     # -------------------------------------------------------- #
     def _add_handlers(self):
         super()._add_handlers()
+
+        self.register(self._on_no_scraping, (multibot_constants.KEYWORDS['negate'], constants.KEYWORDS['scraping']))
+
+        self.register(self._on_reset_instagram_ban, (multibot_constants.KEYWORDS['delete'], ('instagram',)))
+        self.register(self._on_reset_instagram_ban, (multibot_constants.KEYWORDS['reset'], ('instagram',)))
 
         self.register(self._on_scraping, constants.KEYWORDS['scraping'])
         self.register(self._on_scraping, constants.KEYWORDS['force'])
@@ -31,8 +42,6 @@ class ScraperBot(MultiBot, ABC):
         self.register(lambda message: self._on_scraping(message, delete=False), (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete']))
         self.register(lambda message: self._on_scraping(message, delete=False), (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['message']))
         self.register(lambda message: self._on_scraping(message, delete=False), (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
-
-        self.register(self._on_no_scraping, (multibot_constants.KEYWORDS['negate'], constants.KEYWORDS['scraping']))
 
         self.register(self._on_song_info, constants.KEYWORDS['song_info'])
 
@@ -71,7 +80,7 @@ class ScraperBot(MultiBot, ABC):
 
     @staticmethod
     def _medias_sended_info(medias: Iterable[Media]) -> str:
-        medias_count = defaultdict(lambda: defaultdict(int))
+        medias_count: dict = defaultdict(lambda: defaultdict(int))
         for media in medias:
             if not media.source or isinstance(media.source, str):
                 medias_count[media.source][media.type_] += 1
@@ -211,16 +220,27 @@ class ScraperBot(MultiBot, ABC):
 
         gather_result = asyncio.gather(
             twitter.get_medias(tweet_ids, audio_only),
-            instagram.get_medias(instagram_ids, audio_only),
             tiktok.get_medias(tiktok_users_and_ids, tiktok_download_urls, 'h264', 'mp4', force, audio_only, timeout_for_media),
             yt_dlp_wrapper.get_medias(media_urls, 'h264', 'mp4', force, audio_only, timeout_for_media),
             return_exceptions=True
         )
 
         await gather_result
+        instagram_results = []
+        if not self.instagram_ban_date or self.instagram_ban_date + constants.INSTAGRAM_BAN_SLEEP >= datetime.datetime.now(datetime.timezone.utc):
+            try:
+                instagram_results = await instagram.get_medias(instagram_ids, audio_only)
+            except InstagramMediaNotFoundError:
+                self.instagram_ban_date = datetime.datetime.now(datetime.timezone.utc)
+                if not self.owner_chat:
+                    self.owner_chat = await self.get_chat(self.owner_id) or await self.get_chat(await self.get_user(self.owner_id))
+                await self.send('Instagram limite excedido.', self.owner_chat)
+        if not instagram_results:
+            instagram_results = await instagram.get_medias_v2(instagram_ids, audio_only)
+
         await self.delete_message(bot_state_message)
 
-        gather_medias, gather_exceptions = flanautils.filter_exceptions(gather_result.result())
+        gather_medias, gather_exceptions = flanautils.filter_exceptions(gather_result.result() + instagram_results)
         await self._manage_exceptions(exceptions + gather_exceptions, message, print_traceback=True)
 
         return medias | gather_medias
@@ -233,6 +253,9 @@ class ScraperBot(MultiBot, ABC):
 
     async def _on_recover_message(self, message: Message):
         pass
+
+    async def _on_reset_instagram_ban(self, _message: Message):
+        self.instagram_ban_date = None
 
     async def _on_scraping(
         self,
