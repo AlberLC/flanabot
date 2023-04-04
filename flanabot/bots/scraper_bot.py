@@ -227,7 +227,7 @@ class ScraperBot(MultiBot, ABC):
 
         await gather_result
         instagram_results = []
-        if not self.instagram_ban_date or self.instagram_ban_date + constants.INSTAGRAM_BAN_SLEEP >= datetime.datetime.now(datetime.timezone.utc):
+        if not self.instagram_ban_date or datetime.datetime.now(datetime.timezone.utc) >= self.instagram_ban_date + constants.INSTAGRAM_BAN_SLEEP:
             try:
                 instagram_results = await instagram.get_medias(instagram_ids, audio_only)
             except InstagramMediaNotFoundError:
