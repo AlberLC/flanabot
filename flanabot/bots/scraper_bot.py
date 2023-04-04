@@ -33,8 +33,8 @@ class ScraperBot(MultiBot, ABC):
 
         self.register(self._on_no_scraping, (multibot_constants.KEYWORDS['negate'], constants.KEYWORDS['scraping']))
 
-        self.register(self._on_reset_instagram_ban, (multibot_constants.KEYWORDS['delete'], ('instagram',)))
-        self.register(self._on_reset_instagram_ban, (multibot_constants.KEYWORDS['reset'], ('instagram',)))
+        self.register(self._on_reset_instagram_ban, (multibot_constants.KEYWORDS['delete'], 'instagram'))
+        self.register(self._on_reset_instagram_ban, (multibot_constants.KEYWORDS['reset'], 'instagram'))
 
         self.register(self._on_scraping, constants.KEYWORDS['scraping'])
         self.register(self._on_scraping, constants.KEYWORDS['force'])
