@@ -10,7 +10,7 @@ from typing import Iterable
 import flanautils
 from flanaapis import InstagramMediaNotFoundError, RedditMediaNotFoundError, instagram, reddit, tiktok, twitter, yt_dlp_wrapper
 from flanautils import Media, MediaType, OrderedSet, return_if_first_empty
-from multibot import MultiBot, RegisteredCallback, SendError, constants as multibot_constants, reply
+from multibot import MultiBot, RegisteredCallback, SendError, constants as multibot_constants, owner, reply
 
 from flanabot import constants
 from flanabot.models import Action, BotAction, Message
@@ -22,7 +22,6 @@ from flanabot.models import Action, BotAction, Message
 class ScraperBot(MultiBot, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.owner_chat = None
         self.instagram_ban_date = None
 
     # -------------------------------------------------------- #
@@ -227,14 +226,12 @@ class ScraperBot(MultiBot, ABC):
 
         await gather_result
         instagram_results = []
-        if not self.instagram_ban_date or datetime.datetime.now(datetime.timezone.utc) >= self.instagram_ban_date + constants.INSTAGRAM_BAN_SLEEP:
+        if not self.instagram_ban_date or datetime.datetime.now(datetime.timezone.utc) - self.instagram_ban_date >= constants.INSTAGRAM_BAN_SLEEP:
             try:
                 instagram_results = await instagram.get_medias(instagram_ids, audio_only)
             except InstagramMediaNotFoundError:
                 self.instagram_ban_date = datetime.datetime.now(datetime.timezone.utc)
-                if not self.owner_chat:
-                    self.owner_chat = await self.get_chat(self.owner_id) or await self.get_chat(await self.get_user(self.owner_id))
-                await self.send('Instagram limite excedido.', self.owner_chat)
+                await self.send('Límite de Instagram excedido.', await self.owner_chat)
         if not instagram_results:
             instagram_results = await instagram.get_medias_v2(instagram_ids, audio_only)
 
@@ -254,8 +251,10 @@ class ScraperBot(MultiBot, ABC):
     async def _on_recover_message(self, message: Message):
         pass
 
-    async def _on_reset_instagram_ban(self, _message: Message):
+    @owner
+    async def _on_reset_instagram_ban(self, message: Message):
         self.instagram_ban_date = None
+        await self.send('Ban de Instagram reseteado.', message)
 
     async def _on_scraping(
         self,
