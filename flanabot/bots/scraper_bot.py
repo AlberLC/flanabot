@@ -254,7 +254,9 @@ class ScraperBot(MultiBot, ABC):
     @owner
     async def _on_reset_instagram_ban(self, message: Message):
         self.instagram_ban_date = None
-        await self.send('Ban de Instagram reseteado.', message)
+        bot_message = await self.send('Ban de Instagram reseteado.', message)
+        await self.delete_message(message)
+        asyncio.get_running_loop().call_later(multibot_constants.COMMAND_MESSAGE_DURATION, self.delete_message, bot_message)
 
     async def _on_scraping(
         self,
