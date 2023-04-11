@@ -34,7 +34,6 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tunnel_chat = None
-        self.owner_chat = None
         self.help_calls = {}
 
     # -------------------------------------------------------- #
@@ -146,8 +145,6 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         chat_id_or_name = flanautils.cast_number(chat_id_or_name, raise_exception=False)
         if (chat := await self.get_chat(chat_id_or_name)) or (chat := await self.get_chat(await self.get_user(chat_id_or_name))):
             self.tunnel_chat = chat
-            if not self.owner_chat:
-                self.owner_chat = await self.get_chat(self.owner_id) or await self.get_chat(await self.get_user(self.owner_id))
             await self.send(f"Túnel abierto con <b>{chat.name}{f' ({chat.group_name})' if chat.group_name else ''}</b>.", message)
         else:
             await self.send_error('Chat inválido.', message)
@@ -271,9 +268,6 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
         self.help_calls[message.chat.id] = now
 
-        if not self.owner_chat:
-            self.owner_chat = await self.get_chat(self.owner_id) or await self.get_chat(await self.get_user(self.owner_id))
-
         await self.send(
             '<b>Necesita ayuda:</b>\n'
             '<b>User:</b>\n'
@@ -287,7 +281,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             f'    <b>name:</b> <code>{message.chat.name}</code>\n'
             f'    <b>group_id:</b> <code>{message.chat.group_id}</code>\n'
             f'    <b>group_name:</b> <code>{message.chat.group_name}</code>',
-            self.owner_chat
+            await self.owner_chat
         )
         await self.send('Se ha notificado a Flanagan. Se pondrá en contacto contigo cuando pueda.', message)
 
@@ -432,7 +426,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             return
 
         if message.chat == self.tunnel_chat:
-            await self.send(f"<b>{message.author.name.split('#')[0]}:</b> {message.text}", self.owner_chat)
+            await self.send(f"<b>{message.author.name.split('#')[0]}:</b> {message.text}", await self.owner_chat)
         elif message.author.id == self.owner_id and message.chat.is_private:
             if message.text:
                 await self.send(message.text, self.tunnel_chat)
