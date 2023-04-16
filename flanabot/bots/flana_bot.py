@@ -230,7 +230,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
                     and
                     (message.author.is_admin or message.replied_message.author.id == self.id)
             ):
-                await flanautils.do_later(flanautils.text_to_time(message.text).total_seconds(), self.delete_message, message.replied_message)
+                flanautils.do_later(flanautils.text_to_time(message.text).total_seconds(), self.delete_message, message.replied_message)
                 await self.delete_message(message)
             elif message.chat.is_group and self.is_bot_mentioned(message):
                 await self.send_negative(message)
@@ -327,7 +327,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
     async def _on_ready(self):
         await super()._on_ready()
-        await flanautils.do_every(multibot_constants.CHECK_OLD_DATABASE_MESSAGES_EVERY_SECONDS, self.check_old_database_actions)
+        flanautils.do_every(multibot_constants.CHECK_OLD_DATABASE_MESSAGES_EVERY_SECONDS, self.check_old_database_actions)
         for chat in Chat.find({
             'platform': self.platform.value,
             'config.ubereats': {"$exists": True, "$eq": True},
@@ -340,7 +340,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
                     and
                     (delta_time := chat.ubereats['next_execution'] - datetime.datetime.now(datetime.timezone.utc)) > datetime.timedelta()
             ):
-                await flanautils.do_later(delta_time, self.start_ubereats, chat)
+                flanautils.do_later(delta_time, self.start_ubereats, chat)
             else:
                 await self.start_ubereats(chat)
 

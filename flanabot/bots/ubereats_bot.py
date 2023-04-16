@@ -170,7 +170,7 @@ class UberEatsBot(MultiBot, ABC):
         await self._cancel_scraping_task(chat)
         chat.config['ubereats'] = True
         chat.save(pull_overwrite_fields=('ubereats',))
-        self.task_contexts[chat.id]['task'] = await flanautils.do_every(chat.ubereats['seconds'], self.send_ubereats_code, chat, do_first_now=send_code_now)
+        self.task_contexts[chat.id]['task'] = flanautils.do_every(chat.ubereats['seconds'], self.send_ubereats_code, chat, do_first_now=send_code_now)
 
     async def stop_ubereats(self, chat: Chat):
         await self._cancel_scraping_task(chat)
