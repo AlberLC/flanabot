@@ -416,10 +416,10 @@ class ScraperBot(MultiBot, ABC):
     @return_if_first_empty(exclude_self_types='ScraperBot', globals_=globals())
     async def send_song_info(self, song_info: Media, message: Message):
         attributes = (
-            f'Título: {song_info.title}\n' if song_info.title else '',
-            f'Autor: {song_info.author}\n' if song_info.author else '',
-            f'Álbum: {song_info.album}\n' if song_info.album else '',
-            f'Previa:'
+            f'<b>Título:</b> {song_info.title}\n' if song_info.title else '',
+            f'<b>Autor:</b> {song_info.author}\n' if song_info.author else '',
+            f'<b>Álbum:</b> {song_info.album}\n' if song_info.album else '',
+            f'<b>Previa:</b>'
         )
         await self.send(''.join(attributes), message)
         if song_info:
