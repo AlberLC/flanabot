@@ -284,8 +284,8 @@ class Connect4Bot(MultiBot, ABC):
             return False
 
         try:
-            message.data['is_active'] = False
-        except AttributeError:
+            message.data['connect_4']['is_active'] = False
+        except KeyError:
             pass
 
         await self.edit(
@@ -448,7 +448,7 @@ class Connect4Bot(MultiBot, ABC):
         return winners
 
     def _winning_positions(self, board: list[list[int | None]]) -> defaultdict[int, list[tuple[int, int]]]:
-        winning_positions = defaultdict(list)
+        winning_positions: defaultdict[int, list[tuple[int, int]]] = defaultdict(list)
         for next_i, next_j in self._available_positions(board):
             for player_number in self._check_winners(next_i, next_j, board):
                 winning_positions[player_number].append((next_i, next_j))
