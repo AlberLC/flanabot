@@ -217,27 +217,36 @@ class ScraperBot(MultiBot, ABC):
                 else:
                     media_urls.append(reddit_url)
 
-        gather_result = asyncio.gather(
+        gather_future = asyncio.gather(
             twitter.get_medias(tweet_ids, audio_only),
             tiktok.get_medias(tiktok_users_and_ids, tiktok_download_urls, 'h264', 'mp4', force, audio_only, timeout_for_media),
             yt_dlp_wrapper.get_medias(media_urls, 'h264', 'mp4', force, audio_only, timeout_for_media),
             return_exceptions=True
         )
 
-        await gather_result
         instagram_results = []
-        if not self.instagram_ban_date or datetime.datetime.now(datetime.timezone.utc) - self.instagram_ban_date >= constants.INSTAGRAM_BAN_SLEEP:
-            try:
-                instagram_results = await instagram.get_medias(instagram_ids, audio_only)
-            except InstagramMediaNotFoundError:
-                self.instagram_ban_date = datetime.datetime.now(datetime.timezone.utc)
-                await self.send('Límite de Instagram excedido.', await self.owner_chat)
-        if not instagram_results:
-            instagram_results = await instagram.get_medias_v2(instagram_ids, audio_only)
+        if instagram_ids:
+            can_instagram_v1 = not self.instagram_ban_date or datetime.datetime.now(datetime.timezone.utc) - self.instagram_ban_date >= constants.INSTAGRAM_BAN_SLEEP
+            if can_instagram_v1:
+                try:
+                    instagram_results = await instagram.get_medias(instagram_ids, audio_only)
+                except InstagramMediaNotFoundError:
+                    pass
+            if not instagram_results:
+                try:
+                    instagram_results = await instagram.get_medias_v2(instagram_ids, audio_only)
+                except InstagramMediaNotFoundError as e:
+                    if not (instagram_results := await yt_dlp_wrapper.get_medias(instagram.make_urls(instagram_ids), 'h264', 'mp4', force, audio_only, timeout_for_media)):
+                        exceptions.append(e)
 
+                if instagram_results and can_instagram_v1:
+                    self.instagram_ban_date = datetime.datetime.now(datetime.timezone.utc)
+                    await self.send('Límite de Instagram excedido.', await self.owner_chat)
+
+        gather_results = await gather_future
         await self.delete_message(bot_state_message)
 
-        gather_medias, gather_exceptions = flanautils.filter_exceptions(gather_result.result() + instagram_results)
+        gather_medias, gather_exceptions = flanautils.filter_exceptions(gather_results + instagram_results)
         await self._manage_exceptions(exceptions + gather_exceptions, message, print_traceback=True)
 
         return medias | gather_medias
