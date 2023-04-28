@@ -253,6 +253,9 @@ class ScraperBot(MultiBot, ABC):
 
     @owner
     async def _on_reset_instagram_ban(self, message: Message):
+        if message.chat.is_group and not self.is_bot_mentioned(message):
+            return
+
         self.instagram_ban_date = None
         bot_message = await self.send('Ban de Instagram reseteado.', message)
         await self.delete_message(message)
