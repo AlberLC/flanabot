@@ -226,18 +226,18 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
     async def _on_delete(self, message: Message):
         if message.replied_message:
             if (
-                    self.is_bot_mentioned(message)
-                    and
-                    (message.author.is_admin or message.replied_message.author.id == self.id)
+                self.is_bot_mentioned(message)
+                and
+                (message.author.is_admin or message.replied_message.author.id == self.id)
             ):
                 flanautils.do_later(flanautils.text_to_time(message.text).total_seconds(), self.delete_message, message.replied_message)
                 await self.delete_message(message)
             elif message.chat.is_group and self.is_bot_mentioned(message):
                 await self.send_negative(message)
         elif (
-                (message.chat.is_private or self.is_bot_mentioned(message))
-                and
-                (n_messages := flanautils.text_to_number(message.text))
+            (message.chat.is_private or self.is_bot_mentioned(message))
+            and
+            (n_messages := flanautils.text_to_number(message.text))
         ):
             if message.author.is_admin is False:
                 await self.send_negative(message)
@@ -256,13 +256,13 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
     async def _on_help(self, message: Message):
         now = datetime.timedelta(seconds=time.time())
         if (
-                message.chat.is_group
-                and
-                not self.is_bot_mentioned(message)
-                or
-                self.help_calls.get(message.chat.id)
-                and
-                now - self.help_calls[message.chat.id] <= datetime.timedelta(minutes=1)
+            message.chat.is_group
+            and
+            not self.is_bot_mentioned(message)
+            or
+            self.help_calls.get(message.chat.id)
+            and
+            now - self.help_calls[message.chat.id] <= datetime.timedelta(minutes=1)
         ):
             return
 
@@ -289,39 +289,39 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         if message.is_inline:
             await self._on_scraping(message)
         elif (
-                (
-                        message.chat.is_group
-                        and
-                        not self.is_bot_mentioned(message)
-                        and
-                        not message.chat.config['auto_scraping']
-                        or
-                        not await self._on_scraping(message, scrape_replied=False)
-                )
+            (
+                message.chat.is_group
                 and
-                message.author.id != self.owner_id
+                not self.is_bot_mentioned(message)
                 and
-                (
-                        not message.replied_message
-                        or
-                        message.replied_message.author.id != self.id
-                        or
-                        not message.replied_message.medias
-                )
+                not message.chat.config['auto_scraping']
+                or
+                not await self._on_scraping(message, scrape_replied=False)
+            )
+            and
+            message.author.id != self.owner_id
+            and
+            (
+                not message.replied_message
+                or
+                message.replied_message.author.id != self.id
+                or
+                not message.replied_message.medias
+            )
+            and
+            (
+                self.is_bot_mentioned(message)
+                or
+                message.chat.config['auto_insult']
                 and
-                (
-                        self.is_bot_mentioned(message)
-                        or
-                        message.chat.config['auto_insult']
-                        and
-                        random.random() < constants.INSULT_PROBABILITY
-                )
-                and
-                (
-                        not self.tunnel_chat
-                        or
-                        self.tunnel_chat != message.chat
-                )
+                random.random() < constants.INSULT_PROBABILITY
+            )
+            and
+            (
+                not self.tunnel_chat
+                or
+                self.tunnel_chat != message.chat
+            )
         ):
             await self.send_insult(message)
 
@@ -336,9 +336,9 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             chat = await self.get_chat(chat.id)
             chat.pull_from_database(overwrite_fields=('_id', 'config', 'ubereats'))
             if (
-                    chat.ubereats['next_execution']
-                    and
-                    (delta_time := chat.ubereats['next_execution'] - datetime.datetime.now(datetime.timezone.utc)) > datetime.timedelta()
+                chat.ubereats['next_execution']
+                and
+                (delta_time := chat.ubereats['next_execution'] - datetime.datetime.now(datetime.timezone.utc)) > datetime.timedelta()
             ):
                 flanautils.do_later(delta_time, self.start_ubereats, chat)
             else:
@@ -413,15 +413,15 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
     async def _on_tunnel_message(self, message: Message):
         if (
-                not self.tunnel_chat
-                or
-                self._parse_callbacks(
-                    message.text,
-                    [
-                        RegisteredCallback(..., (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['tunnel'])),
-                        RegisteredCallback(..., (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['tunnel']))
-                    ]
-                )
+            not self.tunnel_chat
+            or
+            self._parse_callbacks(
+                message.text,
+                [
+                    RegisteredCallback(..., (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['tunnel'])),
+                    RegisteredCallback(..., (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['tunnel']))
+                ]
+            )
         ):
             return
 
