@@ -377,20 +377,20 @@ class ScraperBot(MultiBot, ABC):
         if message.chat.is_group:
             sended_info_message = await self.send(f"{message.author.name.split('#')[0]} compartió{self._medias_sended_info(medias)}", message, reply_to=message.replied_message)
             if (
-                    send_user_context
-                    and
-                    (user_text := ' '.join(
-                        [word for word in message.text.split()
-                         if (
-                                 not any(await self._find_ids(word))
-                                 and
-                                 not flanautils.find_urls(word)
-                                 and
-                                 not flanautils.cartesian_product_string_matching(word, keywords, multibot_constants.PARSER_MIN_SCORE_DEFAULT)
-                                 and
-                                 flanautils.remove_symbols(word).lower() not in (str(self.id), self.name.lower())
-                         )]
-                    ))
+                send_user_context
+                and
+                (user_text := ' '.join(
+                    [word for word in message.text.split()
+                     if (
+                         not any(await self._find_ids(word))
+                         and
+                         not flanautils.find_urls(word)
+                         and
+                         not flanautils.cartesian_product_string_matching(word, keywords, multibot_constants.PARSER_MIN_SCORE_DEFAULT)
+                         and
+                         flanautils.remove_symbols(word).lower() not in (str(self.id), self.name.lower())
+                     )]
+                ))
             ):
                 user_text_bot_message = await self.send(user_text, message, reply_to=message.replied_message)
 
