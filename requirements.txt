@@ -49,7 +49,7 @@ starlette==0.22.0
 sympy==1.11.1
 Telethon==1.27.0
 tenacity==8.1.0
-twitchio==2.5.0
+twitchio==2.6.0
 typing_extensions==4.4.0
 ujson==5.7.0
 urllib3==1.26.13
