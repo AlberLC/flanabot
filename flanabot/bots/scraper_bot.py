@@ -230,27 +230,26 @@ class ScraperBot(MultiBot, ABC):
             can_instagram_v1 = not self.instagram_ban_date or datetime.datetime.now(datetime.timezone.utc) - self.instagram_ban_date >= constants.INSTAGRAM_BAN_SLEEP
             if can_instagram_v1:
                 try:
-                    instagram_results = await instagram.get_medias(instagram_ids, audio_only)
+                    instagram_results += await instagram.get_medias(instagram_ids, audio_only)
                 except InstagramMediaNotFoundError:
                     pass
                 else:
                     instagram_restricted_age_ids = [media.content for media in instagram_results if media.type_ is MediaType.ERROR]
 
-            if not instagram_results:
-                v2_ids = instagram_ids
-            elif instagram_restricted_age_ids:
-                v2_ids = instagram_restricted_age_ids
-            else:
-                v2_ids = []
+            if instagram_restricted_age_ids:
+                instagram_ids = instagram_restricted_age_ids
+            elif instagram_results:
+                instagram_ids = []
 
-            if v2_ids:
+            if instagram_ids:
                 try:
-                    instagram_results = await instagram.get_medias_v2(instagram_ids, audio_only)
+                    instagram_results += await instagram.get_medias_v2(instagram_ids, audio_only)
                 except InstagramMediaNotFoundError as e:
-                    if not (instagram_results := await yt_dlp_wrapper.get_medias(instagram.make_urls(instagram_ids), 'h264', 'mp4', force, audio_only, timeout_for_media)):
+                    instagram_results += await yt_dlp_wrapper.get_medias(instagram.make_urls(instagram_ids), 'h264', 'mp4', force, audio_only, timeout_for_media)
+                    if not instagram_results:
                         exceptions.append(e)
 
-                if instagram_results and can_instagram_v1 and not instagram_restricted_age_ids:
+                if instagram_results and not instagram_restricted_age_ids and can_instagram_v1:
                     self.instagram_ban_date = datetime.datetime.now(datetime.timezone.utc)
                     await self.send('Límite de Instagram excedido.', await self.owner_chat)
 
