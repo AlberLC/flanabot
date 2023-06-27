@@ -8,7 +8,7 @@ from typing import Callable
 
 import telethon.tl.functions
 from flanautils import Media, OrderedSet
-from multibot import TelegramBot, find_message, user_client
+from multibot import TelegramBot, find_message, use_user_client, user_client
 
 from flanabot import constants
 from flanabot.bots.flana_bot import FlanaBot
@@ -48,7 +48,7 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
     # -------------------------------------------------------- #
     @user_client
     async def _get_contacts_ids(self) -> list[int]:
-        async with self.user_client:
+        async with use_user_client(self):
             contacts_data = await self.user_client(telethon.tl.functions.contacts.GetContactsRequest(hash=0))
 
         return [contact.user_id for contact in contacts_data.contacts]
