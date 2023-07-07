@@ -186,7 +186,7 @@ class PenaltyBot(MultiBot, ABC):
 
         await self._punish(punishment.user_id, punishment.group_id)
         punishment.save(pull_exclude_fields=('until',))
-        await self._unpenalize_later(punishment, self._unpunish, message)
+        await self._unpenalize_later(punishment, self._unpunish, message, delete=False)
 
     async def unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         # noinspection PyTypeChecker
