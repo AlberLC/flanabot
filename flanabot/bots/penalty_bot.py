@@ -73,7 +73,7 @@ class PenaltyBot(MultiBot, ABC):
                 'group_id': message.chat.group_id
             })
             punishment_seconds = (getattr(punishment, 'level', 0) + 2) ** constants.PUNISHMENT_INCREMENT_EXPONENT
-            await self.punish(message.author.id, message.chat.group_id, punishment_seconds, message)
+            await self.punish(message.author.id, message.chat.group_id, punishment_seconds, message, flood=True)
             await self.send(f'Castigado durante {TimeUnits(seconds=punishment_seconds).to_words()}.', message)
 
     async def _punish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
@@ -155,19 +155,11 @@ class PenaltyBot(MultiBot, ABC):
             if not punishment.until or now < punishment.until:
                 continue
 
-            await self._remove_penalty(punishment, self._unpunish, delete=False)
-            if punishment.is_active:
-                punishment.is_active = False
-                punishment.last_update = now
-                punishment.save()
+            await self._remove_penalty(punishment, self._unpunish)
 
             if punishment.last_update + constants.PUNISHMENTS_RESET_TIME <= now:
-                if punishment.level == 1:
-                    punishment.delete()
-                else:
-                    punishment.level -= 1
-                    punishment.last_update = now
-                    punishment.save()
+                punishment.level -= 1
+                punishment.delete()
 
     async def is_punished(self, user: int | str | User, group_: int | str | Chat | Message) -> bool:
         pass
@@ -177,16 +169,18 @@ class PenaltyBot(MultiBot, ABC):
         user: int | str | User,
         group_: int | str | Chat | Message,
         time: int | datetime.timedelta = None,
-        message: Message = None
+        message: Message = None,
+        flood=False
     ):
         # noinspection PyTypeChecker
         punishment = Punishment(self.platform, self.get_user_id(user), self.get_group_id(group_), time)
         punishment.pull_from_database(overwrite_fields=('level',), exclude_fields=('until',))
-        punishment.level += 1
+        if flood:
+            punishment.level += 1
 
         await self._punish(punishment.user_id, punishment.group_id)
         punishment.save(pull_exclude_fields=('until',))
-        await self._unpenalize_later(punishment, self._unpunish, message, delete=False)
+        await self._unpenalize_later(punishment, self._unpunish, message)
 
     async def unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         # noinspection PyTypeChecker
