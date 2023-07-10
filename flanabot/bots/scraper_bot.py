@@ -174,6 +174,13 @@ class ScraperBot(MultiBot, ABC):
         medias = OrderedSet()
         exceptions: list[Exception] = []
 
+        if audio_only:
+            preferred_video_codec = None
+            preferred_extension = None
+        else:
+            preferred_video_codec = 'h264'
+            preferred_extension = 'mp4'
+
         ids = []
         media_urls = []
         for text_part in message.text.split():
@@ -196,7 +203,7 @@ class ScraperBot(MultiBot, ABC):
         tweet_ids, instagram_ids, reddit_ids, tiktok_users_and_ids, tiktok_download_urls = ids
 
         try:
-            reddit_medias = await reddit.get_medias(reddit_ids, 'h264', 'mp4', force, audio_only, timeout_for_media)
+            reddit_medias = await reddit.get_medias(reddit_ids, preferred_video_codec, preferred_extension, force, audio_only, timeout_for_media)
         except RedditMediaNotFoundError as e:
             exceptions.append(e)
             reddit_medias = ()
@@ -219,8 +226,8 @@ class ScraperBot(MultiBot, ABC):
 
         gather_future = asyncio.gather(
             twitter.get_medias(tweet_ids, audio_only),
-            tiktok.get_medias(tiktok_users_and_ids, tiktok_download_urls, 'h264', 'mp4', force, audio_only, timeout_for_media),
-            yt_dlp_wrapper.get_medias(media_urls, 'h264', 'mp4', force, audio_only, timeout_for_media),
+            tiktok.get_medias(tiktok_users_and_ids, tiktok_download_urls, preferred_video_codec, preferred_extension, force, audio_only, timeout_for_media),
+            yt_dlp_wrapper.get_medias(media_urls, preferred_video_codec, preferred_extension, force, audio_only, timeout_for_media),
             return_exceptions=True
         )
 
@@ -245,7 +252,7 @@ class ScraperBot(MultiBot, ABC):
                 try:
                     instagram_results += await instagram.get_medias_v2(instagram_ids, audio_only)
                 except InstagramMediaNotFoundError as e:
-                    instagram_results += await yt_dlp_wrapper.get_medias(instagram.make_urls(instagram_ids), 'h264', 'mp4', force, audio_only, timeout_for_media)
+                    instagram_results += await yt_dlp_wrapper.get_medias(instagram.make_urls(instagram_ids), preferred_video_codec, preferred_extension, force, audio_only, timeout_for_media)
                     if not instagram_results:
                         exceptions.append(e)
 
