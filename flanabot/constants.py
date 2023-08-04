@@ -104,6 +104,7 @@ KEYWORDS = {
                   'sound', 'suena'),
     'tunnel': ('canal', 'channel', 'tunel', 'tunnel'),
     'unpunish': ('absolve', 'forgive', 'innocent', 'inocente', 'perdona', 'spare'),
+    'until': ('hasta', 'until'),
     'vote': ('votacion', 'votar', 'vote', 'voting', 'voto'),
     'weather': ('atmosfera', 'atmosferico', 'calle', 'calor', 'caloret', 'clima', 'climatologia', 'cloud', 'cloudless',
                 'cloudy', 'cold', 'congelar', 'congelado', 'denbora', 'despejado', 'diluvio', 'frio', 'frost', 'hielo',

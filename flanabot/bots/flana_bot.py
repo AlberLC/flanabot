@@ -12,7 +12,7 @@ import pymongo
 import pytz
 from flanaapis import InstagramLoginError, MediaNotFoundError, PlaceNotFoundError
 from flanautils import return_if_first_empty
-from multibot import BadRoleError, MultiBot, RegisteredCallback, Role, User, bot_mentioned, constants as multibot_constants, group, inline, owner
+from multibot import BadRoleError, MultiBot, RegisteredCallback, Role, User, admin, bot_mentioned, constants as multibot_constants, group, inline, owner, reply
 
 from flanabot import constants
 from flanabot.bots.connect_4_bot import Connect4Bot
@@ -56,6 +56,9 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
         self.register(self._on_delete, multibot_constants.KEYWORDS['delete'])
         self.register(self._on_delete, (multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
+
+        self.register(self._on_delete_until, (multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['until']))
+        self.register(self._on_delete_until, (multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['until'], multibot_constants.KEYWORDS['message']))
 
         self.register(self._on_hello, multibot_constants.KEYWORDS['hello'])
 
@@ -246,7 +249,16 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
                 await self.delete_message(message)
                 return
 
-            await self.clear(n_messages + 1, message.chat)
+            await self.clear(message.chat, n_messages + 1)
+
+    @inline(False)
+    @admin(send_negative=True)
+    @reply
+    async def _on_delete_until(self, message: Message):
+        if message.chat.is_group and not self.is_bot_mentioned(message):
+            return
+
+        await self.clear(message.chat, until_message=message.replied_message)
 
     async def _on_hello(self, message: Message):
         if message.chat.is_private or self.is_bot_mentioned(message):
