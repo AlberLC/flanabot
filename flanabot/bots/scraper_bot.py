@@ -263,6 +263,7 @@ class ScraperBot(MultiBot, ABC):
         gather_results = await gather_future
         await self.delete_message(bot_state_message)
 
+        # noinspection PyTypeChecker
         gather_medias, gather_exceptions = flanautils.filter_exceptions(gather_results + instagram_results)
         await self._manage_exceptions(exceptions + gather_exceptions, message, print_traceback=True)
 
