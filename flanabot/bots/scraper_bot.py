@@ -241,7 +241,14 @@ class ScraperBot(MultiBot, ABC):
                 except InstagramMediaNotFoundError:
                     pass
                 else:
-                    instagram_restricted_age_ids = [media.content for media in instagram_results if media.type_ is MediaType.ERROR]
+                    instagram_restricted_age_ids = []
+                    filtered_instagram_results = []
+                    for media in instagram_results:
+                        if media.type_ is MediaType.ERROR:
+                            instagram_restricted_age_ids.append(media.content)
+                        else:
+                            filtered_instagram_results.append(media)
+                    instagram_results = filtered_instagram_results
 
             if instagram_restricted_age_ids:
                 instagram_ids = instagram_restricted_age_ids
