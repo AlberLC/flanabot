@@ -244,7 +244,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         elif (
             (message.chat.is_private or self.is_bot_mentioned(message))
             and
-            (n_messages := flanautils.text_to_number(message.text))
+            (n_messages := flanautils.text_to_number(' '.join(await self.filter_mention_ids(message.text, message))))
         ):
             if message.author.is_admin is False:
                 await self.send_negative(message)
