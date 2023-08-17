@@ -138,10 +138,13 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
     # ---------------------------------------------- #
     #                    HANDLERS                    #
     # ---------------------------------------------- #
+    @owner
+    @group(False)
     async def _on_activate_tunnel(self, message: Message):
         keywords = (*multibot_constants.KEYWORDS['activate'], *constants.KEYWORDS['tunnel'])
+        text_parts = await self.filter_mention_ids(flanautils.remove_accents(message.text.lower()), message, delete_names=True)
         try:
-            chat_id_or_name = next(part for part in flanautils.remove_accents(message.text.lower()).split() if not flanautils.cartesian_product_string_matching(part, keywords, multibot_constants.PARSER_MIN_SCORE_DEFAULT))
+            chat_id_or_name = next(part for part in text_parts if not flanautils.cartesian_product_string_matching(part, keywords, multibot_constants.PARSER_MIN_SCORE_DEFAULT))
         except StopIteration:
             return
 
@@ -221,6 +224,8 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         )
         await self.delete_message(message)
 
+    @owner
+    @group(False)
     async def _on_deactivate_tunnel(self, message: Message):
         self.tunnel_chat = None
         await self.send('Túnel cerrado.', message)
@@ -438,7 +443,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
         if message.chat == self.tunnel_chat:
             await self.send(f"<b>{message.author.name.split('#')[0]}:</b> {message.text}", await self.owner_chat)
-        elif message.author.id == self.owner_id and message.chat.is_private:
+        elif message.chat == await self.owner_chat:
             if message.text:
                 await self.send(message.text, self.tunnel_chat)
             else:
