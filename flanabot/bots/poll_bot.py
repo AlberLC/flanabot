@@ -185,7 +185,7 @@ class PollBot(MultiBot, ABC):
 
         poll_data = message.data['poll']
 
-        if not poll_data['is_active']:
+        if not poll_data['is_active'] or not message.buttons_info.pressed_button or not message.buttons_info.presser_user:
             return
 
         presser_id = message.buttons_info.presser_user.id
