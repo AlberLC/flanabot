@@ -205,7 +205,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
         await self.edit(message.buttons_info.buttons, message)
 
-    @owner
+    @owner(send_negative=True)
     async def _on_database_messages(self, message: Message, simple=False):
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
