@@ -12,7 +12,7 @@ import pymongo
 import pytz
 from flanaapis import InstagramLoginError, MediaNotFoundError, PlaceNotFoundError
 from flanautils import return_if_first_empty
-from multibot import BadRoleError, MultiBot, RegisteredCallback, Role, User, admin, bot_mentioned, constants as multibot_constants, group, inline, owner, reply
+from multibot import BadRoleError, MultiBot, Platform, RegisteredCallback, Role, User, admin, bot_mentioned, constants as multibot_constants, group, inline, owner, reply
 
 from flanabot import constants
 from flanabot.bots.connect_4_bot import Connect4Bot
@@ -210,19 +210,70 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
 
-        n_messages = flanautils.text_to_number(message.text)
-        if not n_messages:
-            n_messages = 1
+        words = await self.filter_mention_ids(message.text, message, delete_names=True)
+        n_messages = 0
+        platforms = []
+        is_group = False
+        is_private = False
+        parsing_users = False
+        parsing_chats = False
+        users = []
+        chats = []
+        for word in words:
+            if bool(flanautils.cartesian_product_string_matching(
+                multibot_constants.KEYWORDS['user'],
+                word,
+                multibot_constants.PARSER_MIN_SCORE_DEFAULT
+            )):
+                parsing_users = True
+                parsing_chats = False
+            elif bool(flanautils.cartesian_product_string_matching(
+                multibot_constants.KEYWORDS['chat'],
+                word,
+                multibot_constants.PARSER_MIN_SCORE_DEFAULT
+            )):
+                parsing_users = False
+                parsing_chats = True
+            elif parsing_users:
+                users.append(word)
+            elif parsing_chats:
+                chats.append(word)
+            elif platform_matches := flanautils.cartesian_product_string_matching(
+                (element.name.lower() for element in Platform),
+                word,
+                multibot_constants.PARSER_MIN_SCORE_DEFAULT
+            ):
+                platforms.extend(Platform[key.upper()] for key in platform_matches)
+            elif is_group := bool(flanautils.cartesian_product_string_matching(
+                multibot_constants.KEYWORDS['group'],
+                word,
+                multibot_constants.PARSER_MIN_SCORE_DEFAULT
+            )):
+                is_group = True
+            elif is_private := bool(flanautils.cartesian_product_string_matching(
+                multibot_constants.KEYWORDS['private'],
+                word,
+                multibot_constants.PARSER_MIN_SCORE_DEFAULT
+            )):
+                is_private = True
+            elif (number := flanautils.cast_number(word, raise_exception=False)) != word:
+                n_messages += number
 
-        await self.send(
-            self.get_formatted_last_database_messages(
-                n_messages,
-                timezone=pytz.timezone('Europe/Madrid'),
-                simple=simple
-            ),
-            message
-        )
-        await self.delete_message(message)
+        if (
+            n_messages >= 0
+            and
+            (messages := await self.get_last_database_messages(
+                n_messages=max(1, n_messages),
+                platforms=platforms,
+                authors=message.mentions + users,
+                is_group=None if is_group == is_private else is_group
+            ))
+        ):
+            await self.send(
+                self.format_messages(messages, timezone=pytz.timezone('Europe/Madrid'), simple=simple),
+                message
+            )
+            await self.delete_message(message)
 
     @owner
     @group(False)
