@@ -259,6 +259,10 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             elif (number := flanautils.cast_number(word, raise_exception=False)) != word:
                 n_messages += number
 
+        if not is_group and not is_private:
+            is_group = True
+            is_private = True
+
         if (
             n_messages >= 0
             and
