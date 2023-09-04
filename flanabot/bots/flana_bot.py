@@ -266,7 +266,8 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
                 n_messages=max(1, n_messages),
                 platforms=platforms,
                 authors=message.mentions + users,
-                is_group=None if is_group == is_private else is_group
+                is_group=is_group,
+                is_private=is_private
             ))
         ):
             await self.send(
