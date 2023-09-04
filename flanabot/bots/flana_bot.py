@@ -271,7 +271,8 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
                 platforms=platforms,
                 authors=message.mentions + users,
                 is_group=is_group,
-                is_private=is_private
+                is_private=is_private,
+                chats=chats
             ))
         ):
             await self.send(
