@@ -269,7 +269,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             (messages := await self.get_last_database_messages(
                 n_messages=max(1, n_messages),
                 platforms=platforms,
-                authors=message.mentions + users,
+                authors=[user for user in message.mentions if user.id != self.id] + users,
                 is_group=is_group,
                 is_private=is_private,
                 chats=chats
