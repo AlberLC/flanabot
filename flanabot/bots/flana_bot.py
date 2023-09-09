@@ -206,6 +206,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         await self.edit(message.buttons_info.buttons, message)
 
     @owner(send_negative=True)
+    @inline(False)
     async def _on_database_messages(self, message: Message, simple=False):
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
@@ -235,9 +236,9 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
                 parsing_users = False
                 parsing_chats = True
             elif parsing_users:
-                users.append(word)
+                users.append(flanautils.cast_number(word, raise_exception=False))
             elif parsing_chats:
-                chats.append(word)
+                chats.append(flanautils.cast_number(word, raise_exception=False))
             elif platform_matches := flanautils.cartesian_product_string_matching(
                 (element.name.lower() for element in Platform),
                 word,
