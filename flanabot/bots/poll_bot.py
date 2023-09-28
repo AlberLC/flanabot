@@ -82,7 +82,7 @@ class PollBot(MultiBot, ABC):
             for option, option_votes in poll_data['votes'].items():
                 ratio = f'{len(option_votes)}/{total_votes}'
                 names = f"({', '.join(option_vote[1] for option_vote in option_votes)})" if option_votes else ''
-                buttons.append(f'{option} ➜ {ratio} {names}')
+                buttons.append(f"{option} ➜ {ratio}{f' {names}' if names else ''}")
         else:
             buttons = list(poll_data['votes'].keys())
 
