@@ -161,16 +161,17 @@ class PollBot(MultiBot, ABC):
 
         discarded_words = {*constants.KEYWORDS['poll'], *constants.KEYWORDS['multiple_answer'], self.name.lower(), f'<@{self.id}>'}
         if final_options := [f'{option[0].upper()}{option[1:]}' for option in self._get_options(message.text, discarded_words)]:
+            buttons = self.distribute_buttons(final_options, vertically=True)
             await self.send(
                 f"Encuesta {'multirespuesta ' if is_multiple_answer else ''}en curso...",
-                self.distribute_buttons(final_options, vertically=True),
+                buttons,
                 message,
                 buttons_key=ButtonsGroup.POLL,
                 data={
                     'poll': {
                         'is_active': True,
                         'is_multiple_answer': is_multiple_answer,
-                        'votes': {option: [] for option in final_options},
+                        'votes': {option: [] for option in (flanautils.flatten(buttons, lazy=True))},
                         'banned_users_tries': {}
                     }
                 }
