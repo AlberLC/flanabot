@@ -209,3 +209,5 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             channel = channel['object']
             if channel.name != original_name:
                 await channel.edit(name=original_name)
+
+        self.heat_level = 0.0
