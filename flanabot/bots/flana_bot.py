@@ -12,7 +12,7 @@ import pymongo
 import pytz
 from flanaapis import InstagramLoginError, MediaNotFoundError, PlaceNotFoundError
 from flanautils import return_if_first_empty
-from multibot import BadRoleError, MultiBot, Platform, RegisteredCallback, Role, User, admin, bot_mentioned, constants as multibot_constants, group, inline, owner, reply
+from multibot import BadRoleError, MessagesFormat, MultiBot, Platform, RegisteredCallback, Role, User, admin, bot_mentioned, constants as multibot_constants, group, inline, owner, reply
 
 from flanabot import constants
 from flanabot.bots.connect_4_bot import Connect4Bot
@@ -50,7 +50,9 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         self.register(self._on_config, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['config']))
 
         self.register(self._on_database_messages, (multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message']))
-        self.register(lambda message: self._on_database_messages(message, simple=True), (multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['simple']))
+        self.register(lambda message: self._on_database_messages(message, format=MessagesFormat.SIMPLE), (multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['simple']))
+        self.register(lambda message: self._on_database_messages(message, format=MessagesFormat.COMPLETE), (multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['all']))
+        self.register(lambda message: self._on_database_messages(message, format=MessagesFormat.COMPLETE), (multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['text']))
 
         self.register(self._on_deactivate_tunnel, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['tunnel']))
 
@@ -207,7 +209,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
     @owner(send_negative=True)
     @inline(False)
-    async def _on_database_messages(self, message: Message, simple=False):
+    async def _on_database_messages(self, message: Message, format=MessagesFormat.NORMAL):
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
 
@@ -277,7 +279,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             ))
         ):
             await self.send(
-                self.format_messages(messages, timezone=pytz.timezone('Europe/Madrid'), simple=simple),
+                self.format_messages(messages, timezone=pytz.timezone('Europe/Madrid'), format=format),
                 message
             )
             await self.delete_message(message)
