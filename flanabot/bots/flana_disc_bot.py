@@ -173,7 +173,8 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     @group
     @bot_mentioned
     @admin(send_negative=True)
-    async def _on_restore_channel_names(self, _message: Message):
+    async def _on_restore_channel_names(self, message: Message):
+        await self.delete_message(message)
         await self.restore_channel_names()
 
     async def _on_voice_state_update(self, _: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
