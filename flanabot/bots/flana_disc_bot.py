@@ -211,4 +211,6 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             if channel.name != original_name:
                 await channel.edit(name=original_name)
 
+        for channel in self.channels.values():
+            channel['n_fires'] = 0
         self.heat_level = 0.0
