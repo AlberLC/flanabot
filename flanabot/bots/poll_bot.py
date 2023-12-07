@@ -8,7 +8,7 @@ from typing import Iterable
 
 import flanautils
 from flanautils import OrderedSet
-from multibot import MultiBot, admin, constants as multibot_constants
+from multibot import MultiBot, constants as multibot_constants
 
 from flanabot import constants
 from flanabot.models import ButtonsGroup, Message
@@ -128,9 +128,11 @@ class PollBot(MultiBot, ABC):
     async def _on_delete_all_votes(self, message: Message):
         await self._on_delete_votes(message, all_=True)
 
-    @admin(send_negative=True)
     async def _on_delete_votes(self, message: Message, all_=False):
         if not (poll_message := self._get_poll_message(message)):
+            return
+        if message.chat.is_group and not message.author.is_admin:
+            await self.send_negative(message)
             return
 
         poll_data = poll_message.data['poll']
@@ -251,9 +253,11 @@ class PollBot(MultiBot, ABC):
 
         await self.edit(text, poll_message)
 
-    @admin(send_negative=True)
     async def _on_voting_ban(self, message: Message):
-        if message.chat.is_group and not self.is_bot_mentioned(message) or not (poll_message := self._get_poll_message(message)):
+        if not (poll_message := self._get_poll_message(message)):
+            return
+        if message.chat.is_group and not message.author.is_admin:
+            await self.send_negative(message)
             return
 
         await self.delete_message(message)
@@ -262,9 +266,11 @@ class PollBot(MultiBot, ABC):
             if str(user.id) not in poll_message.data['poll']['banned_users_tries']:
                 poll_message.data['poll']['banned_users_tries'][str(user.id)] = 0
 
-    @admin(send_negative=True)
     async def _on_voting_unban(self, message: Message):
-        if message.chat.is_group and not self.is_bot_mentioned(message) or not (poll_message := self._get_poll_message(message)):
+        if not (poll_message := self._get_poll_message(message)):
+            return
+        if message.chat.is_group and not message.author.is_admin:
+            await self.send_negative(message)
             return
 
         await self.delete_message(message)

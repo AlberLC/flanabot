@@ -12,7 +12,7 @@ import pymongo
 import pytz
 from flanaapis import InstagramLoginError, MediaNotFoundError, PlaceNotFoundError
 from flanautils import return_if_first_empty
-from multibot import BadRoleError, MessagesFormat, MultiBot, Platform, RegisteredCallback, Role, User, admin, bot_mentioned, constants as multibot_constants, group, inline, owner, reply
+from multibot import BadRoleError, MessagesFormat, MultiBot, Platform, RegisteredCallback, Role, User, bot_mentioned, constants as multibot_constants, group, inline, owner, reply
 
 from flanabot import constants
 from flanabot.bots.connect_4_bot import Connect4Bot
@@ -207,11 +207,12 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
         await self.edit(message.buttons_info.buttons, message)
 
-    @owner(send_negative=True)
     @inline(False)
     async def _on_database_messages(self, message: Message, format=MessagesFormat.NORMAL):
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
+        if message.author.id != self.owner_id:
+            await self.send_negative(message)
 
         words = await self.filter_mention_ids(message.text, message, delete_names=True)
         n_messages = 0
@@ -317,11 +318,14 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             await self.clear(message.chat, n_messages + 1)
 
     @inline(False)
-    @admin(send_negative=True)
     @reply
     async def _on_delete_until(self, message: Message):
-        if message.chat.is_group and not self.is_bot_mentioned(message):
-            return
+        if message.chat.is_group:
+            if not self.is_bot_mentioned(message):
+                return
+            if not message.author.is_admin:
+                await self.send_negative(message)
+                return
 
         await self.clear(message.chat, until_message=message.replied_message)
 
