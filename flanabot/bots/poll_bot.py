@@ -196,14 +196,10 @@ class PollBot(MultiBot, ABC):
         if (presser_id_str := str(presser_id)) in poll_data['banned_users_tries']:
             poll_data['banned_users_tries'][presser_id_str] += 1
             if poll_data['banned_users_tries'][presser_id_str] == 3:
-                await self.send(random.choice((
-                    f'Deja de dar por culo {presser_name} que no puedes votar aqui',
-                    f'No es pesao {presser_name}, que no tienes permitido votar aqui',
-                    f'Deja de pulsar botones que no puedes votar aqui {presser_name}',
-                    f'{presser_name} deja de intentar votar aqui que no puedes',
-                    f'Te han prohibido votar aquí {presser_name}.',
-                    f'No puedes votar aquí, {presser_name}.'
-                )), reply_to=message)
+                await self.send(
+                    random.choice(constants.BANNED_POLL_PHRASES.format(presser_name=presser_name)),
+                    reply_to=message
+                )
             return
 
         option_name = results[0] if (results := re.findall('(.*?) ➜.+', message.buttons_info.pressed_text)) else message.buttons_info.pressed_text

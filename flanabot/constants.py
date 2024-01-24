@@ -23,6 +23,15 @@ PUNISHMENTS_RESET_TIME = datetime.timedelta(weeks=2)
 RECOVERY_DELETED_MESSAGE_BEFORE = datetime.timedelta(hours=1)
 SCRAPING_TIMEOUT_SECONDS = 10
 
+BANNED_POLL_PHRASES = (
+    'Deja de dar por culo {presser_name} que no puedes votar aqui',
+    'No es pesao {presser_name}, que no tienes permitido votar aqui',
+    'Deja de pulsar botones que no puedes votar aqui {presser_name}',
+    '{presser_name} deja de intentar votar aqui que no puedes',
+    'Te han prohibido votar aquí {presser_name}.',
+    'No puedes votar aquí, {presser_name}.'
+)
+
 BYE_PHRASES = ('Adiós.', 'adio', 'adioh', 'adios', 'adió', 'adiós', 'agur', 'bye', 'byyeeee', 'chao', 'hasta la vista',
                'hasta luego', 'hasta nunca', ' hasta pronto', 'hasta la próxima', 'nos vemos', 'taluego')
 
