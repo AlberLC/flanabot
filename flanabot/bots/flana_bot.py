@@ -436,7 +436,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
                 'chat': message.chat.object_id,
                 'affected_objects': message.replied_message.object_id
             })
-        elif self.is_bot_mentioned(message):
+        elif message.chat.is_private or self.is_bot_mentioned(message):
             message_deleted_bot_action = BotAction.find_one({
                 'platform': self.platform.value,
                 'action': Action.MESSAGE_DELETED.value,
