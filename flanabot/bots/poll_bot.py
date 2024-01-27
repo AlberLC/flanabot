@@ -8,7 +8,7 @@ from typing import Iterable
 
 import flanautils
 from flanautils import OrderedSet
-from multibot import MultiBot, constants as multibot_constants
+from multibot import MultiBot, RegisteredCallback, constants as multibot_constants
 
 from flanabot import constants
 from flanabot.models import ButtonsGroup, Message
@@ -30,8 +30,6 @@ class PollBot(MultiBot, ABC):
 
         self.register(lambda message: self._on_delete_votes(message, all_=True), (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['all'], constants.KEYWORDS['vote']))
         self.register(lambda message: self._on_delete_votes(message, all_=True), (multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['all'], constants.KEYWORDS['vote']))
-        self.register(lambda message: self._on_delete_votes(message, all_=True), multibot_constants.KEYWORDS['reset'])
-        self.register(lambda message: self._on_delete_votes(message, all_=True), (multibot_constants.KEYWORDS['reset'], constants.KEYWORDS['poll']))
 
         self.register(self._on_delete_votes, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['vote']))
         self.register(self._on_delete_votes, (multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['vote']))
@@ -137,12 +135,12 @@ class PollBot(MultiBot, ABC):
         poll_data = poll_message.data['poll']
 
         if all_:
-            for option_name, option_votes in poll_data['votes'].items():
-                poll_data['votes'][option_name].clear()
+            for option_votes in poll_data['votes'].values():
+                option_votes.clear()
         else:
-            for user in await self._find_users_to_punish(message):
-                for option_name, option_votes in poll_data['votes'].items():
-                    poll_data['votes'][option_name] = [option_vote for option_vote in option_votes if option_vote[0] != user.id]
+            user_ids = [user.id for user in await self._find_users_to_punish(message)]
+            for option_votes in poll_data['votes'].values():
+                option_votes[:] = [option_vote for option_vote in option_votes if option_vote[0] not in user_ids]
 
         await self.delete_message(message)
         await self._update_poll_buttons(poll_message)
@@ -157,6 +155,14 @@ class PollBot(MultiBot, ABC):
             await self.send(random.choice(('¿De cuántas caras?', '¿Y el número?', '?', '🤔')), message)
 
     async def _on_poll(self, message: Message, is_multiple_answer=False):
+        if (
+            self._get_poll_message(message)
+            and
+            self._parse_callbacks(message.text, [RegisteredCallback(..., multibot_constants.KEYWORDS['reset'])])
+        ):
+            await self._on_delete_votes(message, all_=True)
+            return
+
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
 

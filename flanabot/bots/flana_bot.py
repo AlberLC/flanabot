@@ -68,9 +68,10 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
         self.register(self._on_new_message_default, default=True)
 
-        self.register(self._on_recover_message, multibot_constants.KEYWORDS['reset'])
         self.register(self._on_recover_message, multibot_constants.KEYWORDS['message'])
-        self.register(self._on_recover_message, (multibot_constants.KEYWORDS['reset'], multibot_constants.KEYWORDS['message']))
+
+        self.register(self._on_reset, multibot_constants.KEYWORDS['reset'])
+        self.register(self._on_reset, (multibot_constants.KEYWORDS['reset'], multibot_constants.KEYWORDS['message']))
 
         self.register(self._on_roles, multibot_constants.KEYWORDS['permission'])
         self.register(self._on_roles, multibot_constants.KEYWORDS['role'])
@@ -159,6 +160,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
     async def _on_bye(self, message: Message):
         if message.chat.is_private or self.is_bot_mentioned(message):
+            message.is_inline = False
             await self.send_bye(message)
 
     async def _on_config(self, message: Message):
@@ -331,6 +333,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
     async def _on_hello(self, message: Message):
         if message.chat.is_private or self.is_bot_mentioned(message):
+            message.is_inline = False
             await self.send_hello(message)
 
     async def _on_help(self, message: Message):
@@ -455,6 +458,12 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         for deleted_message in deleted_messages:
             await self.send(deleted_message.text, message)
 
+    async def _on_reset(self, message: Message):
+        if self._get_poll_message(message):
+            await self._on_delete_votes(message, all_=True)
+        else:
+            await self._on_recover_message(message)
+
     @group
     @bot_mentioned
     async def _on_roles(self, message: Message):
@@ -565,12 +574,16 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         BotAction.delete_many_raw({'platform': self.platform.value, 'date': {'$lte': before_date}})
 
     async def send_bye(self, chat: int | str | User | Chat | Message) -> multibot_constants.ORIGINAL_MESSAGE:
-        chat = await self.get_chat(chat)
-        return await self.send(random.choice((*constants.BYE_PHRASES, flanautils.CommonWords.random_time_greeting())), chat)
+        return await self.send(
+            random.choice((*constants.BYE_PHRASES, flanautils.CommonWords.random_time_greeting())),
+            chat
+        )
 
     async def send_hello(self, chat: int | str | User | Chat | Message) -> multibot_constants.ORIGINAL_MESSAGE:
-        chat = await self.get_chat(chat)
-        return await self.send(random.choice((*constants.HELLO_PHRASES, flanautils.CommonWords.random_time_greeting())), chat)
+        return await self.send(
+            random.choice((*constants.HELLO_PHRASES, flanautils.CommonWords.random_time_greeting())),
+            chat
+        )
 
     async def send_insult(self, chat: int | str | User | Chat | Message) -> multibot_constants.ORIGINAL_MESSAGE | None:
         chat = await self.get_chat(chat)
