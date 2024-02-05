@@ -215,6 +215,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             return
         if message.author.id != self.owner_id:
             await self.send_negative(message)
+            return
 
         words = await self.filter_mention_ids(message.text, message, delete_names=True)
         n_messages = 0
