@@ -227,18 +227,26 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         users = []
         chats = []
         for word in words:
-            if bool(flanautils.cartesian_product_string_matching(
-                multibot_constants.KEYWORDS['user'],
-                word,
-                multibot_constants.PARSER_MIN_SCORE_DEFAULT
-            )):
+            if (
+                not parsing_users
+                and
+                flanautils.cartesian_product_string_matching(
+                    multibot_constants.KEYWORDS['user'],
+                    word,
+                    multibot_constants.PARSER_MIN_SCORE_DEFAULT
+                )
+            ):
                 parsing_users = True
                 parsing_chats = False
-            elif bool(flanautils.cartesian_product_string_matching(
-                multibot_constants.KEYWORDS['chat'],
-                word,
-                multibot_constants.PARSER_MIN_SCORE_DEFAULT
-            )):
+            elif (
+                not parsing_chats
+                and
+                flanautils.cartesian_product_string_matching(
+                    multibot_constants.KEYWORDS['chat'],
+                    word,
+                    multibot_constants.PARSER_MIN_SCORE_DEFAULT
+                )
+            ):
                 parsing_users = False
                 parsing_chats = True
             elif parsing_users:
