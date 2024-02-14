@@ -5,6 +5,7 @@ import datetime
 import math
 import os
 import random
+from collections import defaultdict
 
 import discord
 import flanautils
@@ -23,7 +24,7 @@ from flanabot.models import Chat, Message, Punishment
 class FlanaDiscBot(DiscordBot, FlanaBot):
     def __init__(self):
         super().__init__(os.environ['DISCORD_BOT_TOKEN'])
-        self.channels: dict[str, dict] = {}
+        self.channels_data: dict[int, dict[str, dict]] = defaultdict(dict)
         self.heating = False
         self.heat_level = 0.0
 
@@ -46,25 +47,27 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
 
     async def _heat_channel(self, channel: discord.VoiceChannel):
         async def set_fire_to(channel_key: str, depends_on: str, firewall=0):
-            fire_score = random.randint(0, self.channels[depends_on]['n_fires'] - self.channels[channel_key]['n_fires']) - firewall // 2
+            fire_score = random.randint(0, guild_channels_data[depends_on]['n_fires'] - guild_channels_data[channel_key]['n_fires']) - firewall // 2
             if fire_score < 1:
-                if not self.channels[channel_key]['n_fires']:
+                if not guild_channels_data[channel_key]['n_fires']:
                     return
-                self.channels[channel_key]['n_fires'] -= 1
+                guild_channels_data[channel_key]['n_fires'] -= 1
             elif fire_score == 1:
                 return
             else:
-                self.channels[channel_key]['n_fires'] += 1
+                guild_channels_data[channel_key]['n_fires'] += 1
 
-            if self.channels[channel_key]['n_fires']:
-                new_name_ = '🔥' * self.channels[channel_key]['n_fires']
+            if guild_channels_data[channel_key]['n_fires']:
+                new_name_ = '🔥' * guild_channels_data[channel_key]['n_fires']
             else:
-                new_name_ = self.channels[channel_key]['original_name']
-            await self.channels[channel_key]['object'].edit(name=new_name_)
+                new_name_ = guild_channels_data[channel_key]['original_name']
+            await guild_channels_data[channel_key]['object'].edit(name=new_name_)
+
+        guild_channels_data = self.channels_data[channel.guild.id]
 
         for letter, channel_id in constants.DISCORD_HOT_CHANNEL_IDS.items():
             channel_ = flanautils.find(channel.guild.voice_channels, condition=lambda c: c.id == channel_id)
-            self.channels[letter] = {
+            guild_channels_data[letter] = {
                 'object': channel_,
                 'original_name': channel_.name,
                 'n_fires': 0
@@ -88,7 +91,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             i = int(self.heat_level)
             if not i:
                 n_fires = 0
-                new_name = self.channels['C']['original_name']
+                new_name = guild_channels_data['C']['original_name']
             elif i < len(constants.DISCORD_HEAT_NAMES):
                 n_fires = 0
                 new_name = constants.DISCORD_HEAT_NAMES[i]
@@ -96,14 +99,14 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 n_fires = i - len(constants.DISCORD_HEAT_NAMES) + 1
                 n_fires = round(math.log(n_fires + 4, 1.2) - 8)
                 new_name = '🔥' * n_fires
-            self.channels['C']['n_fires'] = n_fires
+            guild_channels_data['C']['n_fires'] = n_fires
             if channel.name != new_name:
                 await channel.edit(name=new_name)
 
-            await set_fire_to('B', depends_on='C', firewall=len(self.channels['B']['object'].members))
-            await set_fire_to('A', depends_on='B', firewall=len(self.channels['A']['object'].members))
-            await set_fire_to('D', depends_on='C', firewall=len(self.channels['C']['object'].members))
-            await set_fire_to('E', depends_on='D', firewall=len(self.channels['D']['object'].members))
+            await set_fire_to('B', depends_on='C', firewall=len(guild_channels_data['B']['object'].members))
+            await set_fire_to('A', depends_on='B', firewall=len(guild_channels_data['A']['object'].members))
+            await set_fire_to('D', depends_on='C', firewall=len(guild_channels_data['C']['object'].members))
+            await set_fire_to('E', depends_on='D', firewall=len(guild_channels_data['D']['object'].members))
 
     async def _punish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         user_id = self.get_user_id(user)
@@ -175,7 +178,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     @admin(send_negative=True)
     async def _on_restore_channel_names(self, message: Message):
         await self.delete_message(message)
-        await self.restore_channel_names()
+        await self.restore_channel_names(self.get_group_id(message))
 
     async def _on_voice_state_update(self, _: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         if getattr(before.channel, 'id', None) == constants.DISCORD_HOT_CHANNEL_IDS['C']:
@@ -204,13 +207,12 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             'is_active': True
         }))
 
-    async def restore_channel_names(self):
-        for channel in self.channels.values():
-            original_name = channel['original_name']
-            channel = channel['object']
+    async def restore_channel_names(self, group_id: int):
+        for channel_data in self.channels_data[group_id].values():
+            original_name = channel_data['original_name']
+            channel = channel_data['object']
             if channel.name != original_name:
                 await channel.edit(name=original_name)
+            channel_data['n_fires'] = 0
 
-        for channel in self.channels.values():
-            channel['n_fires'] = 0
         self.heat_level = 0.0
