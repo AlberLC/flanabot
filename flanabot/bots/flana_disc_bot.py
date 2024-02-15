@@ -76,7 +76,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         heating_context.channels_data = channels_data
 
         while True:
-            await asyncio.sleep(4)  # constants.HEAT_PERIOD_SECONDS)
+            await asyncio.sleep(constants.HEAT_PERIOD_SECONDS)
 
             if channel.members:
                 heating_context.heat_level += 0.5
