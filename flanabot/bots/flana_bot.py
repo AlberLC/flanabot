@@ -227,12 +227,14 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         users = []
         chats = []
         for word in words:
+            lower_word = word.lower()
+
             if (
                 not parsing_users
                 and
                 flanautils.cartesian_product_string_matching(
                     multibot_constants.KEYWORDS['user'],
-                    word,
+                    lower_word,
                     multibot_constants.PARSER_MIN_SCORE_DEFAULT
                 )
             ):
@@ -243,7 +245,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
                 and
                 flanautils.cartesian_product_string_matching(
                     multibot_constants.KEYWORDS['chat'],
-                    word,
+                    lower_word,
                     multibot_constants.PARSER_MIN_SCORE_DEFAULT
                 )
             ):
@@ -255,21 +257,21 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
                 chats.append(flanautils.cast_number(word, raise_exception=False))
             elif platform_matches := flanautils.cartesian_product_string_matching(
                 (element.name.lower() for element in Platform),
-                word,
+                lower_word,
                 multibot_constants.PARSER_MIN_SCORE_DEFAULT
             ):
                 platforms.extend(Platform[key.upper()] for key in platform_matches)
-            elif is_group := bool(flanautils.cartesian_product_string_matching(
+            elif flanautils.cartesian_product_string_matching(
                 multibot_constants.KEYWORDS['group'],
-                word,
+                lower_word,
                 multibot_constants.PARSER_MIN_SCORE_DEFAULT
-            )):
+            ):
                 is_group = True
-            elif is_private := bool(flanautils.cartesian_product_string_matching(
+            elif flanautils.cartesian_product_string_matching(
                 multibot_constants.KEYWORDS['private'],
                 word,
                 multibot_constants.PARSER_MIN_SCORE_DEFAULT
-            )):
+            ):
                 is_private = True
             elif (number := flanautils.cast_number(word, raise_exception=False)) != word:
                 n_messages += number
