@@ -269,12 +269,15 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
                 is_group = True
             elif flanautils.cartesian_product_string_matching(
                 multibot_constants.KEYWORDS['private'],
-                word,
+                lower_word,
                 multibot_constants.PARSER_MIN_SCORE_DEFAULT
             ):
                 is_private = True
-            elif (number := flanautils.cast_number(word, raise_exception=False)) != word:
-                n_messages += number
+            else:
+                try:
+                    n_messages += flanautils.cast_number(word)
+                except ValueError:
+                    pass
 
         if not is_group and not is_private:
             is_group = True
