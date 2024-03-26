@@ -6,7 +6,7 @@ from abc import ABC
 
 import flanautils
 from flanautils import TimeUnits
-from multibot import MultiBot, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message
+from multibot import MultiBot, RegisteredCallback, User, admin, bot_mentioned, constants as multibot_constants, group, ignore_self_message
 
 from flanabot import constants
 from flanabot.models import Chat, Message, Punishment
@@ -100,8 +100,13 @@ class PenaltyBot(MultiBot, ABC):
             await self.mute(user, message, flanautils.text_to_time(await self.filter_mention_ids(message.text, message)), message)
 
     @ignore_self_message
-    async def _on_new_message_raw(self, message: Message):
-        await super()._on_new_message_raw(message)
+    async def _on_new_message_raw(
+        self,
+        message: Message,
+        whitelist_callbacks: set[RegisteredCallback] | None = None,
+        blacklist_callbacks: set[RegisteredCallback] | None = None
+    ):
+        await super()._on_new_message_raw(message, whitelist_callbacks, blacklist_callbacks)
         if message.chat.config['check_flood'] and message.chat.config['punish'] and not message.is_inline:
             async with self.lock:
                 await self._check_message_flood(message)

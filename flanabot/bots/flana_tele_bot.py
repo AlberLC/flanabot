@@ -8,7 +8,7 @@ from typing import Callable
 
 import telethon.tl.functions
 from flanautils import Media, OrderedSet
-from multibot import TelegramBot, find_message, use_user_client, user_client
+from multibot import RegisteredCallback, TelegramBot, find_message, use_user_client, user_client
 
 from flanabot import constants
 from flanabot.bots.flana_bot import FlanaBot
@@ -74,8 +74,13 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
         await super()._on_inline_query_raw(message)
 
     @whitelisted
-    async def _on_new_message_raw(self, message: Message):
-        await super()._on_new_message_raw(message)
+    async def _on_new_message_raw(
+        self,
+        message: Message,
+        whitelist_callbacks: set[RegisteredCallback] | None = None,
+        blacklist_callbacks: set[RegisteredCallback] | None = None
+    ):
+        await super()._on_new_message_raw(message, whitelist_callbacks, blacklist_callbacks)
 
     async def _on_ready(self):
         await super()._on_ready()

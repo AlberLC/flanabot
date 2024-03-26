@@ -12,7 +12,7 @@ import pymongo
 import pytz
 from flanaapis import InstagramLoginError, MediaNotFoundError, PlaceNotFoundError
 from flanautils import return_if_first_empty
-from multibot import BadRoleError, MessagesFormat, MultiBot, Platform, RegisteredCallback, Role, User, bot_mentioned, constants as multibot_constants, group, inline, owner, reply
+from multibot import BadRoleError, MessagesFormat, MultiBot, Platform, RegisteredCallback, Role, User, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, owner, reply
 
 from flanabot import constants
 from flanabot.bots.connect_4_bot import Connect4Bot
@@ -33,8 +33,8 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tunnel_chat = None
-        self.help_calls = {}
+        self.tunnel_chat: Chat | None = None
+        self.help_calls: dict[int, datetime.timedelta] = {}
 
     # -------------------------------------------------------- #
     # ------------------- PROTECTED METHODS ------------------ #
@@ -399,28 +399,38 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             message.author.id != self.owner_id
             and
             (
-                not message.replied_message
-                or
-                message.replied_message.author.id != self.id
-                or
-                not message.replied_message.medias
-            )
-            and
-            (
                 self.is_bot_mentioned(message)
                 or
                 message.chat.config['auto_insult']
                 and
                 random.random() < constants.INSULT_PROBABILITY
             )
-            and
-            (
-                not self.tunnel_chat
-                or
-                self.tunnel_chat != message.chat
-            )
         ):
             await self.send_insult(message)
+
+    @ignore_self_message
+    async def _on_new_message_raw(
+        self,
+        message: Message,
+        whitelist_callbacks: set[RegisteredCallback] | None = None,
+        blacklist_callbacks: set[RegisteredCallback] | None = None
+    ):
+        if (
+            message.replied_message
+            and
+            message.replied_message.author.id == self.id
+            and
+            message.replied_message.medias
+        ):
+            whitelist_callbacks = (whitelist_callbacks or set()) | {self._on_song_info}
+        elif self.tunnel_chat and message.chat == await self.owner_chat:
+            whitelist_callbacks = (whitelist_callbacks or set()) | {
+                self._on_delete,
+                self._on_tunnel_message,
+                self._on_deactivate_tunnel
+            }
+
+        await super()._on_new_message_raw(message, whitelist_callbacks, blacklist_callbacks)
 
     async def _on_ready(self):
         await super()._on_ready()
