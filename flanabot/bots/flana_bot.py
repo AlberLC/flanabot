@@ -422,13 +422,9 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             and
             message.replied_message.medias
         ):
-            whitelist_callbacks = (whitelist_callbacks or set()) | {self._on_song_info}
+            whitelist_callbacks = (whitelist_callbacks or set()) | {self._on_song_info, self._on_delete}
         elif self.tunnel_chat and message.chat == await self.owner_chat:
-            whitelist_callbacks = (whitelist_callbacks or set()) | {
-                self._on_delete,
-                self._on_tunnel_message,
-                self._on_deactivate_tunnel
-            }
+            whitelist_callbacks = (whitelist_callbacks or set()) | {self._on_tunnel_message, self._on_deactivate_tunnel}
 
         await super()._on_new_message_raw(message, whitelist_callbacks, blacklist_callbacks)
 
