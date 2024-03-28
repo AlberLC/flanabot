@@ -308,12 +308,14 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
         await self.send('Túnel cerrado.', message)
 
     @inline(False)
-    async def _on_delete(self, message: Message):
+    async def _on_delete(self, message: Message, until=False):
         if message.replied_message:
             if not self.is_bot_mentioned(message):
                 return
 
-            if message.author.is_admin or message.replied_message.author.id == self.id:
+            if until and message.author.is_admin:
+                await self.clear(message.chat, until_message=message.replied_message)
+            elif not until and (message.author.is_admin or message.replied_message.author.id == self.id):
                 flanautils.do_later(flanautils.text_to_time(message.text).total_seconds(), self.delete_message, message.replied_message)
                 await self.delete_message(message)
             elif message.chat.is_group:
@@ -328,22 +330,9 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
                 return
 
             if n_messages <= 0:
-                await self.delete_message(message)
                 return
 
             await self.clear(message.chat, n_messages + 1)
-
-    @inline(False)
-    @reply
-    async def _on_delete_until(self, message: Message):
-        if message.chat.is_group:
-            if not self.is_bot_mentioned(message):
-                return
-            if not message.author.is_admin:
-                await self.send_negative(message)
-                return
-
-        await self.clear(message.chat, until_message=message.replied_message)
 
     async def _on_hello(self, message: Message):
         if message.chat.is_private or self.is_bot_mentioned(message):
