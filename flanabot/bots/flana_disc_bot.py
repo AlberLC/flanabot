@@ -35,8 +35,8 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         self.client.add_listener(self._on_member_remove, 'on_member_remove')
         self.client.add_listener(self._on_voice_state_update, 'on_voice_state_update')
 
-        self.register(self._on_audit_log, multibot_constants.KEYWORDS['audit'])
-        self.register(self._on_restore_channel_names, (multibot_constants.KEYWORDS['reset'], multibot_constants.KEYWORDS['chat']))
+        self.register(self._on_audit_log, keywords=multibot_constants.KEYWORDS['audit'])
+        self.register(self._on_restore_channel_names, keywords=(multibot_constants.KEYWORDS['reset'], multibot_constants.KEYWORDS['chat']))
 
     async def _changeable_roles(self, group_: int | str | Chat | Message) -> list[Role]:
         group_roles = await self.get_group_roles(group_)

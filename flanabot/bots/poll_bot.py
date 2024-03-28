@@ -24,32 +24,32 @@ class PollBot(MultiBot, ABC):
     def _add_handlers(self):
         super()._add_handlers()
 
-        self.register(self._on_choose, constants.KEYWORDS['choose'], priority=2)
-        self.register(self._on_choose, constants.KEYWORDS['random'], priority=2)
-        self.register(self._on_choose, (constants.KEYWORDS['choose'], constants.KEYWORDS['random']), priority=2)
+        self.register(self._on_choose, keywords=constants.KEYWORDS['choose'], priority=2)
+        self.register(self._on_choose, keywords=constants.KEYWORDS['random'], priority=2)
+        self.register(self._on_choose, keywords=(constants.KEYWORDS['choose'], constants.KEYWORDS['random']), priority=2)
 
-        self.register(lambda message: self._on_delete_votes(message, all_=True), (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['all'], constants.KEYWORDS['vote']))
-        self.register(lambda message: self._on_delete_votes(message, all_=True), (multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['all'], constants.KEYWORDS['vote']))
+        self.register(self._on_delete_votes, extra_kwargs={'all_': True}, keywords=(multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['all'], constants.KEYWORDS['vote']))
+        self.register(self._on_delete_votes, extra_kwargs={'all_': True}, keywords=(multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['all'], constants.KEYWORDS['vote']))
 
-        self.register(self._on_delete_votes, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['vote']))
-        self.register(self._on_delete_votes, (multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['vote']))
+        self.register(self._on_delete_votes, keywords=(multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['vote']))
+        self.register(self._on_delete_votes, keywords=(multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['vote']))
 
-        self.register(self._on_dice, constants.KEYWORDS['dice'])
+        self.register(self._on_dice, keywords=constants.KEYWORDS['dice'])
 
-        self.register(self._on_poll, constants.KEYWORDS['poll'], priority=2)
+        self.register(self._on_poll, keywords=constants.KEYWORDS['poll'], priority=2)
 
-        self.register(self._on_poll_multi, (constants.KEYWORDS['poll'], constants.KEYWORDS['multiple_answer']), priority=2)
+        self.register(self._on_poll_multi, keywords=(constants.KEYWORDS['poll'], constants.KEYWORDS['multiple_answer']), priority=2)
 
-        self.register(self._on_stop_poll, multibot_constants.KEYWORDS['deactivate'])
-        self.register(self._on_stop_poll, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['poll']))
-        self.register(self._on_stop_poll, multibot_constants.KEYWORDS['stop'])
-        self.register(self._on_stop_poll, (multibot_constants.KEYWORDS['stop'], constants.KEYWORDS['poll']))
+        self.register(self._on_stop_poll, keywords=multibot_constants.KEYWORDS['deactivate'])
+        self.register(self._on_stop_poll, keywords=(multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['poll']))
+        self.register(self._on_stop_poll, keywords=multibot_constants.KEYWORDS['stop'])
+        self.register(self._on_stop_poll, keywords=(multibot_constants.KEYWORDS['stop'], constants.KEYWORDS['poll']))
 
-        self.register(self._on_voting_ban, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['permission'], constants.KEYWORDS['vote']))
+        self.register(self._on_voting_ban, keywords=(multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['permission'], constants.KEYWORDS['vote']))
 
-        self.register(self._on_voting_unban, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['permission'], constants.KEYWORDS['vote']))
+        self.register(self._on_voting_unban, keywords=(multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['permission'], constants.KEYWORDS['vote']))
 
-        self.register_button(self._on_poll_button_press, ButtonsGroup.POLL)
+        self.register_button(self._on_poll_button_press, key=ButtonsGroup.POLL)
 
     @staticmethod
     def _get_options(text: str, discarded_words: Iterable = ()) -> list[str]:
@@ -158,7 +158,7 @@ class PollBot(MultiBot, ABC):
         if (
             self._get_poll_message(message)
             and
-            self._parse_callbacks(message.text, [RegisteredCallback(..., multibot_constants.KEYWORDS['reset'])])
+            self._parse_callbacks(message.text, [RegisteredCallback(..., keywords=multibot_constants.KEYWORDS['reset'])])
         ):
             await self._on_delete_votes(message, all_=True)
             return

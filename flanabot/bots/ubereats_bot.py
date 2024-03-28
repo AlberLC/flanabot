@@ -30,7 +30,7 @@ class UberEatsBot(MultiBot, ABC):
     def _add_handlers(self):
         super()._add_handlers()
 
-        self.register(self._on_ubereats, 'ubereats', priority=2)
+        self.register(self._on_ubereats, keywords='ubereats', priority=2)
 
     async def _cancel_scraping_task(self, chat: Chat):
         if not (task := self.task_contexts[chat.id]['task']) or task.done():

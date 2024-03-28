@@ -26,26 +26,26 @@ class PenaltyBot(MultiBot, ABC):
     def _add_handlers(self):
         super()._add_handlers()
 
-        self.register(self._on_ban, multibot_constants.KEYWORDS['ban'])
+        self.register(self._on_ban, keywords=multibot_constants.KEYWORDS['ban'])
 
-        self.register(self._on_mute, multibot_constants.KEYWORDS['mute'])
-        self.register(self._on_mute, (('haz', 'se'), multibot_constants.KEYWORDS['mute']))
-        self.register(self._on_mute, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['unmute']))
-        self.register(self._on_mute, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['sound']))
+        self.register(self._on_mute, keywords=multibot_constants.KEYWORDS['mute'])
+        self.register(self._on_mute, keywords=(('haz', 'se'), multibot_constants.KEYWORDS['mute']))
+        self.register(self._on_mute, keywords=(multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['unmute']))
+        self.register(self._on_mute, keywords=(multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['sound']))
 
-        self.register(self._on_punish, constants.KEYWORDS['punish'])
-        self.register(self._on_punish, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['unpunish']))
-        self.register(self._on_punish, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['permission']))
+        self.register(self._on_punish, keywords=constants.KEYWORDS['punish'])
+        self.register(self._on_punish, keywords=(multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['unpunish']))
+        self.register(self._on_punish, keywords=(multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['permission']))
 
-        self.register(self._on_unban, multibot_constants.KEYWORDS['unban'])
+        self.register(self._on_unban, keywords=multibot_constants.KEYWORDS['unban'])
 
-        self.register(self._on_unmute, multibot_constants.KEYWORDS['unmute'])
-        self.register(self._on_unmute, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['mute']))
-        self.register(self._on_unmute, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['sound']))
+        self.register(self._on_unmute, keywords=multibot_constants.KEYWORDS['unmute'])
+        self.register(self._on_unmute, keywords=(multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['mute']))
+        self.register(self._on_unmute, keywords=(multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['sound']))
 
-        self.register(self._on_unpunish, constants.KEYWORDS['unpunish'])
-        self.register(self._on_unpunish, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['punish']))
-        self.register(self._on_unpunish, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['permission']))
+        self.register(self._on_unpunish, keywords=constants.KEYWORDS['unpunish'])
+        self.register(self._on_unpunish, keywords=(multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['punish']))
+        self.register(self._on_unpunish, keywords=(multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['permission']))
 
     @admin(False)
     @group

@@ -12,7 +12,7 @@ import pymongo
 import pytz
 from flanaapis import InstagramLoginError, MediaNotFoundError, PlaceNotFoundError
 from flanautils import return_if_first_empty
-from multibot import BadRoleError, MessagesFormat, MultiBot, Platform, RegisteredCallback, Role, User, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, owner, reply
+from multibot import BadRoleError, MessagesFormat, MultiBot, Platform, RegisteredCallback, Role, User, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, owner
 
 from flanabot import constants
 from flanabot.bots.connect_4_bot import Connect4Bot
@@ -42,51 +42,51 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
     def _add_handlers(self):
         super()._add_handlers()
 
-        self.register(self._on_activate_tunnel, (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['tunnel']))
+        self.register(self._on_activate_tunnel, keywords=(multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['tunnel']))
 
-        self.register(self._on_bye, multibot_constants.KEYWORDS['bye'])
+        self.register(self._on_bye, keywords=multibot_constants.KEYWORDS['bye'])
 
-        self.register(self._on_config, multibot_constants.KEYWORDS['config'])
-        self.register(self._on_config, (multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['config']))
+        self.register(self._on_config, keywords=multibot_constants.KEYWORDS['config'])
+        self.register(self._on_config, keywords=(multibot_constants.KEYWORDS['show'], multibot_constants.KEYWORDS['config']))
 
-        self.register(self._on_database_messages, (multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message']))
-        self.register(lambda message: self._on_database_messages(message, format=MessagesFormat.SIMPLE), (multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['simple']))
-        self.register(lambda message: self._on_database_messages(message, format=MessagesFormat.COMPLETE), (multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['all']))
-        self.register(lambda message: self._on_database_messages(message, format=MessagesFormat.COMPLETE), (multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['text']))
+        self.register(self._on_database_messages, keywords=(multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_database_messages, extra_kwargs={'format': MessagesFormat.SIMPLE}, keywords=(multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['simple']))
+        self.register(self._on_database_messages, extra_kwargs={'format': MessagesFormat.COMPLETE}, keywords=(multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['all']))
+        self.register(self._on_database_messages, extra_kwargs={'format': MessagesFormat.COMPLETE}, keywords=(multibot_constants.KEYWORDS['last'], multibot_constants.KEYWORDS['message'], multibot_constants.KEYWORDS['text']))
 
-        self.register(self._on_deactivate_tunnel, (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['tunnel']))
+        self.register(self._on_deactivate_tunnel, keywords=(multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['tunnel']))
 
-        self.register(self._on_delete, multibot_constants.KEYWORDS['delete'])
-        self.register(self._on_delete, (multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_delete, keywords=multibot_constants.KEYWORDS['delete'])
+        self.register(self._on_delete, keywords=(multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
 
-        self.register(self._on_delete_until, (multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['until']))
-        self.register(self._on_delete_until, (multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['until'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_delete, extra_kwargs={'until': True}, keywords=(multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['until']))
+        self.register(self._on_delete, extra_kwargs={'until': True}, keywords=(multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['until'], multibot_constants.KEYWORDS['message']))
 
-        self.register(self._on_hello, multibot_constants.KEYWORDS['hello'])
+        self.register(self._on_hello, keywords=multibot_constants.KEYWORDS['hello'])
 
-        self.register(self._on_help, multibot_constants.KEYWORDS['help'])
+        self.register(self._on_help, keywords=multibot_constants.KEYWORDS['help'])
 
         self.register(self._on_new_message_default, default=True)
 
-        self.register(self._on_recover_message, multibot_constants.KEYWORDS['message'])
+        self.register(self._on_recover_message, keywords=multibot_constants.KEYWORDS['message'])
 
-        self.register(self._on_reset, multibot_constants.KEYWORDS['reset'])
-        self.register(self._on_reset, (multibot_constants.KEYWORDS['reset'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_reset, keywords=multibot_constants.KEYWORDS['reset'])
+        self.register(self._on_reset, keywords=(multibot_constants.KEYWORDS['reset'], multibot_constants.KEYWORDS['message']))
 
-        self.register(self._on_roles, multibot_constants.KEYWORDS['permission'])
-        self.register(self._on_roles, multibot_constants.KEYWORDS['role'])
-        self.register(self._on_roles, (multibot_constants.KEYWORDS['permission'], multibot_constants.KEYWORDS['role']))
-        self.register(self._on_roles, (multibot_constants.KEYWORDS['change'], multibot_constants.KEYWORDS['permission']))
-        self.register(self._on_roles, (multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['role']))
-        self.register(self._on_roles, (multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['role']))
+        self.register(self._on_roles, keywords=multibot_constants.KEYWORDS['permission'])
+        self.register(self._on_roles, keywords=multibot_constants.KEYWORDS['role'])
+        self.register(self._on_roles, keywords=(multibot_constants.KEYWORDS['permission'], multibot_constants.KEYWORDS['role']))
+        self.register(self._on_roles, keywords=(multibot_constants.KEYWORDS['change'], multibot_constants.KEYWORDS['permission']))
+        self.register(self._on_roles, keywords=(multibot_constants.KEYWORDS['activate'], multibot_constants.KEYWORDS['role']))
+        self.register(self._on_roles, keywords=(multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['role']))
 
         self.register(self._on_tunnel_message, always=True)
 
-        self.register(self._on_users, multibot_constants.KEYWORDS['user'])
+        self.register(self._on_users, keywords=multibot_constants.KEYWORDS['user'])
 
-        self.register_button(self._on_config_button_press, ButtonsGroup.CONFIG)
-        self.register_button(self._on_roles_button_press, ButtonsGroup.ROLES)
-        self.register_button(self._on_users_button_press, ButtonsGroup.USERS)
+        self.register_button(self._on_config_button_press, key=ButtonsGroup.CONFIG)
+        self.register_button(self._on_roles_button_press, key=ButtonsGroup.ROLES)
+        self.register_button(self._on_users_button_press, key=ButtonsGroup.USERS)
 
     async def _changeable_roles(self, group_: int | str | Chat | Message) -> list[Role]:
         return []
@@ -521,8 +521,8 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
             self._parse_callbacks(
                 message.text,
                 [
-                    RegisteredCallback(..., (multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['tunnel'])),
-                    RegisteredCallback(..., (multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['tunnel']))
+                    RegisteredCallback(..., keywords=(multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['tunnel'])),
+                    RegisteredCallback(..., keywords=(multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['tunnel']))
                 ]
             )
         ):

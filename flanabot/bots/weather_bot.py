@@ -26,10 +26,10 @@ class WeatherBot(MultiBot, ABC):
     def _add_handlers(self):
         super()._add_handlers()
 
-        self.register(self._on_weather, constants.KEYWORDS['weather'])
-        self.register(self._on_weather, (multibot_constants.KEYWORDS['show'], constants.KEYWORDS['weather']))
+        self.register(self._on_weather, keywords=constants.KEYWORDS['weather'])
+        self.register(self._on_weather, keywords=(multibot_constants.KEYWORDS['show'], constants.KEYWORDS['weather']))
 
-        self.register_button(self._on_weather_button_press, ButtonsGroup.WEATHER)
+        self.register_button(self._on_weather_button_press, key=ButtonsGroup.WEATHER)
 
     # ---------------------------------------------- #
     #                    HANDLERS                    #
@@ -54,12 +54,12 @@ class WeatherBot(MultiBot, ABC):
 
         # noinspection PyTypeChecker
         place_words = (
-                OrderedSet(original_text_words)
-                - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['show'], min_score=0.85).keys()
-                - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['weather'], min_score=0.85).keys()
-                - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['date'], min_score=0.85).keys()
-                - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['thanks'], min_score=0.85).keys()
-                - flanautils.CommonWords.get()
+            OrderedSet(original_text_words)
+            - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['show'], min_score=0.85).keys()
+            - flanautils.cartesian_product_string_matching(original_text_words, constants.KEYWORDS['weather'], min_score=0.85).keys()
+            - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['date'], min_score=0.85).keys()
+            - flanautils.cartesian_product_string_matching(original_text_words, multibot_constants.KEYWORDS['thanks'], min_score=0.85).keys()
+            - flanautils.CommonWords.get()
         )
         if not place_words:
             if not message.is_inline:

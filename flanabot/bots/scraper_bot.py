@@ -30,19 +30,19 @@ class ScraperBot(MultiBot, ABC):
     def _add_handlers(self):
         super()._add_handlers()
 
-        self.register(self._on_no_scraping, (multibot_constants.KEYWORDS['negate'], constants.KEYWORDS['scraping']))
+        self.register(self._on_no_scraping, keywords=(multibot_constants.KEYWORDS['negate'], constants.KEYWORDS['scraping']))
 
-        self.register(self._on_reset_instagram_ban, (multibot_constants.KEYWORDS['delete'], 'instagram'))
-        self.register(self._on_reset_instagram_ban, (multibot_constants.KEYWORDS['reset'], 'instagram'))
+        self.register(self._on_reset_instagram_ban, keywords=(multibot_constants.KEYWORDS['delete'], 'instagram'))
+        self.register(self._on_reset_instagram_ban, keywords=(multibot_constants.KEYWORDS['reset'], 'instagram'))
 
-        self.register(self._on_scraping, constants.KEYWORDS['scraping'])
-        self.register(self._on_scraping, constants.KEYWORDS['force'])
-        self.register(self._on_scraping, multibot_constants.KEYWORDS['audio'])
-        self.register(lambda message: self._on_scraping(message, delete=False), (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete']))
-        self.register(lambda message: self._on_scraping(message, delete=False), (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['message']))
-        self.register(lambda message: self._on_scraping(message, delete=False), (multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_scraping, keywords=constants.KEYWORDS['scraping'])
+        self.register(self._on_scraping, keywords=constants.KEYWORDS['force'])
+        self.register(self._on_scraping, keywords=multibot_constants.KEYWORDS['audio'])
+        self.register(self._on_scraping, extra_kwargs={'delete': False}, keywords=(multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete']))
+        self.register(self._on_scraping, extra_kwargs={'delete': False}, keywords=(multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['message']))
+        self.register(self._on_scraping, extra_kwargs={'delete': False}, keywords=(multibot_constants.KEYWORDS['negate'], multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['message']))
 
-        self.register(self._on_song_info, constants.KEYWORDS['song_info'])
+        self.register(self._on_song_info, keywords=constants.KEYWORDS['song_info'])
 
     @staticmethod
     async def _find_ids(text: str) -> tuple[OrderedSet[str], ...]:
@@ -322,8 +322,8 @@ class ScraperBot(MultiBot, ABC):
                 self._parse_callbacks(
                     message.text,
                     [
-                        RegisteredCallback(..., (('sin',), ('timeout', 'limite'))),
-                        RegisteredCallback(..., multibot_constants.KEYWORDS['all'])
+                        RegisteredCallback(..., keywords=(('sin',), ('timeout', 'limite'))),
+                        RegisteredCallback(..., keywords=multibot_constants.KEYWORDS['all'])
                     ]
                 )
             )

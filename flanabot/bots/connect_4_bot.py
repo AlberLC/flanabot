@@ -25,11 +25,11 @@ class Connect4Bot(MultiBot, ABC):
     def _add_handlers(self):
         super()._add_handlers()
 
-        self.register(self._on_connect_4, constants.KEYWORDS['connect_4'])
+        self.register(self._on_connect_4, keywords=constants.KEYWORDS['connect_4'])
 
-        self.register(self._on_connect_4_vs_itself, (*constants.KEYWORDS['connect_4'], *constants.KEYWORDS['self']))
+        self.register(self._on_connect_4_vs_itself, keywords=(*constants.KEYWORDS['connect_4'], *constants.KEYWORDS['self']))
 
-        self.register_button(self._on_connect_4_button_press, ButtonsGroup.CONNECT_4)
+        self.register_button(self._on_connect_4_button_press, key=ButtonsGroup.CONNECT_4)
 
     def _ai_insert(
         self,
@@ -304,105 +304,105 @@ class Connect4Bot(MultiBot, ABC):
     @staticmethod
     def _check_winner_left(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
-                (
-                        2 < j and board[i][j - 3] == board[i][j - 2] == board[i][j - 1]
-                        or
-                        1 < j < constants.CONNECT_4_N_COLUMNS - 1 and board[i][j - 2] == board[i][j - 1] == board[i][j + 1]
-                )
-                and
-                board[i][j - 1] is not None
+            (
+                2 < j and board[i][j - 3] == board[i][j - 2] == board[i][j - 1]
+                or
+                1 < j < constants.CONNECT_4_N_COLUMNS - 1 and board[i][j - 2] == board[i][j - 1] == board[i][j + 1]
+            )
+            and
+            board[i][j - 1] is not None
         ):
             return board[i][j - 1]
 
     @staticmethod
     def _check_winner_right(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
-                (
-                        j < constants.CONNECT_4_N_COLUMNS - 3 and board[i][j + 1] == board[i][j + 2] == board[i][j + 3]
-                        or
-                        0 < j < constants.CONNECT_4_N_COLUMNS - 2 and board[i][j - 1] == board[i][j + 1] == board[i][j + 2]
-                )
-                and
-                board[i][j + 1] is not None
+            (
+                j < constants.CONNECT_4_N_COLUMNS - 3 and board[i][j + 1] == board[i][j + 2] == board[i][j + 3]
+                or
+                0 < j < constants.CONNECT_4_N_COLUMNS - 2 and board[i][j - 1] == board[i][j + 1] == board[i][j + 2]
+            )
+            and
+            board[i][j + 1] is not None
         ):
             return board[i][j + 1]
 
     @staticmethod
     def _check_winner_up(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
-                (
-                        2 < i and board[i - 3][j] == board[i - 2][j] == board[i - 1][j]
-                        or
-                        1 < i < constants.CONNECT_4_N_ROWS - 1 and board[i - 2][j] == board[i - 1][j] == board[i + 1][j]
-                )
-                and
-                board[i - 1][j] is not None
+            (
+                2 < i and board[i - 3][j] == board[i - 2][j] == board[i - 1][j]
+                or
+                1 < i < constants.CONNECT_4_N_ROWS - 1 and board[i - 2][j] == board[i - 1][j] == board[i + 1][j]
+            )
+            and
+            board[i - 1][j] is not None
         ):
             return board[i - 1][j]
 
     @staticmethod
     def _check_winner_down(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
-                (
-                        i < constants.CONNECT_4_N_ROWS - 3 and board[i + 1][j] == board[i + 2][j] == board[i + 3][j]
-                        or
-                        0 < i < constants.CONNECT_4_N_ROWS - 2 and board[i - 1][j] == board[i + 1][j] == board[i + 2][j]
-                )
-                and
-                board[i + 1][j] is not None
+            (
+                i < constants.CONNECT_4_N_ROWS - 3 and board[i + 1][j] == board[i + 2][j] == board[i + 3][j]
+                or
+                0 < i < constants.CONNECT_4_N_ROWS - 2 and board[i - 1][j] == board[i + 1][j] == board[i + 2][j]
+            )
+            and
+            board[i + 1][j] is not None
         ):
             return board[i + 1][j]
 
     @staticmethod
     def _check_winner_up_left(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
-                (
-                        2 < i and 2 < j and board[i - 3][j - 3] == board[i - 2][j - 2] == board[i - 1][j - 1]
-                        or
-                        1 < i < constants.CONNECT_4_N_ROWS - 1 and 1 < j < constants.CONNECT_4_N_COLUMNS - 1 and board[i - 2][j - 2] == board[i - 1][j - 1] == board[i + 1][j + 1]
+            (
+                2 < i and 2 < j and board[i - 3][j - 3] == board[i - 2][j - 2] == board[i - 1][j - 1]
+                or
+                1 < i < constants.CONNECT_4_N_ROWS - 1 and 1 < j < constants.CONNECT_4_N_COLUMNS - 1 and board[i - 2][j - 2] == board[i - 1][j - 1] == board[i + 1][j + 1]
 
-                )
-                and
-                board[i - 1][j - 1] is not None
+            )
+            and
+            board[i - 1][j - 1] is not None
         ):
             return board[i - 1][j - 1]
 
     @staticmethod
     def _check_winner_up_right(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
-                (
-                        2 < i and j < constants.CONNECT_4_N_COLUMNS - 3 and board[i - 1][j + 1] == board[i - 2][j + 2] == board[i - 3][j + 3]
-                        or
-                        1 < i < constants.CONNECT_4_N_ROWS - 1 and 0 < j < constants.CONNECT_4_N_COLUMNS - 2 and board[i + 1][j - 1] == board[i - 1][j + 1] == board[i - 2][j + 2]
-                )
-                and
-                board[i - 1][j + 1] is not None
+            (
+                2 < i and j < constants.CONNECT_4_N_COLUMNS - 3 and board[i - 1][j + 1] == board[i - 2][j + 2] == board[i - 3][j + 3]
+                or
+                1 < i < constants.CONNECT_4_N_ROWS - 1 and 0 < j < constants.CONNECT_4_N_COLUMNS - 2 and board[i + 1][j - 1] == board[i - 1][j + 1] == board[i - 2][j + 2]
+            )
+            and
+            board[i - 1][j + 1] is not None
         ):
             return board[i - 1][j + 1]
 
     @staticmethod
     def _check_winner_down_left(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
-                (
-                        i < constants.CONNECT_4_N_ROWS - 3 and 2 < j and board[i + 3][j - 3] == board[i + 2][j - 2] == board[i + 1][j - 1]
-                        or
-                        0 < i < constants.CONNECT_4_N_ROWS - 2 and 1 < j < constants.CONNECT_4_N_COLUMNS - 1 and board[i + 2][j - 2] == board[i + 1][j - 1] == board[i - 1][j + 1]
-                )
-                and
-                board[i + 1][j - 1] is not None
+            (
+                i < constants.CONNECT_4_N_ROWS - 3 and 2 < j and board[i + 3][j - 3] == board[i + 2][j - 2] == board[i + 1][j - 1]
+                or
+                0 < i < constants.CONNECT_4_N_ROWS - 2 and 1 < j < constants.CONNECT_4_N_COLUMNS - 1 and board[i + 2][j - 2] == board[i + 1][j - 1] == board[i - 1][j + 1]
+            )
+            and
+            board[i + 1][j - 1] is not None
         ):
             return board[i + 1][j - 1]
 
     @staticmethod
     def _check_winner_down_right(i: int, j: int, board: list[list[int | None]]) -> int | None:
         if (
-                (
-                        i < constants.CONNECT_4_N_ROWS - 3 and j < constants.CONNECT_4_N_COLUMNS - 3 and board[i + 1][j + 1] == board[i + 2][j + 2] == board[i + 3][j + 3]
-                        or
-                        0 < i < constants.CONNECT_4_N_ROWS - 2 and 0 < j < constants.CONNECT_4_N_COLUMNS - 2 and board[i - 1][j - 1] == board[i + 1][j + 1] == board[i + 2][j + 2]
-                )
-                and
-                board[i + 1][j + 1] is not None
+            (
+                i < constants.CONNECT_4_N_ROWS - 3 and j < constants.CONNECT_4_N_COLUMNS - 3 and board[i + 1][j + 1] == board[i + 2][j + 2] == board[i + 3][j + 3]
+                or
+                0 < i < constants.CONNECT_4_N_ROWS - 2 and 0 < j < constants.CONNECT_4_N_COLUMNS - 2 and board[i - 1][j - 1] == board[i + 1][j + 1] == board[i + 2][j + 2]
+            )
+            and
+            board[i + 1][j + 1] is not None
         ):
             return board[i + 1][j + 1]
 
@@ -530,14 +530,14 @@ class Connect4Bot(MultiBot, ABC):
         if player_2.id == self.id:
             connect_4_data['turn'] += 1
             if await self._ai_turn(
-                    player_1,
-                    player_2,
-                    next_player,
-                    current_player,
-                    connect_4_data['turn'],
-                    constants.CONNECT_4_AI_DELAY_SECONDS,
-                    board,
-                    message
+                player_1,
+                player_2,
+                next_player,
+                current_player,
+                connect_4_data['turn'],
+                constants.CONNECT_4_AI_DELAY_SECONDS,
+                board,
+                message
             ):
                 return
 
@@ -564,14 +564,14 @@ class Connect4Bot(MultiBot, ABC):
         while True:
             turn += 1
             if await self._ai_turn(
-                    player_1,
-                    player_2,
-                    current_player,
-                    next_player,
-                    turn,
-                    constants.CONNECT_4_AI_DELAY_SECONDS / 2,
-                    board,
-                    bot_message
+                player_1,
+                player_2,
+                current_player,
+                next_player,
+                turn,
+                constants.CONNECT_4_AI_DELAY_SECONDS / 2,
+                board,
+                bot_message
             ):
                 break
             current_player, next_player = next_player, current_player
