@@ -315,7 +315,7 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
             if until and message.author.is_admin:
                 await self.clear(message.chat, until_message=message.replied_message)
-            elif not until and (message.author.is_admin or message.replied_message.author.id == self.id):
+            elif not until and (message.author.is_admin or message.replied_message.author.id in {self.id, message.author.id}):
                 flanautils.do_later(flanautils.text_to_time(message.text).total_seconds(), self.delete_message, message.replied_message)
                 await self.delete_message(message)
             elif message.chat.is_group:
