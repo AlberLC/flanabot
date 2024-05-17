@@ -122,9 +122,10 @@ class PenaltyBot(MultiBot, ABC):
             await self.punish(user, message, flanautils.text_to_time(await self.filter_mention_ids(message.text, message)), message)
 
     async def _on_ready(self):
-        await super()._on_ready()
         if not self._is_initialized:
             flanautils.do_every(constants.CHECK_PUNISHMENTS_EVERY_SECONDS, self.check_old_punishments)
+
+        await super()._on_ready()
 
     @bot_mentioned
     @group

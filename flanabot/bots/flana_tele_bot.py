@@ -83,9 +83,10 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
         await super()._on_new_message_raw(message, whitelist_callbacks, blacklist_callbacks)
 
     async def _on_ready(self):
-        await super()._on_ready()
         if not self._is_initialized:
             await self._update_whitelist()
+
+        await super()._on_ready()
 
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
