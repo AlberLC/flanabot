@@ -424,6 +424,9 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, Weathe
 
     async def _on_ready(self):
         await super()._on_ready()
+        if self._is_initialized:
+            return
+
         flanautils.do_every(multibot_constants.CHECK_OLD_DATABASE_MESSAGES_EVERY_SECONDS, self.check_old_database_actions)
         for chat in Chat.find({
             'platform': self.platform.value,

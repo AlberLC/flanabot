@@ -123,7 +123,8 @@ class PenaltyBot(MultiBot, ABC):
 
     async def _on_ready(self):
         await super()._on_ready()
-        flanautils.do_every(constants.CHECK_PUNISHMENTS_EVERY_SECONDS, self.check_old_punishments)
+        if not self._is_initialized:
+            flanautils.do_every(constants.CHECK_PUNISHMENTS_EVERY_SECONDS, self.check_old_punishments)
 
     @bot_mentioned
     @group
