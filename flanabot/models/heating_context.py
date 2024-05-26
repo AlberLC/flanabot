@@ -16,4 +16,4 @@ class ChannelData:
 class HeatingContext:
     channels_data: dict[str, ChannelData] = field(default_factory=dict)
     is_active: bool = False
-    heat_level: float = 0.0
+    heat_level: float = -1

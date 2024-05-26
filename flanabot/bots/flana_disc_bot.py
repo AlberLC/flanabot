@@ -81,8 +81,9 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             if channel.members:
                 heating_context.heat_level += 0.5
             else:
-                if not heating_context.heat_level:
+                if heating_context.heat_level == -1:
                     return
+
                 heating_context.heat_level -= 0.5
                 if heating_context.heat_level > len(constants.DISCORD_HEAT_NAMES) - 1:
                     heating_context.heat_level = float(int(heating_context.heat_level))
@@ -91,7 +92,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 continue
 
             i = int(heating_context.heat_level)
-            if not i:
+            if i == -1:
                 n_fires = 0
                 new_name = channels_data['C'].original_name
             elif i < len(constants.DISCORD_HEAT_NAMES):
