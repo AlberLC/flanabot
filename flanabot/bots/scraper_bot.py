@@ -8,7 +8,7 @@ from collections import defaultdict
 from typing import Iterable
 
 import flanautils
-from flanaapis import InstagramMediaNotFoundError, RedditMediaNotFoundError, instagram, reddit, tiktok, twitter, yt_dlp_wrapper
+from flanaapis import InstagramMediaNotFoundError, RedditMediaNotFoundError, instagram, reddit, tiktok, yt_dlp_wrapper
 from flanautils import Media, MediaType, OrderedSet, return_if_first_empty
 from multibot import MultiBot, RegisteredCallback, SendError, constants as multibot_constants, owner, reply
 
@@ -47,7 +47,6 @@ class ScraperBot(MultiBot, ABC):
     @staticmethod
     async def _find_ids(text: str) -> tuple[OrderedSet[str], ...]:
         return (
-            twitter.find_ids(text),
             instagram.find_ids(text),
             reddit.find_ids(text),
             await tiktok.find_users_and_ids(text),
@@ -189,30 +188,40 @@ class ScraperBot(MultiBot, ABC):
                     ids[i] |= platform_ids
                 except IndexError:
                     ids.append(platform_ids)
-            if not any(ids) and flanautils.find_urls(text_part):
-                if force:
-                    media_urls.append(text_part)
-                elif not any(domain.lower() in text_part for domain in multibot_constants.GIF_DOMAINS):
-                    media_urls.append(text_part)
+
+            if (
+                not any(ids)
+                and
+                flanautils.find_urls(text_part)
+                and
+                (
+                    force
+                    or
+                    not any(domain.lower() in text_part for domain in multibot_constants.GIF_DOMAINS)
+                )
+            ):
+                media_urls.append(text_part)
 
         if not any(ids) and not media_urls:
             return medias
 
         bot_state_message = await self.send(random.choice(constants.SCRAPING_PHRASES), message)
 
-        tweet_ids, instagram_ids, reddit_ids, tiktok_users_and_ids, tiktok_download_urls = ids
+        instagram_ids, reddit_ids, tiktok_users_and_ids, tiktok_download_urls = ids
 
         try:
             reddit_medias = await reddit.get_medias(reddit_ids, preferred_video_codec, preferred_extension, force, audio_only, timeout_for_media)
         except RedditMediaNotFoundError as e:
             exceptions.append(e)
             reddit_medias = ()
+
         reddit_urls = []
         for reddit_media in reddit_medias:
             if reddit_media.source:
                 medias.add(reddit_media)
             else:
                 reddit_urls.append(reddit_media.url)
+
         if force:
             media_urls.extend(reddit_urls)
         else:
@@ -225,7 +234,6 @@ class ScraperBot(MultiBot, ABC):
                     media_urls.append(reddit_url)
 
         gather_future = asyncio.gather(
-            twitter.get_medias(tweet_ids, audio_only),
             tiktok.get_medias(tiktok_users_and_ids, tiktok_download_urls, preferred_video_codec, preferred_extension, force, audio_only, timeout_for_media),
             yt_dlp_wrapper.get_medias(media_urls, preferred_video_codec, preferred_extension, force, audio_only, timeout_for_media),
             return_exceptions=True
