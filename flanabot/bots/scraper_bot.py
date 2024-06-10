@@ -1,16 +1,15 @@
 __all__ = ['ScraperBot']
 
 import asyncio
-import datetime
 import random
 from abc import ABC
 from collections import defaultdict
 from typing import Iterable
 
 import flanautils
-from flanaapis import InstagramMediaNotFoundError, RedditMediaNotFoundError, instagram, reddit, tiktok, yt_dlp_wrapper
+from flanaapis import RedditMediaNotFoundError, reddit, tiktok, yt_dlp_wrapper
 from flanautils import Media, MediaType, OrderedSet, return_if_first_empty
-from multibot import MultiBot, RegisteredCallback, SendError, constants as multibot_constants, owner, reply
+from multibot import MultiBot, RegisteredCallback, SendError, constants as multibot_constants, reply
 
 from flanabot import constants
 from flanabot.models import Action, BotAction, Message
@@ -20,10 +19,6 @@ from flanabot.models import Action, BotAction, Message
 # --------------------------------------------- SCRAPER_BOT --------------------------------------------- #
 # ------------------------------------------------------------------------------------------------------- #
 class ScraperBot(MultiBot, ABC):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.instagram_ban_date = None
-
     # -------------------------------------------------------- #
     # ------------------- PROTECTED METHODS ------------------ #
     # -------------------------------------------------------- #
@@ -31,9 +26,6 @@ class ScraperBot(MultiBot, ABC):
         super()._add_handlers()
 
         self.register(self._on_no_scraping, keywords=(multibot_constants.KEYWORDS['negate'], constants.KEYWORDS['scraping']))
-
-        self.register(self._on_reset_instagram_ban, keywords=(multibot_constants.KEYWORDS['delete'], 'instagram'))
-        self.register(self._on_reset_instagram_ban, keywords=(multibot_constants.KEYWORDS['reset'], 'instagram'))
 
         self.register(self._on_scraping, keywords=constants.KEYWORDS['scraping'])
         self.register(self._on_scraping, keywords=constants.KEYWORDS['force'])
@@ -47,7 +39,6 @@ class ScraperBot(MultiBot, ABC):
     @staticmethod
     async def _find_ids(text: str) -> tuple[OrderedSet[str], ...]:
         return (
-            instagram.find_ids(text),
             reddit.find_ids(text),
             await tiktok.find_users_and_ids(text),
             tiktok.find_download_urls(text)
@@ -207,7 +198,7 @@ class ScraperBot(MultiBot, ABC):
 
         bot_state_message = await self.send(random.choice(constants.SCRAPING_PHRASES), message)
 
-        instagram_ids, reddit_ids, tiktok_users_and_ids, tiktok_download_urls = ids
+        reddit_ids, tiktok_users_and_ids, tiktok_download_urls = ids
 
         try:
             reddit_medias = await reddit.get_medias(reddit_ids, preferred_video_codec, preferred_extension, force, audio_only, timeout_for_media)
@@ -233,53 +224,15 @@ class ScraperBot(MultiBot, ABC):
                 else:
                     media_urls.append(reddit_url)
 
-        gather_future = asyncio.gather(
+        gather_results = await asyncio.gather(
             tiktok.get_medias(tiktok_users_and_ids, tiktok_download_urls, preferred_video_codec, preferred_extension, force, audio_only, timeout_for_media),
             yt_dlp_wrapper.get_medias(media_urls, preferred_video_codec, preferred_extension, force, audio_only, timeout_for_media),
             return_exceptions=True
         )
 
-        instagram_results = []
-        instagram_restricted_age_ids = []
-        if instagram_ids:
-            can_instagram_v1 = not self.instagram_ban_date or datetime.datetime.now(datetime.timezone.utc) - self.instagram_ban_date >= constants.INSTAGRAM_BAN_SLEEP
-            if can_instagram_v1:
-                try:
-                    instagram_results += await instagram.get_medias(instagram_ids, audio_only)
-                except InstagramMediaNotFoundError:
-                    pass
-                else:
-                    instagram_restricted_age_ids = []
-                    filtered_instagram_results = []
-                    for media in instagram_results:
-                        if media.type_ is MediaType.ERROR:
-                            instagram_restricted_age_ids.append(media.content)
-                        else:
-                            filtered_instagram_results.append(media)
-                    instagram_results = filtered_instagram_results
-
-            if instagram_restricted_age_ids:
-                instagram_ids = instagram_restricted_age_ids
-            elif instagram_results:
-                instagram_ids = []
-
-            if instagram_ids:
-                try:
-                    instagram_results += await instagram.get_medias_v2(instagram_ids, audio_only)
-                except InstagramMediaNotFoundError as e:
-                    instagram_results += await yt_dlp_wrapper.get_medias(instagram.make_urls(instagram_ids), preferred_video_codec, preferred_extension, force, audio_only, timeout_for_media)
-                    if not instagram_results:
-                        exceptions.append(e)
-
-                if instagram_results and not instagram_restricted_age_ids and can_instagram_v1:
-                    self.instagram_ban_date = datetime.datetime.now(datetime.timezone.utc)
-                    await self.send('Límite de Instagram excedido.', await self.owner_chat)
-
-        gather_results = await gather_future
         await self.delete_message(bot_state_message)
 
-        # noinspection PyTypeChecker
-        gather_medias, gather_exceptions = flanautils.filter_exceptions(gather_results + instagram_results)
+        gather_medias, gather_exceptions = flanautils.filter_exceptions(gather_results)
         await self._manage_exceptions(exceptions + gather_exceptions, message, print_traceback=True)
 
         return medias | gather_medias
@@ -292,16 +245,6 @@ class ScraperBot(MultiBot, ABC):
 
     async def _on_recover_message(self, message: Message):
         pass
-
-    @owner
-    async def _on_reset_instagram_ban(self, message: Message):
-        if message.chat.is_group and not self.is_bot_mentioned(message):
-            return
-
-        self.instagram_ban_date = None
-        bot_message = await self.send('Ban de Instagram reseteado.', message)
-        await self.delete_message(message)
-        flanautils.do_later(multibot_constants.COMMAND_MESSAGE_DURATION, self.delete_message, bot_message)
 
     async def _on_scraping(
         self,
