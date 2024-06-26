@@ -13,6 +13,7 @@ CONNECT_4_N_COLUMNS = 7
 CONNECT_4_N_ROWS = 6
 FLOOD_2s_LIMIT = 2
 FLOOD_7s_LIMIT = 4
+HEAT_FIRST_LEVEL = -1
 HEAT_PERIOD_SECONDS = datetime.timedelta(minutes=15).total_seconds()
 HELP_MINUTES_LIMIT = 1
 INSTAGRAM_BAN_SLEEP = datetime.timedelta(days=1)
