@@ -34,7 +34,7 @@ numpy==1.26.3
 opencv-python==4.9.0.80
 packaging==23.2
 pillow==10.2.0
-playwright==1.41.0
+playwright==1.17.2
 plotly==5.22.0
 pyaes==1.6.1
 pyasn1==0.5.1
