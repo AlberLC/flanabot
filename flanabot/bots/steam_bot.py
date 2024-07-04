@@ -119,7 +119,7 @@ class SteamBot(MultiBot, ABC):
                 except playwright.async_api.TimeoutError:
                     raise LimitError('🚫 Steam ban: espera 5 minutos antes de consultar de nuevo.')
 
-                for td in await page.locator('tr td a[href]').all():
+                for td in await page.query_selector_all('tr td a[href]'):
                     href = await td.get_attribute('href')
                     app_ids.add(re.search(re_pattern, href).group(1))
 
@@ -168,7 +168,7 @@ class SteamBot(MultiBot, ABC):
             async with self._create_browser_context(browser) as context:
                 page = await context.new_page()
                 await page.goto(f'{constants.STEAM_DB_URL}/app/{app_id}/')
-                for td in await page.locator("#prices td[class='price-line']").all():
+                for td in await page.query_selector_all("#prices td[class='price-line']"):
                     src = (await td.locator('img').get_attribute('src'))
                     name = (await td.text_content()).strip()
                     flag_url = f'{constants.STEAM_DB_URL}{src}'
