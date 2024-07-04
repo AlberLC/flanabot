@@ -328,7 +328,7 @@ class SteamBot(MultiBot, ABC):
             height=945,
             margin={'t': 20, 'r': 20, 'b': 20, 'l': 20},
             title={
-                'text': f'{len(apps_prices)} juegos<br><sup>(solo los comparables entre {flanautils.join_last_separator(chart_title_parts, ', ', ' y ')})</sup>',
+                'text': f"{len(apps_prices)} juegos<br><sup>(solo los comparables entre {flanautils.join_last_separator(chart_title_parts, ', ', ' y ')})</sup>",
                 'xref': 'paper',
                 'yref': 'paper',
                 'x': 0.5,
