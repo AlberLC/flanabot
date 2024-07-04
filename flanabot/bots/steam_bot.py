@@ -2,7 +2,6 @@ __all__ = ['SteamBot']
 
 import asyncio
 import base64
-import itertools
 import os
 import random
 import re
@@ -44,8 +43,9 @@ class SteamBot(MultiBot, ABC):
         app_ids: Iterable[str],
         session: aiohttp.ClientSession
     ) -> None:
-        for ids_batch_batch in itertools.batched(
-            itertools.batched(app_ids, constants.STEAM_IDS_BATCH), constants.STEAM_MAX_CONCURRENT_REQUESTS
+        for ids_batch_batch in flanautils.chunks(
+            flanautils.chunks(list(app_ids), constants.STEAM_IDS_BATCH),
+            constants.STEAM_MAX_CONCURRENT_REQUESTS
         ):
             gather_results = await asyncio.gather(
                 *(self._get_app_data(session, ids_batch, steam_region.code) for ids_batch in ids_batch_batch)
