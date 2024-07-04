@@ -82,8 +82,8 @@ class SteamBot(MultiBot, ABC):
         ) as context:
             yield context
 
+    @staticmethod
     async def _get_app_data(
-        self,
         session: aiohttp.ClientSession,
         ids_batch: Iterable[str],
         country_code: str
