@@ -155,8 +155,14 @@ class SteamBot(MultiBot, ABC):
                         steam_regions = await self._update_steam_regions(browser)
 
                     if most_games:
-                        await update_state('Obteniendo los juegos más jugados y vendidos de Steam...')
-                        most_games_ids = await self._get_most_games_ids(browser)
+                        bot_state_message = await update_state(
+                            'Obteniendo los juegos más jugados y vendidos de Steam...'
+                        )
+                        try:
+                            most_games_ids = await self._get_most_games_ids(browser)
+                        except LimitError:
+                            await self.delete_message(bot_state_message)
+                            raise
 
                     return steam_regions, most_games_ids
         else:
