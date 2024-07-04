@@ -23,6 +23,25 @@ PUNISHMENT_INCREMENT_EXPONENT = 6
 PUNISHMENTS_RESET_TIME = datetime.timedelta(weeks=2)
 RECOVERY_DELETED_MESSAGE_BEFORE = datetime.timedelta(hours=1)
 SCRAPING_TIMEOUT_SECONDS = 10
+STEAM_ALL_APPS_ENDPOINT = 'https://api.steampowered.com/ISteamApps/GetAppList/v2'
+STEAM_APP_ENDPOINT_TEMPLATE = 'https://store.steampowered.com/api/appdetails?appids={ids}&cc={country_code}&filters=price_overview'
+STEAM_APP_IDS_FOR_SCRAPE_COUNTRIES = (400, 620, 730, 210970, 252490, 292030, 427520, 1712350)
+STEAM_DB_URL = 'https://steamdb.info'
+STEAM_EXCHANGERATE_API_ENDPOINT = 'https://v6.exchangerate-api.com/v6/{api_key}/latest/EUR'
+STEAM_IDS_BATCH = 750
+STEAM_LAST_GAMES = 1500
+STEAM_MAX_CONCURRENT_REQUESTS = 10
+STEAM_MOST_URLS = (
+    'https://store.steampowered.com/charts/mostplayed',
+    'https://store.steampowered.com/charts/topselling/global'
+)
+STEAM_RANDOM_GAMES = 1000
+STEAM_REGION_CODE_MAPPING = {'eu': 'EUR', 'ru': 'RUB', 'pk': 'USD', 'ua': 'UAH', 'za': 'ZAR', 'vn': 'VND', 'tw': 'TWD',
+                             'id': 'IDR', 'my': 'MYR', 'ar': 'USD', 'tr': 'USD', 'ph': 'PHP', 'in': 'INR', 'cn': 'CNY',
+                             'br': 'BRL', 'sa': 'SAR', 'th': 'THB', 'pe': 'PEN', 'cl': 'CLP', 'kw': 'KWD', 'az': 'USD',
+                             'kz': 'KZT', 'co': 'COP', 'mx': 'MXN', 'qa': 'QAR', 'sg': 'SGD', 'jp': 'JPY', 'uy': 'UYU',
+                             'ae': 'AED', 'kr': 'KRW', 'hk': 'HKD', 'cr': 'CRC', 'nz': 'NZD', 'ca': 'CAD', 'au': 'AUD',
+                             'il': 'ILS', 'us': 'USD', 'no': 'NOK', 'uk': 'GBP', 'pl': 'PLN', 'ch': 'CHF'}
 
 BANNED_POLL_PHRASES = (
     'Deja de dar por culo {presser_name} que no puedes votar aqui',
@@ -106,7 +125,8 @@ KEYWORDS = {
                'controla', 'destroy', 'destroza', 'duro', 'ejecuta', 'enseña', 'escarmiento', 'execute', 'fuck',
                'fusila', 'hell', 'humos', 'infierno', 'jefe', 'jode', 'learn', 'leccion', 'lesson', 'manda', 'paliza',
                'purgatorio', 'purgatory', 'sancion', 'shoot', 'teach', 'whip'),
-    'random': ('aleatorio', 'azar', 'random'),
+    'region': ('countries', 'country', 'pais', 'paises', 'region', 'regiones', 'regions', 'zona', 'zonas', 'zone',
+               'zones'),
     'scraping': ('busca', 'contenido', 'content', 'descarga', 'descargar', 'descargues', 'download', 'envia', 'scrap',
                  'scrapea', 'scrapees', 'scraping', 'search', 'send'),
     'self': (('contigo', 'contra', 'ti'), ('mismo', 'ti')),

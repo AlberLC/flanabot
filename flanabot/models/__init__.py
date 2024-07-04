@@ -5,4 +5,5 @@ from flanabot.models.heating_context import *
 from flanabot.models.message import *
 from flanabot.models.player import *
 from flanabot.models.punishment import *
+from flanabot.models.steam_region import *
 from flanabot.models.weather_chart import *

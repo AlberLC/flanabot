@@ -19,6 +19,7 @@ from flanabot.bots.connect_4_bot import Connect4Bot
 from flanabot.bots.penalty_bot import PenaltyBot
 from flanabot.bots.poll_bot import PollBot
 from flanabot.bots.scraper_bot import ScraperBot
+from flanabot.bots.steam_bot import SteamBot
 from flanabot.bots.ubereats_bot import UberEatsBot
 from flanabot.bots.weather_bot import WeatherBot
 from flanabot.models import Action, BotAction, ButtonsGroup, Chat, Message
@@ -27,7 +28,7 @@ from flanabot.models import Action, BotAction, ButtonsGroup, Chat, Message
 # ----------------------------------------------------------------------------------------------------- #
 # --------------------------------------------- FLANA_BOT --------------------------------------------- #
 # ----------------------------------------------------------------------------------------------------- #
-class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, UberEatsBot, WeatherBot, MultiBot, ABC):
+class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, SteamBot, UberEatsBot, WeatherBot, MultiBot, ABC):
     Chat = Chat
     Message = Message
 

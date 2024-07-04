@@ -25,8 +25,8 @@ class PollBot(MultiBot, ABC):
         super()._add_handlers()
 
         self.register(self._on_choose, keywords=constants.KEYWORDS['choose'], priority=2)
-        self.register(self._on_choose, keywords=constants.KEYWORDS['random'], priority=2)
-        self.register(self._on_choose, keywords=(constants.KEYWORDS['choose'], constants.KEYWORDS['random']), priority=2)
+        self.register(self._on_choose, keywords=multibot_constants.KEYWORDS['random'], priority=2)
+        self.register(self._on_choose, keywords=(constants.KEYWORDS['choose'], multibot_constants.KEYWORDS['random']), priority=2)
 
         self.register(self._on_delete_votes, extra_kwargs={'all_': True}, keywords=(multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['all'], constants.KEYWORDS['vote']))
         self.register(self._on_delete_votes, extra_kwargs={'all_': True}, keywords=(multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['all'], constants.KEYWORDS['vote']))
@@ -97,7 +97,7 @@ class PollBot(MultiBot, ABC):
 
         discarded_words = {
             *constants.KEYWORDS['choose'],
-            *constants.KEYWORDS['random'],
+            *multibot_constants.KEYWORDS['random'],
             self.name.lower(), f'<@{self.id}>',
             'entre', 'between'
         }
