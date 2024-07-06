@@ -260,7 +260,7 @@ class SteamBot(MultiBot, ABC):
 
         async with aiohttp.ClientSession() as session:
             if last_apps or random_apps:
-                await update_state('Obteniendo todas las aplicaciones de Steam...')
+                await update_state('Obteniendo todas los productos de Steam...')
                 async with session.get(constants.STEAM_ALL_APPS_ENDPOINT) as response:
                     all_apps_data = await response.json()
                 app_ids = [
