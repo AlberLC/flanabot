@@ -29,13 +29,13 @@ STEAM_APP_IDS_FOR_SCRAPE_COUNTRIES = (400, 620, 730, 210970, 252490, 292030, 427
 STEAM_DB_URL = 'https://steamdb.info'
 STEAM_EXCHANGERATE_API_ENDPOINT = 'https://v6.exchangerate-api.com/v6/{api_key}/latest/EUR'
 STEAM_IDS_BATCH = 750
-STEAM_LAST_GAMES = 1500
+STEAM_LAST_APPS = 1500
 STEAM_MAX_CONCURRENT_REQUESTS = 10
 STEAM_MOST_URLS = (
-    'https://store.steampowered.com/charts/mostplayed',
-    'https://store.steampowered.com/charts/topselling/global'
+    'https://store.steampowered.com/charts/topselling/global',
+    'https://store.steampowered.com/charts/mostplayed'
 )
-STEAM_RANDOM_GAMES = 1000
+STEAM_RANDOM_APPS = 1000
 STEAM_REGION_CODE_MAPPING = {'eu': 'EUR', 'ru': 'RUB', 'pk': 'USD', 'ua': 'UAH', 'za': 'ZAR', 'vn': 'VND', 'tw': 'TWD',
                              'id': 'IDR', 'my': 'MYR', 'ar': 'USD', 'tr': 'USD', 'ph': 'PHP', 'in': 'INR', 'cn': 'CNY',
                              'br': 'BRL', 'sa': 'SAR', 'th': 'THB', 'pe': 'PEN', 'cl': 'CLP', 'kw': 'KWD', 'az': 'USD',

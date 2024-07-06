@@ -15,7 +15,7 @@ class SteamRegion(DCMongoBase, FlanaBase):
     name: str
     flag_url: str
     eur_conversion_rate: float | None = None
-    total_price: int = 0
+    mean_price: float = 0.0
 
     def __post_init__(self):
         super().__post_init__()

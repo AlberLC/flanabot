@@ -104,7 +104,7 @@ class SteamBot(MultiBot, ABC):
             exchange_data = await response.json()
             return exchange_data
 
-    async def _get_most_games_ids(self, browser: playwright.async_api.Browser) -> set[str]:
+    async def _get_most_apps_ids(self, browser: playwright.async_api.Browser) -> set[str]:
         app_ids = set()
 
         re_pattern = fr'{urllib.parse.urlparse(constants.STEAM_MOST_URLS[0]).netloc}/\w+/(\d+)'
@@ -128,10 +128,10 @@ class SteamBot(MultiBot, ABC):
 
     @staticmethod
     def _insert_exchange_rates(
-        steam_regions: dict[str, SteamRegion],
+        steam_regions: list[SteamRegion],
         exchange_data: dict[str, Any]
-    ) -> dict[str, SteamRegion]:
-        for steam_region in steam_regions.values():
+    ) -> list[SteamRegion]:
+        for steam_region in steam_regions:
             alpha_3_code = constants.STEAM_REGION_CODE_MAPPING[steam_region.code]
             steam_region.eur_conversion_rate = exchange_data['conversion_rates'][alpha_3_code]
 
@@ -141,12 +141,12 @@ class SteamBot(MultiBot, ABC):
         self,
         update_state: Callable[[str], Awaitable[Message]],
         update_steam_regions=False,
-        most_games=True
-    ) -> tuple[dict[str, SteamRegion], set[str]]:
-        steam_regions = {steam_region.code: steam_region for steam_region in SteamRegion.find()}
-        most_games_ids = set()
+        most_apps=True
+    ) -> tuple[list[SteamRegion], set[str]]:
+        steam_regions = SteamRegion.find()
+        most_apps_ids = set()
 
-        if update_steam_regions or most_games:
+        if update_steam_regions or most_apps:
             async with playwright.async_api.async_playwright() as playwright_:
                 async with await playwright_.chromium.launch() as browser:
                     if update_steam_regions:
@@ -154,22 +154,22 @@ class SteamBot(MultiBot, ABC):
                         SteamRegion.delete_many_raw({})
                         steam_regions = await self._update_steam_regions(browser)
 
-                    if most_games:
+                    if most_apps:
                         bot_state_message = await update_state(
-                            'Obteniendo los juegos más jugados y vendidos de Steam...'
+                            'Obteniendo los productos más vendidos y jugados de Steam...'
                         )
                         try:
-                            most_games_ids = await self._get_most_games_ids(browser)
+                            most_apps_ids = await self._get_most_apps_ids(browser)
                         except LimitError:
                             await self.delete_message(bot_state_message)
                             raise
 
-                    return steam_regions, most_games_ids
+                    return steam_regions, most_apps_ids
         else:
-            return steam_regions, most_games_ids
+            return steam_regions, most_apps_ids
 
-    async def _update_steam_regions(self, browser: playwright.async_api.Browser) -> dict[str, SteamRegion]:
-        steam_regions = {}
+    async def _update_steam_regions(self, browser: playwright.async_api.Browser) -> list[SteamRegion]:
+        steam_regions = []
 
         for app_id in constants.STEAM_APP_IDS_FOR_SCRAPE_COUNTRIES:
             async with self._create_browser_context(browser) as context:
@@ -184,7 +184,7 @@ class SteamBot(MultiBot, ABC):
                     region_code = await td.get_attribute('data-cc')
                     steam_region = SteamRegion(region_code, name, flag_url)
                     steam_region.save()
-                    steam_regions[steam_region.code] = steam_region
+                    steam_regions.append(steam_region)
 
                 await asyncio.sleep(2)
 
@@ -197,9 +197,9 @@ class SteamBot(MultiBot, ABC):
         self,
         message: Message,
         update_steam_regions: bool | None = None,
-        most_games: bool | None = None,
-        last_games: bool | None = None,
-        random_games: bool | None = None
+        most_apps: bool | None = None,
+        last_apps: bool | None = None,
+        random_apps: bool | None = None
     ):
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
@@ -217,8 +217,8 @@ class SteamBot(MultiBot, ABC):
                 )
             )
 
-        if most_games is None:
-            most_games = bool(
+        if most_apps is None:
+            most_apps = bool(
                 flanautils.cartesian_product_string_matching(
                     message.text,
                     ('jugados', 'played', 'sellers', 'selling', 'vendidos'),
@@ -226,8 +226,8 @@ class SteamBot(MultiBot, ABC):
                 )
             )
 
-        if last_games is None:
-            last_games = bool(
+        if last_apps is None:
+            last_apps = bool(
                 flanautils.cartesian_product_string_matching(
                     message.text,
                     multibot_constants.KEYWORDS['last'] + ('new', 'novedades', 'nuevos'),
@@ -235,8 +235,8 @@ class SteamBot(MultiBot, ABC):
                 )
             )
 
-        if random_games is None:
-            random_games = bool(
+        if random_apps is None:
+            random_apps = bool(
                 flanautils.cartesian_product_string_matching(
                     message.text,
                     multibot_constants.KEYWORDS['random'],
@@ -244,22 +244,22 @@ class SteamBot(MultiBot, ABC):
                 )
             )
 
-        if not any((most_games, last_games, random_games)):
-            most_games = True
-            last_games = True
-            random_games = True
+        if not any((most_apps, last_apps, random_apps)):
+            most_apps = True
+            last_apps = True
+            random_apps = True
 
         update_state = self.create_message_updater(message, delete_user_message=True)
 
         chart_title_parts = []
 
-        steam_regions, selected_app_ids = await self._scrape_steam_data(update_state, update_steam_regions, most_games)
+        steam_regions, selected_app_ids = await self._scrape_steam_data(update_state, update_steam_regions, most_apps)
 
-        if most_games:
-            chart_title_parts.append(f'los {len(selected_app_ids)} más jugados/vendidos')
+        if most_apps:
+            chart_title_parts.append(f'los {len(selected_app_ids)} más vendidos/jugados')
 
         async with aiohttp.ClientSession() as session:
-            if last_games or random_games:
+            if last_apps or random_apps:
                 await update_state('Obteniendo todas las aplicaciones de Steam...')
                 async with session.get(constants.STEAM_ALL_APPS_ENDPOINT) as response:
                     all_apps_data = await response.json()
@@ -267,13 +267,13 @@ class SteamBot(MultiBot, ABC):
                     str(app_id) for app_data in all_apps_data['applist']['apps'] if (app_id := app_data['appid'])
                 ]
 
-                if last_games:
-                    selected_app_ids.update(app_ids[-constants.STEAM_LAST_GAMES:])
-                    chart_title_parts.append(f'los {constants.STEAM_LAST_GAMES} más nuevos')
+                if last_apps:
+                    selected_app_ids.update(app_ids[-constants.STEAM_LAST_APPS:])
+                    chart_title_parts.append(f'los {constants.STEAM_LAST_APPS} más nuevos')
 
-                if random_games:
-                    selected_app_ids.update(random.sample(app_ids, constants.STEAM_RANDOM_GAMES))
-                    chart_title_parts.append(f'{constants.STEAM_RANDOM_GAMES} aleatorios')
+                if random_apps:
+                    selected_app_ids.update(random.sample(app_ids, constants.STEAM_RANDOM_APPS))
+                    chart_title_parts.append(f'{constants.STEAM_RANDOM_APPS} aleatorios')
 
             exchange_data = await self._get_exchange_data(session)
             steam_regions = self._insert_exchange_rates(steam_regions, exchange_data)
@@ -284,7 +284,7 @@ class SteamBot(MultiBot, ABC):
                 await asyncio.gather(
                     *(
                         self._add_app_price(apps_prices, steam_region, selected_app_ids, session)
-                        for steam_region in steam_regions.values()
+                        for steam_region in steam_regions
                     )
                 )
             except LimitError:
@@ -293,20 +293,24 @@ class SteamBot(MultiBot, ABC):
 
             apps_prices = {k: v for k, v in apps_prices.items() if len(v) == len(steam_regions)}
 
+            total_prices = defaultdict(float)
             for app_prices in apps_prices.values():
                 for region_code, price in app_prices.items():
-                    steam_regions[region_code].total_price += price
+                    total_prices[region_code] += price
+
+            for steam_region in steam_regions:
+                steam_region.mean_price = total_prices[steam_region.code] / len(apps_prices)
 
             await update_state('Creando gráfico...')
-            steam_regions_values = sorted(steam_regions.values(), key=lambda steam_region: steam_region.total_price)
+            steam_regions = sorted(steam_regions, key=lambda steam_region: steam_region.mean_price)
             region_names = []
             region_total_prices = []
             bar_colors = []
             bar_line_colors = []
             images = []
-            for i, steam_region in enumerate(steam_regions_values):
+            for i, steam_region in enumerate(steam_regions):
                 region_names.append(steam_region.name)
-                region_total_prices.append(steam_region.total_price)
+                region_total_prices.append(steam_region.mean_price)
                 bar_colors.append(steam_region.bar_color)
                 bar_line_colors.append(steam_region.bar_line_color)
                 async with session.get(steam_region.flag_url) as response:
@@ -337,7 +341,7 @@ class SteamBot(MultiBot, ABC):
             height=945,
             margin={'t': 20, 'r': 20, 'b': 20, 'l': 20},
             title={
-                'text': f"{len(apps_prices)} juegos de Steam<br><sup>(solo los comparables entre {flanautils.join_last_separator(chart_title_parts, ', ', ' y ')})</sup>",
+                'text': f"Media de {len(apps_prices)} productos de Steam<br><sup>(solo los comparables entre {flanautils.join_last_separator(chart_title_parts, ', ', ' y ')})</sup>",
                 'xref': 'paper',
                 'yref': 'paper',
                 'x': 0.5,
@@ -347,12 +351,17 @@ class SteamBot(MultiBot, ABC):
                 }
             },
             images=images,
-            xaxis={'tickfont': {
-                'size': 14
-            }},
-            yaxis={'ticksuffix': ' €', 'tickfont': {
-                'size': 18
-            }}
+            xaxis={
+                'tickfont': {
+                    'size': 14
+                }
+            },
+            yaxis={
+                'ticksuffix': ' €',
+                'tickfont': {
+                    'size': 18
+                }
+            }
         )
 
         bot_state_message = await update_state('Enviando...')
