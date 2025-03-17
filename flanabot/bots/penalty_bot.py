@@ -76,6 +76,46 @@ class PenaltyBot(MultiBot, ABC):
             await self.punish(message.author.id, message.chat.group_id, punishment_seconds, message, flood=True)
             await self.send(f'Castigado durante {TimeUnits(seconds=punishment_seconds).to_words()}.', message)
 
+    @admin(False)
+    @group
+    async def _check_message_spam(self, message: Message) -> bool:
+        if await self.is_punished(message.author, message.chat):
+            return True
+
+        spam_messages = self.Message.find({
+            'text': message.text,
+            'platform': self.platform.value,
+            'author': message.author.object_id,
+            'date': {'$gte': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)}
+        })
+
+        chats = {message.chat for message in spam_messages}
+        if len(chats) > constants.SPAM_CHANNELS_LIMIT:
+            for message in spam_messages:
+                await self.delete_message(await self.get_message(message.id, message.chat.id))
+            await self.punish(message.author.id, message.chat.group_id)
+            owner_message_parts = [
+                '<b>Castigado spammer:</b>',
+                '<b>User:</b>',
+                f'    <b>id:</b> <code>{message.author.id}</code>',
+                f'    <b>name:</b> <code>{message.author.name}</code>',
+                f'    <b>is_admin:<b> <code>{message.author.is_admin}</code>',
+                f'    <b>is_bot:</b> <code>{message.author.is_bot}</code>',
+                '',
+                '<b>Chats:</b>',
+                '\n\n'.join(
+                    f'    <b>id:</b> <code>{chat.id}</code>\n'
+                    f'    <b>name:</b> <code>{chat.name}</code>\n'
+                    f'    <b>group_id:</b> <code>{chat.group_id}</code>\n'
+                    f'    <b>group_name:</b> <code>{chat.group_name}</code>'
+                    for chat in chats
+                )
+            ]
+            await self.send('\n'.join(owner_message_parts), await self.owner_chat)
+            return True
+
+        return False
+
     async def _punish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         pass
 
@@ -109,7 +149,8 @@ class PenaltyBot(MultiBot, ABC):
         await super()._on_new_message_raw(message, whitelist_callbacks, blacklist_callbacks)
         if message.chat.config['check_flood'] and message.chat.config['punish'] and not message.is_inline:
             async with self.lock:
-                await self._check_message_flood(message)
+                if not await self._check_message_spam(message):
+                    await self._check_message_flood(message)
 
     @bot_mentioned
     @group
