@@ -88,12 +88,12 @@ class PenaltyBot(MultiBot, ABC):
             'author': message.author.object_id,
             'date': {'$gte': datetime.datetime.now(datetime.timezone.utc) - constants.SPAM_TIME_RANGE},
         })
-
         chats = {message.chat for message in spam_messages}
         if len(chats) <= constants.SPAM_CHANNELS_LIMIT:
             return False
 
         await self.punish(message.author.id, message.chat.group_id)
+
         await asyncio.sleep(constants.SPAM_DELETION_DELAY.total_seconds())  # We make sure to also delete any messages they may have sent before the punishment
         spam_messages = self.Message.find({
             'text': message.text,
