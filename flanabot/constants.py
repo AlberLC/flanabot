@@ -24,6 +24,7 @@ PUNISHMENTS_RESET_TIME = datetime.timedelta(weeks=2)
 RECOVERY_DELETED_MESSAGE_BEFORE = datetime.timedelta(hours=1)
 SCRAPING_TIMEOUT_SECONDS = 10
 SPAM_CHANNELS_LIMIT = 2
+SPAM_DELETION_DELAY = datetime.timedelta(seconds=5)
 SPAM_TIME_RANGE = datetime.timedelta(hours=1)
 STEAM_ALL_APPS_ENDPOINT = 'https://api.steampowered.com/ISteamApps/GetAppList/v2'
 STEAM_APP_ENDPOINT_TEMPLATE = 'https://store.steampowered.com/api/appdetails?appids={ids}&cc={country_code}&filters=price_overview'

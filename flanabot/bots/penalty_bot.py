@@ -86,36 +86,54 @@ class PenaltyBot(MultiBot, ABC):
             'text': message.text,
             'platform': self.platform.value,
             'author': message.author.object_id,
-            'date': {'$gte': datetime.datetime.now(datetime.timezone.utc) - constants.SPAM_TIME_RANGE}
+            'date': {'$gte': datetime.datetime.now(datetime.timezone.utc) - constants.SPAM_TIME_RANGE},
         })
 
         chats = {message.chat for message in spam_messages}
-        if len(chats) > constants.SPAM_CHANNELS_LIMIT:
-            for message in spam_messages:
-                await self.delete_message(await self.get_message(message.id, message.chat.id))
-            await self.punish(message.author.id, message.chat.group_id)
-            groups_data = {chat.group_id: chat.group_name for chat in chats}
-            owner_message_parts = [
-                '<b>Spammer castigado:</b>',
-                '<b>User:</b>',
-                f'    <b>id:</b> <code>{message.author.id}</code>',
-                f'    <b>name:</b> <code>{message.author.name}</code>',
-                f'    <b>is_admin:<b> <code>{message.author.is_admin}</code>',
-                f'    <b>is_bot:</b> <code>{message.author.is_bot}</code>',
-                '',
-                f'<b>Chats: {len(chats)}</b>',
-                '',
-                '<b>Groups:</b>',
-                '\n\n'.join(
-                    f'    <b>group_id:</b> <code>{group_id}</code>\n'
-                    f'    <b>group_name:</b> <code>{group_name}</code>'
-                    for group_id, group_name in groups_data.items()
-                )
-            ]
-            await self.send('\n'.join(owner_message_parts), await self.owner_chat)
-            return True
+        if len(chats) <= constants.SPAM_CHANNELS_LIMIT:
+            return False
 
-        return False
+        await self.punish(message.author.id, message.chat.group_id)
+        await asyncio.sleep(constants.SPAM_DELETION_DELAY.total_seconds())  # We make sure to also delete any messages they may have sent before the punishment
+        spam_messages = self.Message.find({
+            'text': message.text,
+            'platform': self.platform.value,
+            'author': message.author.object_id,
+            'date': {
+                '$gte': datetime.datetime.now(datetime.timezone.utc)
+                        -
+                        constants.SPAM_TIME_RANGE
+                        -
+                        constants.SPAM_DELETION_DELAY
+            },
+            'is_deleted': False
+        })
+        chats = {message.chat for message in spam_messages}
+
+        for message in spam_messages:
+            await self.delete_message(await self.get_message(message.id, message.chat.id))
+
+        groups_data = {chat.group_id: chat.group_name for chat in chats}
+        owner_message_parts = [
+            '<b>Spammer castigado:</b>',
+            '<b>User:</b>',
+            f'    <b>id:</b> <code>{message.author.id}</code>',
+            f'    <b>name:</b> <code>{message.author.name}</code>',
+            f'    <b>is_admin:<b> <code>{message.author.is_admin}</code>',
+            f'    <b>is_bot:</b> <code>{message.author.is_bot}</code>',
+            '',
+            f'<b>Chats: {len(chats)}</b>',
+            '',
+            '<b>Groups:</b>',
+            '\n\n'.join(
+                f'    <b>group_id:</b> <code>{group_id}</code>\n'
+                f'    <b>group_name:</b> <code>{group_name}</code>'
+                for group_id, group_name in groups_data.items()
+            )
+        ]
+        await self.send('\n'.join(owner_message_parts), await self.owner_chat)
+
+        return True
 
     async def _punish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         pass
