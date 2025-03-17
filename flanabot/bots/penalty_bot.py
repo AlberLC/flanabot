@@ -86,7 +86,7 @@ class PenaltyBot(MultiBot, ABC):
             'text': message.text,
             'platform': self.platform.value,
             'author': message.author.object_id,
-            'date': {'$gte': datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)}
+            'date': {'$gte': datetime.datetime.now(datetime.timezone.utc) - constants.SPAM_TIME_RANGE}
         })
 
         chats = {message.chat for message in spam_messages}
@@ -94,21 +94,22 @@ class PenaltyBot(MultiBot, ABC):
             for message in spam_messages:
                 await self.delete_message(await self.get_message(message.id, message.chat.id))
             await self.punish(message.author.id, message.chat.group_id)
+            groups_data = {chat.group_id: chat.group_name for chat in chats}
             owner_message_parts = [
-                '<b>Castigado spammer:</b>',
+                '<b>Spammer castigado:</b>',
                 '<b>User:</b>',
                 f'    <b>id:</b> <code>{message.author.id}</code>',
                 f'    <b>name:</b> <code>{message.author.name}</code>',
                 f'    <b>is_admin:<b> <code>{message.author.is_admin}</code>',
                 f'    <b>is_bot:</b> <code>{message.author.is_bot}</code>',
                 '',
-                '<b>Chats:</b>',
+                f'<b>Chats: {len(chats)}</b>',
+                '',
+                '<b>Groups:</b>',
                 '\n\n'.join(
-                    f'    <b>id:</b> <code>{chat.id}</code>\n'
-                    f'    <b>name:</b> <code>{chat.name}</code>\n'
-                    f'    <b>group_id:</b> <code>{chat.group_id}</code>\n'
-                    f'    <b>group_name:</b> <code>{chat.group_name}</code>'
-                    for chat in chats
+                    f'    <b>group_id:</b> <code>{group_id}</code>\n'
+                    f'    <b>group_name:</b> <code>{group_name}</code>'
+                    for group_id, group_name in groups_data.items()
                 )
             ]
             await self.send('\n'.join(owner_message_parts), await self.owner_chat)
