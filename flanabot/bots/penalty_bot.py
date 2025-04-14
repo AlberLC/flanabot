@@ -12,9 +12,9 @@ from flanabot import constants
 from flanabot.models import Chat, Message, Punishment
 
 
-# ------------------------------------------------------------------------------------------------------- #
-# --------------------------------------------- PENALTY_BOT --------------------------------------------- #
-# ------------------------------------------------------------------------------------------------------- #
+# ----------------------------------------------------------------------------------------------------- #
+# -------------------------------------------- PENALTY_BOT -------------------------------------------- #
+# ----------------------------------------------------------------------------------------------------- #
 class PenaltyBot(MultiBot, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -114,7 +114,7 @@ class PenaltyBot(MultiBot, ABC):
             await self.delete_message(await self.get_message(message.id, message.chat.id))
 
         groups_data = {chat.group_id: chat.group_name for chat in chats}
-        owner_message_parts = [
+        owner_message_parts = (
             '<b>Spammer castigado:</b>',
             '<b>User:</b>',
             f'    <b>id:</b> <code>{message.author.id}</code>',
@@ -130,7 +130,7 @@ class PenaltyBot(MultiBot, ABC):
                 f'    <b>group_name:</b> <code>{group_name}</code>'
                 for group_id, group_name in groups_data.items()
             )
-        ]
+        )
         await self.send('\n'.join(owner_message_parts), await self.owner_chat)
 
         return True
