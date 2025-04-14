@@ -15,6 +15,7 @@ from flanautils import return_if_first_empty
 from multibot import BadRoleError, MessagesFormat, MultiBot, Platform, RegisteredCallback, Role, User, bot_mentioned, constants as multibot_constants, group, ignore_self_message, inline, owner
 
 from flanabot import constants
+from flanabot.bots.btc_offers_bot import BtcOffersBot
 from flanabot.bots.connect_4_bot import Connect4Bot
 from flanabot.bots.penalty_bot import PenaltyBot
 from flanabot.bots.poll_bot import PollBot
@@ -28,7 +29,7 @@ from flanabot.models import Action, BotAction, ButtonsGroup, Chat, Message
 # ----------------------------------------------------------------------------------------------------- #
 # --------------------------------------------- FLANA_BOT --------------------------------------------- #
 # ----------------------------------------------------------------------------------------------------- #
-class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, SteamBot, UberEatsBot, WeatherBot, MultiBot, ABC):
+class FlanaBot(Connect4Bot, BtcOffersBot, PenaltyBot, PollBot, ScraperBot, SteamBot, UberEatsBot, WeatherBot, MultiBot, ABC):
     Chat = Chat
     Message = Message
 
