@@ -96,14 +96,6 @@ class SteamBot(MultiBot, ABC):
 
             return await response.json()
 
-    @staticmethod
-    async def _get_exchange_data(session: aiohttp.ClientSession) -> dict[str, Any]:
-        async with session.get(
-            constants.STEAM_EXCHANGERATE_API_ENDPOINT.format(api_key=os.environ['EXCHANGERATE_API_KEY'])
-        ) as response:
-            exchange_data = await response.json()
-            return exchange_data
-
     async def _get_most_apps_ids(self, browser: playwright.async_api.Browser) -> set[str]:
         app_ids = set()
 
@@ -127,10 +119,15 @@ class SteamBot(MultiBot, ABC):
         return app_ids
 
     @staticmethod
-    def _insert_exchange_rates(
-        steam_regions: list[SteamRegion],
-        exchange_data: dict[str, Any]
+    async def _insert_conversion_rates(
+        session: aiohttp.ClientSession,
+        steam_regions: list[SteamRegion]
     ) -> list[SteamRegion]:
+        async with session.get(
+            constants.STEAM_EXCHANGERATE_API_ENDPOINT.format(api_key=os.environ['EXCHANGERATE_API_KEY'])
+        ) as response:
+            exchange_data = await response.json()
+
         for steam_region in steam_regions:
             alpha_3_code = constants.STEAM_REGION_CODE_MAPPING[steam_region.code]
             steam_region.eur_conversion_rate = exchange_data['conversion_rates'][alpha_3_code]
@@ -275,8 +272,7 @@ class SteamBot(MultiBot, ABC):
                     selected_app_ids.update(random.sample(app_ids, constants.STEAM_RANDOM_APPS))
                     chart_title_parts.append(f'{constants.STEAM_RANDOM_APPS} aleatorios')
 
-            exchange_data = await self._get_exchange_data(session)
-            steam_regions = self._insert_exchange_rates(steam_regions, exchange_data)
+            steam_regions = await self._insert_conversion_rates(session, steam_regions)
 
             bot_state_message = await update_state('Obteniendo los precios para todas las regiones...')
             apps_prices = defaultdict(dict)
