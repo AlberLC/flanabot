@@ -426,21 +426,6 @@ class FlanaBot(Connect4Bot, PenaltyBot, PollBot, ScraperBot, SteamBot, UberEatsB
     async def _on_ready(self):
         if not self._is_initialized:
             flanautils.do_every(multibot_constants.CHECK_OLD_DATABASE_MESSAGES_EVERY_SECONDS, self.check_old_database_actions)
-            for chat in Chat.find({
-                'platform': self.platform.value,
-                'config.ubereats': {"$exists": True, "$eq": True},
-                'ubereats.cookies': {"$exists": True, "$ne": []}
-            }):
-                chat = await self.get_chat(chat.id)
-                chat.pull_from_database(overwrite_fields=('_id', 'config', 'ubereats'))
-                if (
-                    chat.ubereats['next_execution']
-                    and
-                    (delta_time := chat.ubereats['next_execution'] - datetime.datetime.now(datetime.timezone.utc)) > datetime.timedelta()
-                ):
-                    flanautils.do_later(delta_time, self.start_ubereats, chat)
-                else:
-                    await self.start_ubereats(chat)
 
         await super()._on_ready()
 

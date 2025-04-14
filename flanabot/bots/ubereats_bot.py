@@ -20,9 +20,7 @@ from flanabot.models import Chat, Message
 class UberEatsBot(MultiBot, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.playwright: playwright.async_api.Playwright | None = None
-        self.browser: playwright.async_api.Browser | None = None
-        self.task_contexts: dict[int, dict] = defaultdict(lambda: defaultdict(lambda: None))
+        self._task_contexts: dict[int, dict] = defaultdict(lambda: defaultdict(lambda: None))
 
     # -------------------------------------------------------- #
     # ------------------- PROTECTED METHODS ------------------ #
@@ -33,17 +31,17 @@ class UberEatsBot(MultiBot, ABC):
         self.register(self._on_ubereats, keywords='ubereats', priority=2)
 
     async def _cancel_scraping_task(self, chat: Chat):
-        if not (task := self.task_contexts[chat.id]['task']) or task.done():
+        if not (task := self._task_contexts[chat.id]['task']) or task.done():
             return
 
         await self._close_playwright(chat)
         task.cancel()
-        del self.task_contexts[chat.id]
+        del self._task_contexts[chat.id]
 
     async def _close_playwright(self, chat: Chat):
-        if browser := self.task_contexts[chat.id]['browser']:
+        if browser := self._task_contexts[chat.id]['browser']:
             await browser.close()
-        if playwright_ := self.task_contexts[chat.id]['playwright']:
+        if playwright_ := self._task_contexts[chat.id]['playwright']:
             await playwright_.stop()
 
     async def _scrape_codes(self, chat: Chat) -> list[str | None]:
@@ -53,12 +51,12 @@ class UberEatsBot(MultiBot, ABC):
         codes: list[str | None] = [None] * len(chat.ubereats['cookies'])
 
         async with playwright.async_api.async_playwright() as playwright_:
-            self.task_contexts[chat.id]['playwright'] = playwright_
+            self._task_contexts[chat.id]['playwright'] = playwright_
             for i, cookies in enumerate(chat.ubereats['cookies']):
                 for _ in range(3):
                     try:
                         async with await playwright_.chromium.launch() as browser:
-                            self.task_contexts[chat.id]['browser'] = browser
+                            self._task_contexts[chat.id]['browser'] = browser
                             context: playwright.async_api.BrowserContext = await browser.new_context(
                                 storage_state={'cookies': cookies},
                                 user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.49 Safari/537.36',
@@ -117,6 +115,25 @@ class UberEatsBot(MultiBot, ABC):
     # ---------------------------------------------- #
     #                    HANDLERS                    #
     # ---------------------------------------------- #
+    async def _on_ready(self):
+        await super()._on_ready()
+
+        for chat in self.Chat.find({
+            'platform': self.platform.value,
+            'config.ubereats': True,
+            'ubereats.cookies': {"$exists": True, "$ne": []}
+        }):
+            chat = await self.get_chat(chat.id)
+            chat.pull_from_database(overwrite_fields=('_id', 'config', 'ubereats'))
+            if (
+                chat.ubereats['next_execution']
+                and
+                (delta_time := chat.ubereats['next_execution'] - datetime.datetime.now(datetime.timezone.utc)) > datetime.timedelta()
+            ):
+                flanautils.do_later(delta_time, self.start_ubereats, chat)
+            else:
+                await self.start_ubereats(chat)
+
     @group(False)
     async def _on_ubereats(self, message: Message):
         if not message.chat.ubereats['cookies']:
@@ -170,7 +187,7 @@ class UberEatsBot(MultiBot, ABC):
         await self._cancel_scraping_task(chat)
         chat.config['ubereats'] = True
         chat.save(pull_overwrite_fields=('ubereats',))
-        self.task_contexts[chat.id]['task'] = flanautils.do_every(chat.ubereats['seconds'], self.send_ubereats_code, chat, do_first_now=send_code_now)
+        self._task_contexts[chat.id]['task'] = flanautils.do_every(chat.ubereats['seconds'], self.send_ubereats_code, chat, do_first_now=send_code_now)
 
     async def stop_ubereats(self, chat: Chat):
         await self._cancel_scraping_task(chat)
