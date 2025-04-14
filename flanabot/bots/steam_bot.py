@@ -8,9 +8,9 @@ import re
 import urllib.parse
 from abc import ABC
 from collections import defaultdict
-from collections.abc import Awaitable, Callable, Iterable, Iterator
+from collections.abc import Awaitable, Callable, Iterable
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, AsyncIterator
 
 import aiohttp
 import flanautils
@@ -63,7 +63,7 @@ class SteamBot(MultiBot, ABC):
     @asynccontextmanager
     async def _create_browser_context(
         browser: playwright.async_api.Browser
-    ) -> Iterator[playwright.async_api.BrowserContext]:
+    ) -> AsyncIterator[playwright.async_api.BrowserContext]:
         async with await browser.new_context(
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.49 Safari/537.36',
             screen={
