@@ -73,6 +73,10 @@ def preprocess_btc_offers(func: Callable) -> Callable:
         if parsed_number and not any((eur_mode, usd_mode, premium_mode)):
             eur_mode = True
 
+        if (eur_mode or usd_mode) and parsed_number < 0 or not flanautils.validate_mongodb_number(parsed_number):
+            await self.send_error('❌ Por favor, introduce un número válido.', message)
+            return
+
         if eur_mode:
             query = {'max_price_eur': parsed_number}
         elif usd_mode:
