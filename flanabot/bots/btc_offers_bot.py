@@ -206,21 +206,16 @@ class BtcOffersBot(MultiBot, ABC):
 
     @preprocess_btc_offers
     async def _on_notify_btc_offers(self, message: Message, query: dict[str, float]):
-        if message.chat.is_group and not self.is_bot_mentioned(message):
+        if not query:
+            await self.send_error('❌ Especifica una cantidad para poder avisarte.', message)
             return
 
-        if max_price_eur := query.get('max_price_eur'):
-            response_text = f'✅ ¡Perfecto! Te avisaré cuando existan ofertas por {max_price_eur:.2f} € o menos.'
-        else:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(constants.YADIO_API_ENDPOINT) as response:
-                    yadio_data = await response.json()
-
-            if max_price_usd := query.get('max_price_usd'):
-                max_price_eur = max_price_usd / yadio_data['EUR']['USD']
+        match query:
+            case {'max_price_eur': max_price_eur}:
+                response_text = f'✅ ¡Perfecto! Te avisaré cuando existan ofertas por {max_price_eur:.2f} € o menos.'
+            case {'max_price_usd': max_price_usd}:
                 response_text = f'✅ ¡Perfecto! Te avisaré cuando existan ofertas por {max_price_usd:.2f} $ o menos.'
-            else:
-                max_price_eur = yadio_data['BTC'] + query['max_premium'] / 100 * yadio_data['BTC']
+            case _:
                 response_text = f"✅ ¡Perfecto! Te avisaré cuando existan ofertas con una prima del {query['max_premium']:.2f} % o menor."
 
         await self.send(response_text, message)
