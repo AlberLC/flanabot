@@ -16,7 +16,7 @@ class Chat(MultiBotChat):
         'scraping_delete_original': True,
         'ubereats': False
     })
-    btc_offers_max_eur: float | None = None
+    btc_offers_query: dict[str, float] = field(default_factory=lambda: {})
     ubereats: dict = field(default_factory=lambda: {
         'cookies': [],
         'last_codes': [],

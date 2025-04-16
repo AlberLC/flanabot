@@ -186,8 +186,8 @@ class BtcOffersBot(MultiBot, ABC):
         while True:
             data = json.loads(await self._websocket.recv())
             chat = await self.get_chat(data['chat_id'])
-            chat.btc_offers_max_eur = None
-            chat.save(pull_exclude_fields=('btc_offers_max_eur',))
+            chat.btc_offers_query = {}
+            chat.save(pull_exclude_fields=('btc_offers_query',))
             await self._send_offers(data['offers'], chat, notifications_disabled=True)
 
     # ---------------------------------------------- #
@@ -223,7 +223,7 @@ class BtcOffersBot(MultiBot, ABC):
                 response_text = f"✅ ¡Perfecto! Te avisaré cuando existan ofertas con una prima del {query['max_premium']:.2f} % o menor."
 
         await self.send(response_text, message)
-        await self.start_btc_offers_notification(message.chat, max_price_eur)
+        await self.start_btc_offers_notification(message.chat, query)
 
     async def _on_ready(self):
         await super()._on_ready()
@@ -237,12 +237,12 @@ class BtcOffersBot(MultiBot, ABC):
             await self.start_btc_offers_notification(chat, chat.btc_offers_max_eur)
 
     async def _on_stop_btc_offers_notification(self, message: Message):
-        previous_btc_offers_max_eur = message.chat.btc_offers_max_eur
+        previous_btc_offers_query = message.chat.btc_offers_query
 
         await self.stop_btc_offers_notification(message.chat)
 
-        if previous_btc_offers_max_eur:
-            await self.send('🛑 Los avisos de ofertas de BTC se han desactivado.', message)
+        if previous_btc_offers_query:
+            await self.send('🛑 Los avisos de ofertas de BTC se han eliminado.', message)
         else:
             await self.send('🤔 No existía ningún aviso de ofertas de BTC configurado.', message)
 
@@ -254,7 +254,7 @@ class BtcOffersBot(MultiBot, ABC):
             self._websocket = await client.connect(f'ws://{self._api_endpoint}')
             self._notification_task = asyncio.create_task(self._wait_btc_offers_notification())
 
-        chat.btc_offers_max_eur = max_price_eur
+        chat.btc_offers_query = query
         chat.save()
         await self._websocket.send(json.dumps({'action': 'start', 'chat_id': chat.id, 'max_price_eur': max_price_eur}))
 
@@ -263,5 +263,5 @@ class BtcOffersBot(MultiBot, ABC):
             return
 
         await self._websocket.send(json.dumps({'action': 'stop', 'chat_id': chat.id}))
-        chat.btc_offers_max_eur = None
-        chat.save(pull_exclude_fields=('btc_offers_max_eur',))
+        chat.btc_offers_query = {}
+        chat.save(pull_exclude_fields=('btc_offers_query',))
