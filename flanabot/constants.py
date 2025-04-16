@@ -6,6 +6,7 @@ from multibot import Platform
 AUDIT_LOG_AGE = datetime.timedelta(hours=1)
 AUDIT_LOG_LIMIT = 5
 AUTO_WEATHER_EVERY = datetime.timedelta(hours=6)
+BTC_OFFERS_WEBSOCKET_RETRY_DELAY_SECONDS = datetime.timedelta(hours=1).total_seconds()
 CHECK_PUNISHMENTS_EVERY_SECONDS = datetime.timedelta(hours=1).total_seconds()
 CONNECT_4_AI_DELAY_SECONDS = 1
 CONNECT_4_CENTER_COLUMN_POINTS = 2
