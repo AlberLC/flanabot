@@ -140,12 +140,13 @@ class BtcOffersBot(MultiBot, ABC):
                 f'\n    <code>{payment_method}</code>' for payment_method in offer['payment_methods']
             )
 
+            rounded_premium = round(offer['premium'], 2)
             offer_parts.extend(
                 (
                     f"<b>Cantidad:</b> <code>{offer['amount']}</code>",
                     f"<b>Precio (EUR):</b> <code>{offer['price_eur']:.2f} €</code>",
                     f"<b>Precio (USD):</b> <code>{offer['price_usd']:.2f} $</code>",
-                    f"<b>Prima:</b> <code>{offer['premium']:.2f} %</code>",
+                    f"<b>Prima:</b> <code>{rounded_premium if rounded_premium else '0.00'} %</code>",
                     f'<b>Métodos de pago:</b>{payment_methods_text}'
                 )
             )
@@ -235,7 +236,8 @@ class BtcOffersBot(MultiBot, ABC):
             case {'max_price_usd': max_price_usd}:
                 response_text = f'✅ ¡Perfecto! Te avisaré cuando existan ofertas por {max_price_usd:.2f} $ o menos.'
             case _:
-                response_text = f"✅ ¡Perfecto! Te avisaré cuando existan ofertas con una prima del {query['max_premium']:.2f} % o menor."
+                rounded_max_premium = round(query['max_premium'], 2)
+                response_text = f"✅ ¡Perfecto! Te avisaré cuando existan ofertas con una prima del {rounded_max_premium if rounded_max_premium else '0.00'} % o menor."
 
         await self.send(response_text, message)
         await self.start_btc_offers_notification(message.chat, query)
