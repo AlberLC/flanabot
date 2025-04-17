@@ -14,7 +14,7 @@ import flanautils
 import websockets
 from multibot import MultiBot, constants as multibot_constants
 
-import constants
+from flanabot import constants
 from flanabot.models import Chat, Message
 
 

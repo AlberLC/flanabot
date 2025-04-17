@@ -15,7 +15,7 @@ from multibot import BadRoleError, DiscordBot, Platform, Role, User, admin, bot_
 from flanabot import constants
 from flanabot.bots.flana_bot import FlanaBot
 from flanabot.models import Chat, Message, Punishment
-from models.heating_context import ChannelData, HeatingContext
+from flanabot.models.heating_context import ChannelData, HeatingContext
 
 
 # ---------------------------------------------------------------------------------------------------- #
