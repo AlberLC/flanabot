@@ -254,6 +254,9 @@ class BtcOffersBot(MultiBot, ABC):
         asyncio.create_task(self.start_all_btc_offers_notifications())
 
     async def _on_stop_btc_offers_notification(self, message: Message):
+        if message.chat.is_group and not self.is_bot_mentioned(message):
+            return
+
         previous_btc_offers_query = message.chat.btc_offers_query
 
         await self.stop_btc_offers_notification(message.chat)
