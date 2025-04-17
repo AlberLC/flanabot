@@ -210,9 +210,13 @@ class BtcOffersBot(MultiBot, ABC):
     async def _on_btc_offers(self, message: Message, query: dict[str, float]):
         bot_state_message = await self.send('Obteniendo ofertas BTC...', message)
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f'http://{self._api_endpoint}', params=query) as response:
-                offers = await response.json()
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f'http://{self._api_endpoint}', params=query) as response:
+                    offers = await response.json()
+        except aiohttp.ClientConnectorError:
+            await self.send_error('❌🌐 El servidor de ofertas BTC está desconectado.', bot_state_message, edit=True)
+            return
 
         if offers:
             await self._send_offers(offers, message.chat)
