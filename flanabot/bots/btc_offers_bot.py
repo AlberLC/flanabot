@@ -180,7 +180,7 @@ class BtcOffersBot(MultiBot, ABC):
                 (
                     '',
                     '-' * 70,
-                    '<b>ℹ️ Los avisos de ofertas de BTC se han eliminado. Si quieres volver a recibirlos, no dudes en pedírmelo.</b>'
+                    '<b>ℹ️ Los avisos de ofertas BTC se han eliminado. Si quieres volver a recibirlos, no dudes en pedírmelo.</b>'
                 )
             )
 
@@ -193,7 +193,7 @@ class BtcOffersBot(MultiBot, ABC):
                 try:
                     data = json.loads(await self._websocket.recv())
                 except websockets.ConnectionClosed:
-                    await self.start_saved_btc_offers_notification()
+                    await self.start_saved_btc_offers_notifications()
                 else:
                     break
 
@@ -205,7 +205,6 @@ class BtcOffersBot(MultiBot, ABC):
     # ---------------------------------------------- #
     #                    HANDLERS                    #
     # ---------------------------------------------- #
-
     @preprocess_btc_offers
     async def _on_btc_offers(self, message: Message, query: dict[str, float]):
         bot_state_message = await self.send('Obteniendo ofertas BTC...', message)
@@ -251,9 +250,9 @@ class BtcOffersBot(MultiBot, ABC):
         await self.stop_btc_offers_notification(message.chat)
 
         if previous_btc_offers_query:
-            await self.send('🛑 Los avisos de ofertas de BTC se han eliminado.', message)
+            await self.send('🛑 Los avisos de ofertas BTC se han eliminado.', message)
         else:
-            await self.send('🤔 No existía ningún aviso de ofertas de BTC configurado.', message)
+            await self.send('🤔 No existía ningún aviso de ofertas BTC configurado.', message)
 
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #
@@ -276,8 +275,7 @@ class BtcOffersBot(MultiBot, ABC):
         chat.save()
         await self._websocket.send(json.dumps({'action': 'start', 'chat_id': chat.id, 'query': query}))
 
-    async def start_saved_btc_offers_notification(self):
-        for chat in self.Chat.find({
+    async def start_saved_btc_offers_notifications(self):
         if chats := self.Chat.find({
             'platform': self.platform.value,
             'btc_offers_query': {'$exists': True, '$ne': {}}
