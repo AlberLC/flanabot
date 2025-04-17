@@ -8,6 +8,7 @@ import json
 import os
 from abc import ABC
 from collections.abc import Callable
+from typing import Any
 
 import aiohttp
 import flanautils
@@ -23,7 +24,7 @@ from flanabot.models import Chat, Message
 # ---------------------------------------------------- #
 def preprocess_btc_offers(func: Callable) -> Callable:
     @functools.wraps(func)
-    async def wrapper(self: BtcOffersBot, message: Message):
+    async def wrapper(self: BtcOffersBot, message: Message) -> Any:
         if message.chat.is_group and not self.is_bot_mentioned(message):
             return
 

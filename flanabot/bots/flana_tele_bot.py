@@ -4,7 +4,7 @@ __all__ = ['whitelisted', 'FlanaTeleBot']
 
 import functools
 import os
-from typing import Callable
+from typing import Any, Callable
 
 import telethon.tl.functions
 from flanautils import Media, OrderedSet
@@ -21,7 +21,7 @@ from flanabot.models import Message
 def whitelisted(func: Callable) -> Callable:
     @functools.wraps(func)
     @find_message
-    async def wrapper(self: FlanaTeleBot, message: Message, *args, **kwargs):
+    async def wrapper(self: FlanaTeleBot, message: Message, *args, **kwargs) -> Any:
         if message.author.id not in self.whitelist_ids:
             return
 
