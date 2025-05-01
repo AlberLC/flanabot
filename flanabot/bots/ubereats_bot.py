@@ -10,7 +10,7 @@ import flanautils
 import playwright.async_api
 from multibot import MultiBot, group
 
-import constants
+from flanabot import constants
 from flanabot.models import Chat, Message
 
 

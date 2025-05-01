@@ -15,12 +15,11 @@ from typing import Any, AsyncIterator
 import aiohttp
 import flanautils
 import playwright.async_api
-import playwright.async_api
 import plotly
 from flanautils import Media, MediaType, Source
 from multibot import LimitError, MultiBot, RegisteredCallback, constants as multibot_constants
 
-import constants
+from flanabot import constants
 from flanabot.models import Message, SteamRegion
 
 

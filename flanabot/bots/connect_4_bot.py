@@ -10,8 +10,7 @@ from typing import Iterable
 from flanautils import Media, MediaType, Source
 from multibot import MultiBot
 
-import connect_4_frontend
-from flanabot import constants
+from flanabot import connect_4_frontend, constants
 from flanabot.models import ButtonsGroup, Message, Player
 
 
