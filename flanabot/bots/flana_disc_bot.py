@@ -148,8 +148,8 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                     media.title or Path(media.url).name or uuid.uuid4().hex
                 ).replace(' ', '_')
 
-                if not (file_name_path := Path(file_name)).suffix and media.extension:
-                    file_name = file_name_path.with_suffix(f'.{media.extension}').name
+                if media.extension and not file_name.endswith(media.extension):
+                    file_name = f'{file_name}.{media.extension}'
 
                 match media.type_:
                     case MediaType.AUDIO:
