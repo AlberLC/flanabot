@@ -142,7 +142,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 await self.edit('No cabe porque Discord es una mierda. Subiendo a FlanaServer...', bot_state_message)
 
             async with aiohttp.ClientSession() as session:
-                form = aiohttp.FormData(quote_fields=False)
+                form = aiohttp.FormData()
 
                 file_name = urllib.parse.unquote(
                     media.title or Path(media.url).name or uuid.uuid4().hex
