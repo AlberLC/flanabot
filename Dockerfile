@@ -3,7 +3,7 @@ FROM flanaganvaquero/flanawright
 WORKDIR /application
 
 COPY flanabot flanabot
-COPY venv/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY .venv/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 
 ENV PYTHONPATH=/application
 
