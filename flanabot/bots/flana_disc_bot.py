@@ -5,12 +5,16 @@ import datetime
 import math
 import os
 import random
+import urllib.parse
+import uuid
 from collections import defaultdict
+from pathlib import Path
 
+import aiohttp
 import discord
 import pytz
-from flanautils import Media, NotFoundError, OrderedSet
-from multibot import BadRoleError, DiscordBot, Platform, Role, User, admin, bot_mentioned, constants as multibot_constants, group
+from flanautils import Media, MediaType, NotFoundError, OrderedSet
+from multibot import BadRoleError, DiscordBot, LimitError, Platform, Role, User, admin, bot_mentioned, constants as multibot_constants, group
 
 from flanabot import constants
 from flanabot.bots.flana_bot import FlanaBot
@@ -25,6 +29,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     def __init__(self):
         super().__init__(os.environ['DISCORD_BOT_TOKEN'])
         self.heating_contexts: dict[int, HeatingContext] = defaultdict(HeatingContext)
+        self._flanaserver_api_base_url = f"http://{os.environ['FLANASERVER_API_HOST']}:{os.environ['FLANASERVER_API_PORT']}"
 
     # -------------------------------------------------------- #
     # ------------------- PROTECTED METHODS ------------------ #
@@ -127,6 +132,46 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         timeout_for_media: int | float = constants.SCRAPING_TIMEOUT_SECONDS
     ) -> OrderedSet[Media]:
         return await super()._search_medias(message, force, audio_only, timeout_for_media)
+
+    async def _send_media(self, media: Media, bot_state_message: Message, message: Message) -> Message | None:
+        # noinspection PyBroadException
+        try:
+            return await self.send(media, message, reply_to=message.replied_message, raise_exceptions=True)
+        except LimitError:
+            if bot_state_message:
+                await self.edit('No cabe porque Discord es una mierda. Subiendo a FlanaServer...', bot_state_message)
+
+            async with aiohttp.ClientSession() as session:
+                form = aiohttp.FormData(quote_fields=False)
+
+                file_name = urllib.parse.unquote(
+                    media.title or Path(media.url).name or uuid.uuid4().hex
+                ).replace(' ', '_')
+
+                if not (file_name_path := Path(file_name)).suffix and media.extension:
+                    file_name = file_name_path.with_suffix(f'.{media.extension}').name
+
+                match media.type_:
+                    case MediaType.AUDIO:
+                        content_type = f"audio/{'mpeg' if media.extension == 'mp3' else media.extension}"
+                    case MediaType.GIF:
+                        content_type = 'image/gif'
+                    case MediaType.IMAGE:
+                        content_type = f'image/{media.extension}'
+                    case MediaType.VIDEO:
+                        content_type = f'video/{media.extension}'
+
+                form.add_field('file', media.bytes_, content_type=content_type, filename=file_name)
+                form.add_field('expires_in', str(constants.FLANASERVER_FILE_EXPIRATION_SECONDS))
+
+                async with session.post(f'{self._flanaserver_api_base_url}/files', data=form) as response:
+                    if response.status != 201:
+                        return
+
+                    file_info = await response.json()
+                    return await self.send(f"{constants.FLANASERVER_BASE_URL}{file_info['embed_url']}", message)
+        except Exception:
+            pass
 
     async def _unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
         user_id = self.get_user_id(user)

@@ -237,6 +237,9 @@ class ScraperBot(MultiBot, ABC):
 
         return medias | gather_medias
 
+    async def _send_media(self, media: Media, bot_state_message: Message, message: Message) -> Message | None:
+        return await self.send(media, message, reply_to=message.replied_message)
+
     # ---------------------------------------------- #
     #                    HANDLERS                    #
     # ---------------------------------------------- #
@@ -379,7 +382,7 @@ class ScraperBot(MultiBot, ABC):
                 message.song_infos.add(media.song_info)
                 message.save()
 
-            if bot_message := await self.send(media, message, reply_to=message.replied_message):
+            if bot_message := await self._send_media(media, bot_state_message, message):
                 sended_media_messages.append(bot_message)
                 if media.song_info and bot_message:
                     bot_message.song_infos.add(media.song_info)
