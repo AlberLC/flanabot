@@ -31,7 +31,7 @@ STEAM_ALL_APPS_ENDPOINT = 'https://api.steampowered.com/ISteamApps/GetAppList/v2
 STEAM_APP_ENDPOINT_TEMPLATE = 'https://store.steampowered.com/api/appdetails?appids={ids}&cc={country_code}&filters=price_overview'
 STEAM_APP_IDS_FOR_SCRAPE_COUNTRIES = (400, 620, 730, 210970, 252490, 292030, 427520, 1712350)
 STEAM_DB_URL = 'https://steamdb.info'
-STEAM_EXCHANGERATE_API_ENDPOINT = 'https://v6.exchangerate-api.com/v6/{api_key}/latest/EUR'
+STEAM_EXCHANGERATE_API_ENDPOINT_TEMPLATE = 'https://v6.exchangerate-api.com/v6/{api_key}/latest/EUR'
 STEAM_IDS_BATCH = 750
 STEAM_LAST_APPS = 1500
 STEAM_MAX_CONCURRENT_REQUESTS = 10
