@@ -1,25 +1,35 @@
 __all__ = ['Chat']
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from multibot import Chat as MultiBotChat
 
 
 @dataclass(eq=False)
 class Chat(MultiBotChat):
-    config: dict = field(default_factory=lambda: {
-        'auto_insult': True,
-        'auto_scraping': True,
-        'auto_weather_chart': False,
-        'check_flood': False,
-        'punish': False,
-        'scraping_delete_original': True,
-        'ubereats': False
-    })
-    btc_offers_query: dict[str, float] = field(default_factory=lambda: {})
-    ubereats: dict = field(default_factory=lambda: {
-        'cookies': [],
-        'last_codes': [],
-        'seconds': 86700,
-        'next_execution': None
-    })
+    btc_offers: dict[str, Any] = field(
+        default_factory=lambda: {
+            'blocked_authors': [],
+            'query': {}
+        }
+    )
+    config: dict[str, bool] = field(
+        default_factory=lambda: {
+            'auto_insult': True,
+            'auto_scraping': True,
+            'auto_weather_chart': False,
+            'check_flood': False,
+            'punish': False,
+            'scraping_delete_original': True,
+            'ubereats': False
+        }
+    )
+    ubereats: dict[str, Any] = field(
+        default_factory=lambda: {
+            'cookies': [],
+            'last_codes': [],
+            'next_execution': None,
+            'seconds': 86700
+        }
+    )

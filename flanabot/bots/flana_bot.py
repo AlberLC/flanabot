@@ -97,7 +97,7 @@ class FlanaBot(Connect4Bot, BtcOffersBot, PenaltyBot, PollBot, ScraperBot, Steam
     async def _get_message(
         self,
         event: multibot_constants.MESSAGE_EVENT,
-        pull_overwrite_fields: Iterable[str] = ('_id', 'config', 'date', 'ubereats')
+        pull_overwrite_fields: Iterable[str] = ('_id', 'btc_offers', 'config', 'date', 'ubereats')
     ) -> Message:
         return await super()._get_message(event, pull_overwrite_fields)
 
