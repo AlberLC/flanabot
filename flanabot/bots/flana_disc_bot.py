@@ -141,33 +141,8 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             if bot_state_message:
                 await self.edit('No cabe porque Discord es una mierda. Subiendo a FlanaServer...', bot_state_message)
 
-            async with aiohttp.ClientSession() as session:
-                form = aiohttp.FormData()
-
-                file_name = urllib.parse.unquote(media.title or Path(media.url).name or uuid.uuid4().hex)
-
-                if media.extension and not file_name.endswith(media.extension):
-                    file_name = f'{file_name}.{media.extension}'
-
-                match media.type_:
-                    case MediaType.AUDIO:
-                        content_type = f"audio/{'mpeg' if media.extension == 'mp3' else media.extension}"
-                    case MediaType.GIF:
-                        content_type = 'image/gif'
-                    case MediaType.IMAGE:
-                        content_type = f'image/{media.extension}'
-                    case MediaType.VIDEO:
-                        content_type = f'video/{media.extension}'
-
-                form.add_field('file', media.bytes_, content_type=content_type, filename=file_name)
-                form.add_field('expires_in', str(constants.FLANASERVER_FILE_EXPIRATION_SECONDS))
-
-                async with session.post(f'{self._flanaserver_api_base_url}/files', data=form) as response:
-                    if response.status != 201:
-                        return
-
-                    file_info = await response.json()
-                    return await self.send(f"{constants.FLANASERVER_BASE_URL}{file_info['embed_url']}", message)
+            if url := await self._upload_to_server(media):
+                return await self.send(url, message)
         except Exception:
             pass
 
@@ -178,6 +153,35 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             await self.remove_role(user_id, group_, 'Castigado')
         except AttributeError:
             raise BadRoleError(str(self._unpunish))
+
+    async def _upload_to_server(self, media: Media) -> str | None:
+        async with aiohttp.ClientSession() as session:
+            form = aiohttp.FormData()
+
+            file_name = urllib.parse.unquote(media.title or Path(media.url).name or uuid.uuid4().hex)
+
+            if media.extension and not file_name.endswith(media.extension):
+                file_name = f'{file_name}.{media.extension}'
+
+            match media.type_:
+                case MediaType.AUDIO:
+                    content_type = f"audio/{'mpeg' if media.extension == 'mp3' else media.extension}"
+                case MediaType.GIF:
+                    content_type = 'image/gif'
+                case MediaType.IMAGE:
+                    content_type = f'image/{media.extension}'
+                case MediaType.VIDEO:
+                    content_type = f'video/{media.extension}'
+
+            form.add_field('file', media.bytes_, content_type=content_type, filename=file_name)
+            form.add_field('expires_in', str(constants.FLANASERVER_FILE_EXPIRATION_SECONDS))
+
+            try:
+                async with session.post(f'{self._flanaserver_api_base_url}/files', data=form) as response:
+                    if response.status == 201:
+                        return f"{constants.FLANASERVER_BASE_URL}{(await response.json())['embed_url']}"
+            except aiohttp.client_exceptions.ClientConnectorError:
+                pass
 
     # ---------------------------------------------- #
     #                    HANDLERS                    #
