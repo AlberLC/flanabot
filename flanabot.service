@@ -1,0 +1,12 @@
+[Unit]
+Description=FlanaBot
+After=network.target
+
+[Service]
+User=flanauser
+WorkingDirectory=/opt/flanabot/flanabot
+Environment=PYTHONPATH=/opt/flanabot
+ExecStart=/opt/flanabot/.venv/bin/python3 -u main.py
+
+[Install]
+WantedBy=multi-user.target
