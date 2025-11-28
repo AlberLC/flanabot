@@ -232,7 +232,7 @@ class BtcOffersBot(MultiBot, ABC):
             word
             for word in await self.filter_mention_ids(message.text, message, delete_names=True)
             if not flanautils.cartesian_product_string_matching(
-                word,
+                word.lower(),
                 (
                     *multibot_constants.KEYWORDS['user'],
                     *multibot_constants.KEYWORDS['block'],

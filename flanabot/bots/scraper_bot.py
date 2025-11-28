@@ -365,7 +365,7 @@ class ScraperBot(MultiBot, ABC):
                          and
                          not flanautils.find_urls(word)
                          and
-                         not flanautils.cartesian_product_string_matching(word, keywords, multibot_constants.PARSER_MIN_SCORE_DEFAULT)
+                         not flanautils.cartesian_product_string_matching(word.lower(), keywords, multibot_constants.PARSER_MIN_SCORE_DEFAULT)
                          and
                          flanautils.remove_symbols(word).lower() not in (str(self.id), self.name.lower())
                      )]
