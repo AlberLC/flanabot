@@ -3,6 +3,7 @@ from __future__ import annotations  # todo0 remove when it's by default
 __all__ = ['BtcOffersBot']
 
 import asyncio
+import datetime
 import functools
 import json
 import os
@@ -16,6 +17,7 @@ from multibot import MultiBot, constants as multibot_constants
 
 from flanabot import constants
 from flanabot.models import Chat, Message
+from models.offers_data import OffersData
 
 
 # ---------------------------------------------------- #
@@ -161,10 +163,10 @@ class BtcOffersBot(MultiBot, ABC):
 
         await self.send(text, chat)
 
-    async def _send_offers(self, offers: list[dict], chat: Chat, notifications_disabled: bool = False) -> None:
+    async def _send_offers(self, offers_data: OffersData, chat: Chat, notifications_disabled: bool = False) -> None:
         offers_parts = []
 
-        for i, offer in enumerate(offers, start=1):
+        for i, offer in enumerate(offers_data.offers, start=1):
             offer_parts = [
                 f'<b>{i}.</b>',
                 f"<b>Plataforma:</b> <code>{offer['exchange']}</code>",
@@ -196,7 +198,21 @@ class BtcOffersBot(MultiBot, ABC):
 
             offers_parts.append(offer_parts)
 
-        await self.send('<b>💰💰💰 OFERTAS BTC 💰💰💰</b>', chat)
+        elapsed_time = datetime.datetime.now(datetime.UTC) - offers_data.updated_at
+        elapsed_seconds = elapsed_time.total_seconds()
+        elapsed_minutes = elapsed_seconds / 60
+        elapsed_hours = elapsed_minutes / 60
+
+        if elapsed_time.days > 0:
+            elapsed_time_description = f'{elapsed_time.days} d'
+        elif (elapsed_hours := int(elapsed_hours)) > 0:
+            elapsed_time_description = f'{elapsed_hours} h'
+        elif (elapsed_minutes := int(elapsed_minutes)) > 0:
+            elapsed_time_description = f'{elapsed_minutes} m'
+        else:
+            elapsed_time_description = f'{int(elapsed_seconds)} s'
+
+        await self.send(f'<b>💰💰💰 OFERTAS BTC 💰💰💰</b> · hace {elapsed_time_description}', chat)
 
         for offer_parts in offers_parts:
             await self.send('\n'.join(offer_parts), chat)
@@ -222,7 +238,8 @@ class BtcOffersBot(MultiBot, ABC):
             chat.pull_from_database(overwrite_fields=('btc_offers',))
             chat.btc_offers['query'] = {}
             chat.save()
-            await self._send_offers(data['offers'], chat, notifications_disabled=True)
+
+            await self._send_offers(OffersData.from_dict(data['offers_data']), chat, notifications_disabled=True)
 
     # ---------------------------------------------- #
     #                    HANDLERS                    #
@@ -263,13 +280,13 @@ class BtcOffersBot(MultiBot, ABC):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f'http://{self._api_endpoint}', params=query) as response:
-                    offers = await response.json()
+                    offers_data = await response.json()
         except aiohttp.ClientConnectorError:
             await self.send_error('❌🌐 El servidor de ofertas BTC está desconectado.', bot_state_message, edit=True)
             return
 
-        if offers:
-            await self._send_offers(offers, message.chat)
+        if offers_data:
+            await self._send_offers(OffersData.from_dict(offers_data), message.chat)
             await self.delete_message(bot_state_message)
         else:
             await self.edit('No hay ofertas BTC actualmente que cumplan esa condición.', bot_state_message)

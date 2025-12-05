@@ -123,7 +123,7 @@ class SteamBot(MultiBot, ABC):
         steam_regions: list[SteamRegion]
     ) -> list[SteamRegion]:
         async with session.get(
-            constants.STEAM_EXCHANGERATE_API_ENDPOINT.format(api_key=os.environ['EXCHANGERATE_API_KEY'])
+            constants.STEAM_EXCHANGERATE_API_ENDPOINT_TEMPLATE.format(api_key=os.environ['EXCHANGERATE_API_KEY'])
         ) as response:
             exchange_data = await response.json()
 
@@ -182,7 +182,7 @@ class SteamBot(MultiBot, ABC):
                     steam_region.save()
                     steam_regions.append(steam_region)
 
-                await asyncio.sleep(2)
+            await asyncio.sleep(2)
 
         return steam_regions
 
@@ -207,7 +207,7 @@ class SteamBot(MultiBot, ABC):
                     [
                         RegisteredCallback(
                             ...,
-                            keywords=(multibot_constants.KEYWORDS['update'], constants.KEYWORDS['region'])
+                            keywords=(*multibot_constants.KEYWORDS['update'], *constants.KEYWORDS['region'])
                         )
                     ]
                 )
