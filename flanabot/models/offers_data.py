@@ -13,4 +13,9 @@ class OffersData:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
-        return cls(offers=data['offers'], updated_at=datetime.datetime.fromisoformat(data['updated_at']))
+        if raw_updated_at := data['updated_at']:
+            updated_at = datetime.datetime.fromisoformat(raw_updated_at)
+        else:
+            updated_at = None
+
+        return cls(offers=data['offers'], updated_at=updated_at)

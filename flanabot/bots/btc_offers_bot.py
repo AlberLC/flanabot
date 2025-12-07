@@ -198,21 +198,26 @@ class BtcOffersBot(MultiBot, ABC):
 
             offers_parts.append(offer_parts)
 
-        elapsed_time = datetime.datetime.now(datetime.UTC) - offers_data.updated_at
-        elapsed_seconds = elapsed_time.total_seconds()
-        elapsed_minutes = elapsed_seconds / 60
-        elapsed_hours = elapsed_minutes / 60
+        if offers_data.updated_at:
+            elapsed_time = datetime.datetime.now(datetime.UTC) - offers_data.updated_at
+            elapsed_seconds = int(elapsed_time.total_seconds())
+            elapsed_minutes = int(elapsed_seconds / 60)
+            elapsed_hours = int(elapsed_minutes / 60)
 
-        if elapsed_time.days > 0:
-            elapsed_time_description = f'{elapsed_time.days} d'
-        elif (elapsed_hours := int(elapsed_hours)) > 0:
-            elapsed_time_description = f'{elapsed_hours} h'
-        elif (elapsed_minutes := int(elapsed_minutes)) > 0:
-            elapsed_time_description = f'{elapsed_minutes} m'
+            if elapsed_time.days > 0:
+                time_unit_description = f'{elapsed_time.days} d'
+            elif elapsed_hours > 0:
+                time_unit_description = f'{elapsed_hours} h'
+            elif elapsed_minutes > 0:
+                time_unit_description = f'{elapsed_minutes} m'
+            else:
+                time_unit_description = f'{elapsed_seconds} s'
+
+            elapsed_time_description = f'· hace {time_unit_description}'
         else:
-            elapsed_time_description = f'{int(elapsed_seconds)} s'
+            elapsed_time_description = ''
 
-        await self.send(f'<b>💰💰💰 OFERTAS BTC 💰💰💰</b> · hace {elapsed_time_description}', chat)
+        await self.send(f'<b>💰💰💰 OFERTAS BTC 💰💰💰</b>{elapsed_time_description}', chat)
 
         for offer_parts in offers_parts:
             await self.send('\n'.join(offer_parts), chat)
@@ -245,6 +250,9 @@ class BtcOffersBot(MultiBot, ABC):
     #                    HANDLERS                    #
     # ---------------------------------------------- #
     async def _on_block_authors(self, message: Message, delete: bool = False) -> None:
+        if message.chat.is_group and not self.is_bot_mentioned(message):
+            return
+
         authors = {
             word
             for word in await self.filter_mention_ids(message.text, message, delete_names=True)
@@ -280,16 +288,16 @@ class BtcOffersBot(MultiBot, ABC):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f'http://{self._api_endpoint}', params=query) as response:
-                    offers_data = await response.json()
+                    offers_data = OffersData.from_dict(await response.json())
         except aiohttp.ClientConnectorError:
             await self.send_error('❌🌐 El servidor de ofertas BTC está desconectado.', bot_state_message, edit=True)
             return
 
         if offers_data:
-            await self._send_offers(OffersData.from_dict(offers_data), message.chat)
+            await self._send_offers(offers_data, message.chat)
             await self.delete_message(bot_state_message)
         else:
-            await self.edit('No hay ofertas BTC actualmente que cumplan esa condición.', bot_state_message)
+            await self.edit('ℹ️🔍 No hay ofertas BTC actualmente que cumplan esa condición.', bot_state_message)
 
     @preprocess_btc_offers
     async def _on_notify_btc_offers(self, message: Message, query: dict[str, float]) -> None:
