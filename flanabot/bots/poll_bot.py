@@ -28,11 +28,10 @@ class PollBot(MultiBot, ABC):
         self.register(self._on_choose, keywords=multibot_constants.KEYWORDS['random'], priority=2)
         self.register(self._on_choose, keywords=(constants.KEYWORDS['choose'], multibot_constants.KEYWORDS['random']), priority=2)
 
-        self.register(self._on_delete_votes, extra_kwargs={'all_': True}, keywords=(multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['all'], constants.KEYWORDS['vote']))
-        self.register(self._on_delete_votes, extra_kwargs={'all_': True}, keywords=(multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['all'], constants.KEYWORDS['vote']))
-
         self.register(self._on_delete_votes, keywords=(multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['vote']))
         self.register(self._on_delete_votes, keywords=(multibot_constants.KEYWORDS['delete'], constants.KEYWORDS['vote']))
+        self.register(self._on_delete_votes, extra_kwargs={'all_': True}, keywords=(multibot_constants.KEYWORDS['deactivate'], multibot_constants.KEYWORDS['all'], constants.KEYWORDS['vote']))
+        self.register(self._on_delete_votes, extra_kwargs={'all_': True}, keywords=(multibot_constants.KEYWORDS['delete'], multibot_constants.KEYWORDS['all'], constants.KEYWORDS['vote']))
 
         self.register(self._on_dice, keywords=constants.KEYWORDS['dice'])
 
