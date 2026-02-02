@@ -17,6 +17,7 @@ from multibot import MultiBot, constants as multibot_constants
 
 from flanabot import constants
 from flanabot.models import Chat, Message
+from models.enums import Exchange, PaymentMethod
 from models.offers_data import OffersData
 
 
@@ -78,14 +79,22 @@ def preprocess_btc_offers(
             await self.send_error('❌ Por favor, introduce un número válido.', message)
             return
 
+        query = {}
+
+        if payment_methods := self._find_payment_methods(message.text):
+            query['payment_methods'] = [payment_method.value for payment_method in payment_methods]
+
+        if exchanges := self._find_exchanges(message.text):
+            query['exchanges'] = [exchange.value for exchange in exchanges]
+
         if eur_mode:
-            query = {'max_price_eur': parsed_number}
+            query['max_price_eur'] = parsed_number
         elif usd_mode:
-            query = {'max_price_usd': parsed_number}
+            query['max_price_usd'] = parsed_number
         elif premium_mode:
-            query = {'max_premium': parsed_number}
+            query['max_premium'] = parsed_number
         else:
-            query = {'limit': parsed_number if parsed_number else constants.BTC_OFFERS_DEFAULT_LIMIT}
+            query['limit'] = parsed_number if parsed_number else constants.BTC_OFFERS_DEFAULT_LIMIT
 
         query['ignore_authors'] = message.chat.btc_offers['blocked_authors']
 
@@ -142,6 +151,57 @@ class BtcOffersBot(MultiBot, ABC):
 
     def _find_chats_to_notify(self) -> list[Chat]:
         return self.Chat.find({'platform': self.platform.value, 'btc_offers.query': {'$exists': True, '$ne': {}}})
+
+    @staticmethod
+    def _find_exchanges(text: str) -> list[Exchange]:
+        exchanges = []
+        normalized_text = flanautils.remove_accents(text.lower())
+
+        for exchange, exchange_names in constants.KEYWORDS['btc_offers_exchanges'].items():
+            if exchange in exchanges:
+                continue
+
+            for exchange_name in exchange_names:
+                if flanautils.cartesian_product_string_matching(
+                    normalized_text,
+                    exchange_name,
+                    multibot_constants.PARSER_MIN_SCORE_DEFAULT
+                ):
+                    exchanges.append(exchange)
+                    break
+
+        return exchanges
+
+    @staticmethod
+    def _find_payment_methods(text: str) -> list[PaymentMethod]:
+        payment_methods = []
+        normalized_text = flanautils.remove_accents(text.lower())
+
+        for payment_method, payment_method_names in constants.KEYWORDS['btc_offers_payment_methods'].items():
+            if payment_method in payment_methods:
+                continue
+
+            for payment_method_name in payment_method_names:
+                payment_method_name_words = payment_method_name.split()
+
+                if (
+                    (
+                        matches := flanautils.cartesian_product_string_matching(
+                            normalized_text,
+                            payment_method_name_words,
+                            multibot_constants.PARSER_MIN_SCORE_DEFAULT
+                        )
+                    )
+                    and
+                    len(matches) == len(payment_method_name_words)
+                ):
+                    for payment_method_name_word in payment_method_name_words:
+                        normalized_text = normalized_text.replace(payment_method_name_word, '', count=1)
+
+                    payment_methods.append(payment_method)
+                    break
+
+        return payment_methods
 
     def _is_websocket_connected(self) -> bool:
         return self._websocket and self._websocket.state in {websockets.State.CONNECTING, websockets.State.OPEN}
@@ -282,7 +342,7 @@ class BtcOffersBot(MultiBot, ABC):
         await self._send_blocked_authors(chat)
 
     @preprocess_btc_offers
-    async def _on_btc_offers(self, message: Message, query: dict[str, float]) -> None:
+    async def _on_btc_offers(self, message: Message, query: dict[str, float | list[str]]) -> None:
         bot_state_message = await self.send('Obteniendo ofertas BTC...', message)
 
         try:
@@ -300,20 +360,33 @@ class BtcOffersBot(MultiBot, ABC):
             await self.edit('ℹ️🔍 No hay ofertas BTC actualmente que cumplan esa condición.', bot_state_message)
 
     @preprocess_btc_offers
-    async def _on_notify_btc_offers(self, message: Message, query: dict[str, float]) -> None:
+    async def _on_notify_btc_offers(self, message: Message, query: dict[str, float | list[str]]) -> None:
+        options_parts = []
+
+        if 'exchanges' in query:
+            options_parts.append(f'de {flanautils.join_last_separator(query['exchanges'], ', ', ' y ')}')
+
+        if 'payment_methods' in query:
+            options_parts.append(f'con {flanautils.join_last_separator(query['payment_methods'], ', ', ' y ')}')
+
         match query:
             case {'max_price_eur': max_price_eur}:
-                response_text = f'✅ ¡Perfecto! Te avisaré cuando existan ofertas por {max_price_eur:.2f} € o menos.'
+                options_parts.append(f'por {max_price_eur:.2f} € o menos')
             case {'max_price_usd': max_price_usd}:
-                response_text = f'✅ ¡Perfecto! Te avisaré cuando existan ofertas por {max_price_usd:.2f} $ o menos.'
+                options_parts.append(f'por {max_price_usd:.2f} $ o menos')
             case {'max_premium': max_premium}:
                 rounded_max_premium = round(max_premium, 2)
-                response_text = f"✅ ¡Perfecto! Te avisaré cuando existan ofertas con una prima del {rounded_max_premium if rounded_max_premium else '0.00'} % o menor."
+                options_parts.append(f'con una prima del {rounded_max_premium if rounded_max_premium else '0.00'} % o menor')
             case _:
                 await self.send_error('❌ Especifica una cantidad para poder avisarte.', message)
                 return
 
-        await self.send(response_text, message)
+        if len(options_parts) == 1:
+            options_text = f' {options_parts[0]}.'
+        else:
+            options_text = f'\n- {'\n- '.join(options_parts)}'
+
+        await self.send(f'✅ ¡Perfecto! Te avisaré cuando existan ofertas{options_text}', message)
         await self.start_btc_offers_notification(message.chat, query)
 
     async def _on_ready(self) -> None:
@@ -344,7 +417,7 @@ class BtcOffersBot(MultiBot, ABC):
             self._notification_task.cancel()
             await asyncio.sleep(0)
 
-    async def start_btc_offers_notification(self, chat: Chat, query: dict[str, float]) -> None:
+    async def start_btc_offers_notification(self, chat: Chat, query: dict[str, float | list[str]]) -> None:
         async with self._websocket_lock:
             if not self._is_websocket_connected():
                 while True:

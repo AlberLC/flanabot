@@ -3,6 +3,8 @@ from collections import defaultdict
 
 from multibot import Platform
 
+from models.enums import Exchange, PaymentMethod
+
 AUDIT_LOG_AGE = datetime.timedelta(hours=1)
 AUDIT_LOG_LIMIT = 5
 AUTO_WEATHER_EVERY = datetime.timedelta(hours=6)
@@ -117,6 +119,20 @@ INSULTS = ('._.', 'aha', 'Aléjate de mi.', 'Ante la duda mi dedo corazón te sa
            '¿Tú eres así o te dan apagones cerebrales?', '🖕', '😑', '🙄', '🤔', '🤨')
 
 KEYWORDS = {
+    'btc_offers_exchanges': {
+        Exchange.HODLHODL: ('hodlhodl',),
+        Exchange.LNP2PBOT: ('lnp2pBot',),
+        Exchange.ROBOSATS: ('robosats',)
+    },
+    'btc_offers_payment_methods': {
+        PaymentMethod.CREDIT_CARD: ('credit', 'credito'),
+        PaymentMethod.PAYPAL: ('paypal',),
+        PaymentMethod.REVOLUT: ('revolut',),
+        PaymentMethod.HALCASH: ('cajero', 'efectivo', 'halcash'),
+        PaymentMethod.BIZUM: ('bizum',),
+        PaymentMethod.SEPA_INSTANT: ('instant sepa', 'sepa instant'),
+        PaymentMethod.SEPA: ('sepa',)  # check SEPA after Instant SEPA
+    },
     'choose': ('choose', 'elige', 'escoge'),
     'connect_4': (('conecta', 'connect', 'ralla', 'raya'), ('4', 'cuatro', 'four')),
     'dice': ('dado', 'dice'),

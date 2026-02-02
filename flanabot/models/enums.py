@@ -17,3 +17,19 @@ class ButtonsGroup(FlanaEnum):
     ROLES = auto()
     USERS = auto()
     WEATHER = auto()
+
+
+class Exchange(FlanaEnum):
+    HODLHODL = 'HodlHodl'
+    LNP2PBOT = 'lnp2pBot'
+    ROBOSATS = 'RoboSats'
+
+
+class PaymentMethod(FlanaEnum):
+    CREDIT_CARD = 'Credit card'
+    BIZUM = 'Bizum'
+    HALCASH = 'HalCash'
+    PAYPAL = 'PayPal'
+    REVOLUT = 'Revolut'
+    SEPA = 'SEPA'
+    SEPA_INSTANT = 'Instant SEPA'
