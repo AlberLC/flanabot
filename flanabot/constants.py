@@ -130,7 +130,8 @@ KEYWORDS = {
         PaymentMethod.REVOLUT: ('revolut',),
         PaymentMethod.HALCASH: ('cajero', 'efectivo', 'halcash'),
         PaymentMethod.BIZUM: ('bizum',),
-        PaymentMethod.SEPA_INSTANT: ('instant sepa', 'sepa instant'),
+        PaymentMethod.SEPA_INSTANT: ('instant sepa', 'instantanea sepa', 'instantaneo sepa', 'sepa instant',
+                                     'sepa instantanea', 'sepa instantaneo'),
         PaymentMethod.SEPA: ('sepa',)  # check SEPA after Instant SEPA
     },
     'choose': ('choose', 'elige', 'escoge'),
