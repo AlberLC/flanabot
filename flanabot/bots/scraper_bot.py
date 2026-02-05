@@ -38,11 +38,7 @@ class ScraperBot(MultiBot, ABC):
 
     @staticmethod
     async def _find_ids(text: str) -> tuple[OrderedSet[str], ...]:
-        return (
-            reddit.find_ids(text),
-            await tiktok.find_users_and_ids(text),
-            tiktok.find_download_urls(text)
-        )
+        return await reddit.find_ids(text), await tiktok.find_users_and_ids(text), tiktok.find_download_urls(text)
 
     @staticmethod
     def _get_keywords(delete=True, force=False, full=False, audio_only=False) -> list[str]:
