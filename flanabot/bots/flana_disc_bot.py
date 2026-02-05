@@ -158,7 +158,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         async with aiohttp.ClientSession() as session:
             form = aiohttp.FormData()
 
-            file_name = urllib.parse.unquote(media.title or Path(media.url).name or uuid.uuid4().hex)
+            file_name = urllib.parse.unquote(media.title or media.url and Path(media.url).name or uuid.uuid4().hex)
 
             if media.extension and not file_name.endswith(media.extension):
                 file_name = f'{file_name}.{media.extension}'
