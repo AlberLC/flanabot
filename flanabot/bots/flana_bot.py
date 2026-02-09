@@ -106,6 +106,16 @@ class FlanaBot(
     async def _changeable_roles(self, group_: int | str | Chat | Message) -> list[Role]:
         return []
 
+    async def _get_config_names(self, message: Message) -> list[str]:
+        config_names = ['auto_insult', 'auto_scraping', 'scraping_delete_original']
+
+        if message.chat.is_private:
+            config_names.append('ubereats')
+        elif self.is_bot_mentioned(message):
+            config_names.extend(('auto_weather_chart', 'check_flood', 'punish'))
+
+        return sorted(config_names)
+
     @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
     async def _get_message(
         self,
@@ -179,26 +189,17 @@ class FlanaBot(
             await self.send_bye(message)
 
     async def _on_config(self, message: Message):
-        if message.chat.is_private:
-            config_names = ('auto_insult', 'auto_scraping', 'scraping_delete_original', 'ubereats')
-        elif self.is_bot_mentioned(message):
-            config_names = (
-                'auto_insult',
-                'auto_scraping',
-                'auto_weather_chart',
-                'check_flood',
-                'punish',
-                'scraping_delete_original'
-            )
-        else:
+        if message.chat.is_group and not self.is_bot_mentioned(message):
             return
 
         buttons_texts = []
+
         for k, v in message.chat.config.items():
-            if k not in config_names:
+            if k not in await self._get_config_names(message):
                 continue
             if k == 'ubereats':
                 k = f"ubereats (cada {flanautils.TimeUnits(seconds=message.chat.ubereats['seconds']).to_words()})"
+
             buttons_texts.append((f"{'✔' if v else '❌'} {k}", v))
 
         await self.send('<b>Estos son los ajustes del chat:</b>\n\n', flanautils.chunks(buttons_texts, 3), message, buttons_key=ButtonsGroup.CONFIG)

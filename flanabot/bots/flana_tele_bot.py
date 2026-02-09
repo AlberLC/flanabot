@@ -44,6 +44,14 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
     # -------------------------------------------------------- #
     # ------------------- PROTECTED METHODS ------------------ #
     # -------------------------------------------------------- #
+    async def _get_config_names(self, message: Message) -> list[str]:
+        config_names = await super()._get_config_names(message)
+
+        if message.chat == await self.owner_chat:
+            config_names.append('client_connection_notifications')
+
+        return sorted(config_names)
+
     @user_client
     async def _get_contacts_ids(self) -> list[int]:
         async with use_user_client(self):
