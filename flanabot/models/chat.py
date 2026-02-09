@@ -20,6 +20,7 @@ class Chat(MultiBotChat):
             'auto_scraping': True,
             'auto_weather_chart': False,
             'check_flood': False,
+            'client_connection_notifications': True,
             'punish': False,
             'scraping_delete_original': True,
             'ubereats': False

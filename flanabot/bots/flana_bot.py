@@ -2,6 +2,7 @@ __all__ = ['FlanaBot']
 
 import asyncio
 import datetime
+import os
 import random
 import time
 from abc import ABC
@@ -46,8 +47,9 @@ class FlanaBot(
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tunnel_chat: Chat | None = None
-        self.help_calls: dict[int, datetime.timedelta] = {}
+        self._flanaserver_api_base_url = (
+            f"http://{os.environ['FLANASERVER_API_HOST']}:{os.environ['FLANASERVER_API_PORT']}"
+        )
         self._help_calls: dict[int, datetime.timedelta] = {}
         self._tunnel_chat: Chat | None = None
 

@@ -29,7 +29,6 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     def __init__(self):
         super().__init__(os.environ['DISCORD_BOT_TOKEN'])
         self.heating_contexts: dict[int, HeatingContext] = defaultdict(HeatingContext)
-        self._flanaserver_api_base_url = f"http://{os.environ['FLANASERVER_API_HOST']}:{os.environ['FLANASERVER_API_PORT']}"
 
     # -------------------------------------------------------- #
     # ------------------- PROTECTED METHODS ------------------ #
