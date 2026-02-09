@@ -160,6 +160,13 @@ class FlanaBot(
             except Exception as e:
                 await super()._manage_exceptions(e, context, reraise, print_traceback)
 
+    @property
+    async def owner_chat(self) -> Chat:
+        self._owner_chat = await super().owner_chat
+        self._owner_chat.pull_from_database(overwrite_fields=('_id', 'btc_offers', 'config', 'date', 'ubereats'))
+
+        return self._owner_chat
+
     async def _role_state_options(self, group_: int | str | Chat | Message, activated_user_role_names: list[str]) -> list[str]:
         options = []
         for role in await self._changeable_roles(group_):
