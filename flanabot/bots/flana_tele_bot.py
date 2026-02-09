@@ -59,6 +59,16 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
 
         return [contact.user_id for contact in contacts_data.contacts]
 
+    async def _handle_config_change(self, config_name: str, message: Message) -> str:
+        if config_name == 'client_connection_notifications':
+            if message.chat.config[config_name]:
+                await self.start_client_connections_checker(message.chat)
+            else:
+                await self.stop_client_connections_checker(message.chat)
+
+            return config_name
+        else:
+            return await super()._handle_config_change(config_name, message)
     async def _search_medias(
         self,
         message: Message,

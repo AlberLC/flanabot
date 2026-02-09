@@ -124,6 +124,17 @@ class FlanaBot(
     ) -> Message:
         return await super()._get_message(event, pull_overwrite_fields)
 
+    async def _handle_config_change(self, config_name: str, message: Message) -> str:
+        if config_name == 'ubereats':
+            if message.chat.config[config_name]:
+                await self.start_ubereats(message.chat)
+            else:
+                await self.stop_ubereats(message.chat)
+
+            return f"ubereats (cada {flanautils.TimeUnits(seconds=message.chat.ubereats['seconds']).to_words()})"
+        else:
+            return config_name
+
     @return_if_first_empty(exclude_self_types='FlanaBot', globals_=globals())
     async def _manage_exceptions(
         self,
@@ -213,14 +224,8 @@ class FlanaBot(
 
         config_name = message.buttons_info.pressed_text.split()[1]
         message.chat.config[config_name] = not message.chat.config[config_name]
-        if config_name == 'ubereats':
-            if message.chat.config[config_name]:
-                await self.start_ubereats(message.chat)
-            else:
-                await self.stop_ubereats(message.chat)
-            button_text = f"ubereats (cada {flanautils.TimeUnits(seconds=message.chat.ubereats['seconds']).to_words()})"
-        else:
-            button_text = config_name
+
+        button_text = await self._handle_config_change(config_name, message)
         message.buttons_info.pressed_button.text = f"{'✔' if message.chat.config[config_name] else '❌'} {button_text}"
 
         await self.edit(message.buttons_info.buttons, message)
