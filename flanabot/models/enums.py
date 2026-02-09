@@ -1,4 +1,4 @@
-__all__ = ['Action', 'ButtonsGroup']
+__all__ = ['Action', 'ButtonsGroup', 'Exchange', 'PaymentMethod']
 
 from enum import auto
 

@@ -29,7 +29,18 @@ from flanabot.models import Action, BotAction, ButtonsGroup, Chat, Message
 # ----------------------------------------------------------------------------------------------------- #
 # --------------------------------------------- FLANA_BOT --------------------------------------------- #
 # ----------------------------------------------------------------------------------------------------- #
-class FlanaBot(Connect4Bot, BtcOffersBot, PenaltyBot, PollBot, ScraperBot, SteamBot, UberEatsBot, WeatherBot, MultiBot, ABC):
+class FlanaBot(
+    BtcOffersBot,
+    Connect4Bot,
+    PenaltyBot,
+    PollBot,
+    ScraperBot,
+    SteamBot,
+    UberEatsBot,
+    WeatherBot,
+    MultiBot,
+    ABC
+):
     Chat = Chat
     Message = Message
 
@@ -37,6 +48,8 @@ class FlanaBot(Connect4Bot, BtcOffersBot, PenaltyBot, PollBot, ScraperBot, Steam
         super().__init__(*args, **kwargs)
         self.tunnel_chat: Chat | None = None
         self.help_calls: dict[int, datetime.timedelta] = {}
+        self._help_calls: dict[int, datetime.timedelta] = {}
+        self._tunnel_chat: Chat | None = None
 
     # -------------------------------------------------------- #
     # ------------------- PROTECTED METHODS ------------------ #
@@ -155,7 +168,7 @@ class FlanaBot(Connect4Bot, BtcOffersBot, PenaltyBot, PollBot, ScraperBot, Steam
 
         chat_id_or_name = flanautils.cast_number(chat_id_or_name, raise_exception=False)
         if (chat := await self.get_chat(chat_id_or_name)) or (chat := await self.get_chat(await self.get_user(chat_id_or_name))):
-            self.tunnel_chat = chat
+            self._tunnel_chat = chat
             await self.send(f"Túnel abierto con <b>{chat.name}{f' ({chat.group_name})' if chat.group_name else ''}</b>.", message)
         else:
             await self.send_error('Chat inválido.', message)
@@ -306,7 +319,7 @@ class FlanaBot(Connect4Bot, BtcOffersBot, PenaltyBot, PollBot, ScraperBot, Steam
     @owner
     @group(False)
     async def _on_deactivate_tunnel(self, message: Message):
-        self.tunnel_chat = None
+        self._tunnel_chat = None
         await self.send('Túnel cerrado.', message)
 
     @inline(False)
@@ -348,13 +361,13 @@ class FlanaBot(Connect4Bot, BtcOffersBot, PenaltyBot, PollBot, ScraperBot, Steam
             and
             not self.is_bot_mentioned(message)
             or
-            self.help_calls.get(message.chat.id)
+            self._help_calls.get(message.chat.id)
             and
-            now - self.help_calls[message.chat.id] <= datetime.timedelta(minutes=1)
+            now - self._help_calls[message.chat.id] <= datetime.timedelta(minutes=1)
         ):
             return
 
-        self.help_calls[message.chat.id] = now
+        self._help_calls[message.chat.id] = now
 
         await self.send(
             '<b>Necesita ayuda:</b>\n'
@@ -419,7 +432,7 @@ class FlanaBot(Connect4Bot, BtcOffersBot, PenaltyBot, PollBot, ScraperBot, Steam
                 self._on_reset,
                 self._on_song_info
             }
-        elif self.tunnel_chat and message.chat == await self.owner_chat:
+        elif self._tunnel_chat and message.chat == await self.owner_chat:
             whitelist_callbacks = (whitelist_callbacks or set()) | {self._on_deactivate_tunnel, self._on_tunnel_message}
 
         await super()._on_new_message_raw(message, whitelist_callbacks, blacklist_callbacks)
@@ -505,7 +518,7 @@ class FlanaBot(Connect4Bot, BtcOffersBot, PenaltyBot, PollBot, ScraperBot, Steam
 
     async def _on_tunnel_message(self, message: Message):
         if (
-            not self.tunnel_chat
+            not self._tunnel_chat
             or
             self._parse_callbacks(
                 message.text,
@@ -517,11 +530,11 @@ class FlanaBot(Connect4Bot, BtcOffersBot, PenaltyBot, PollBot, ScraperBot, Steam
         ):
             return
 
-        if message.chat == self.tunnel_chat:
+        if message.chat == self._tunnel_chat:
             await self.send(f"<b>{message.author.name.split('#')[0]}:</b> {message.text}", await self.owner_chat)
         elif message.chat == await self.owner_chat:
             if message.text:
-                await self.send(message.text, self.tunnel_chat)
+                await self.send(message.text, self._tunnel_chat)
             else:
                 await self.send('No puedo enviar un mensaje sin texto.', message)
 

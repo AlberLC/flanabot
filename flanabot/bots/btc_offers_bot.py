@@ -107,10 +107,12 @@ def preprocess_btc_offers(
 class BtcOffersBot(MultiBot, ABC):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._websocket: websockets.ClientConnection | None = None
-        self._notification_task: asyncio.Task[None] | None = None
-        self._api_endpoint = f"{os.environ['BTC_OFFERS_API_HOST']}:{os.environ['BTC_OFFERS_API_PORT']}/offers"
-        self._websocket_lock = asyncio.Lock()
+        self._btc_offers_api_endpoint = (
+            f'{os.environ['BTC_OFFERS_API_HOST']}:{os.environ['BTC_OFFERS_API_PORT']}/offers'
+        )
+        self._btc_offers_lock = asyncio.Lock()
+        self._btc_offers_notifications_task: asyncio.Task[None] | None = None
+        self._btc_offers_websocket: websockets.ClientConnection | None = None
 
     # -------------------------------------------------------- #
     # ------------------- PROTECTED METHODS ------------------ #
@@ -202,7 +204,11 @@ class BtcOffersBot(MultiBot, ABC):
         return payment_methods
 
     def _is_websocket_connected(self) -> bool:
-        return self._websocket and self._websocket.state in {websockets.State.CONNECTING, websockets.State.OPEN}
+        return (
+            self._btc_offers_websocket
+            and
+            self._btc_offers_websocket.state in {websockets.State.CONNECTING, websockets.State.OPEN}
+        )
 
     async def _send_blocked_authors(self, chat: Chat) -> None:
         if chat.btc_offers['blocked_authors']:
@@ -291,7 +297,7 @@ class BtcOffersBot(MultiBot, ABC):
         while True:
             while True:
                 try:
-                    data = json.loads(await self._websocket.recv())
+                    data = json.loads(await self._btc_offers_websocket.recv())
                 except websockets.ConnectionClosed:
                     await self.start_all_btc_offers_notifications()
                 else:
@@ -345,7 +351,7 @@ class BtcOffersBot(MultiBot, ABC):
 
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(f'http://{self._api_endpoint}', params=query) as response:
+                async with session.get(f'http://{self._btc_offers_api_endpoint}', params=query) as response:
                     offers_data = OffersData.from_dict(await response.json())
         except aiohttp.ClientConnectorError:
             await self.send_error('❌🌐 El servidor de ofertas BTC está desconectado.', bot_state_message, edit=True)
@@ -374,7 +380,8 @@ class BtcOffersBot(MultiBot, ABC):
                 options_parts.append(f'por {max_price_usd:.2f} $ o menos')
             case {'max_premium': max_premium}:
                 rounded_max_premium = round(max_premium, 2)
-                options_parts.append(f'con una prima del {rounded_max_premium if rounded_max_premium else '0.00'} % o menor')
+                formatted_premium = rounded_max_premium if rounded_max_premium else '0.00'
+                options_parts.append(f'con una prima del {formatted_premium} % o menor')
             case _:
                 await self.send_error('❌ Especifica una cantidad para poder avisarte.', message)
                 return
@@ -411,27 +418,29 @@ class BtcOffersBot(MultiBot, ABC):
         if chats := self._find_chats_to_notify():
             for chat in chats:
                 await self.start_btc_offers_notification(chat, chat.btc_offers['query'])
-        elif self._notification_task and not self._notification_task.done():
-            self._notification_task.cancel()
+        elif self._btc_offers_notifications_task and not self._btc_offers_notifications_task.done():
+            self._btc_offers_notifications_task.cancel()
             await asyncio.sleep(0)
 
     async def start_btc_offers_notification(self, chat: Chat, query: dict[str, float | list[str]]) -> None:
-        async with self._websocket_lock:
+        async with self._btc_offers_lock:
             if not self._is_websocket_connected():
                 while True:
                     try:
-                        self._websocket = await websockets.connect(f'ws://{self._api_endpoint}')
+                        self._btc_offers_websocket = await websockets.connect(
+                            f'ws://{self._btc_offers_api_endpoint}/ws/notifications'
+                        )
                     except ConnectionRefusedError:
                         await asyncio.sleep(constants.BTC_OFFERS_WEBSOCKET_RETRY_DELAY_SECONDS)
                     else:
                         break
 
-        if not self._notification_task or self._notification_task.done():
-            self._notification_task = asyncio.create_task(self._wait_btc_offers_notification())
+        if not self._btc_offers_notifications_task or self._btc_offers_notifications_task.done():
+            self._btc_offers_notifications_task = asyncio.create_task(self._wait_btc_offers_notification())
 
         chat.btc_offers['query'] = query
         chat.save()
-        await self._websocket.send(json.dumps({'action': 'start', 'chat_id': chat.id, 'query': query}))
+        await self._btc_offers_websocket.send(json.dumps({'action': 'start', 'chat_id': chat.id, 'query': query}))
 
     async def stop_all_btc_offers_notification(self) -> None:
         for chat in self._find_chats_to_notify():
@@ -439,7 +448,7 @@ class BtcOffersBot(MultiBot, ABC):
 
     async def stop_btc_offers_notification(self, chat: Chat) -> None:
         if self._is_websocket_connected():
-            await self._websocket.send(json.dumps({'action': 'stop', 'chat_id': chat.id}))
+            await self._btc_offers_websocket.send(json.dumps({'action': 'stop', 'chat_id': chat.id}))
 
         chat.btc_offers['query'] = {}
         chat.save()
