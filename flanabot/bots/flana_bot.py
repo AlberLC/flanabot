@@ -384,6 +384,7 @@ class FlanaBot(
 
         await self.send(
             '<b>Necesita ayuda:</b>\n'
+            '\n'
             '<b>User:</b>\n'
             f'    <b>id:</b> <code>{message.author.id}</code>\n'
             f'    <b>name:</b> <code>{message.author.name}</code>\n'
