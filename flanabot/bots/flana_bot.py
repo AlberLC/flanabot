@@ -114,7 +114,7 @@ class FlanaBot(
         if message.chat.is_private:
             config_names.append('ubereats')
         elif self.is_bot_mentioned(message):
-            config_names.extend(('auto_weather_chart', 'check_flood', 'punish'))
+            config_names.extend(('auto_weather_chart', 'check_flood', 'check_spam', 'punish'))
 
         return sorted(config_names)
 

@@ -166,10 +166,15 @@ class PenaltyBot(MultiBot, ABC):
         blacklist_callbacks: set[RegisteredCallback] | None = None
     ):
         await super()._on_new_message_raw(message, whitelist_callbacks, blacklist_callbacks)
-        if message.chat.config['check_flood'] and message.chat.config['punish'] and not message.is_inline:
-            async with self.lock:
-                if not await self._check_message_spam(message):
-                    await self._check_message_flood(message)
+        if not message.chat.config['punish'] or message.is_inline:
+            return
+
+        async with self.lock:
+            if message.chat.config['check_spam'] and await self._check_message_spam(message):
+                return
+
+            if message.chat.config['check_flood']:
+                await self._check_message_flood(message)
 
     @bot_mentioned
     @group
@@ -179,7 +184,7 @@ class PenaltyBot(MultiBot, ABC):
             return
 
         for user in await self._find_users_to_punish(message):
-            await self.punish(user, message, flanautils.text_to_time(await self.filter_mention_ids(message.text, message)), message)
+            await self.punish(user, message.chat.group_id, flanautils.text_to_time(await self.filter_mention_ids(message.text, message)), message)
 
     async def _on_ready(self):
         if not self._is_initialized:
