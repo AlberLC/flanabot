@@ -13,7 +13,7 @@ from pathlib import Path
 import aiohttp
 import discord
 import pytz
-from flanautils import Media, MediaType, NotFoundError, OrderedSet
+from flanautils import Media, MediaType, OrderedSet
 from multibot import BadRoleError, DiscordBot, LimitError, Platform, Role, User, admin, bot_mentioned, constants as multibot_constants, group
 
 from flanabot import constants
@@ -116,12 +116,13 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             await set_fire_to('E', depends_on='D', firewall=len(channels_data['D'].channel.members))
 
     async def _punish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
-        user_id = self.get_user_id(user)
+        user = await self.get_user(user, group_)
+
         try:
-            await self.add_role(user_id, group_, 'Castigado')
-            await self.remove_role(user_id, group_, 'Persona')
-        except AttributeError:
-            raise BadRoleError(str(self._punish))
+            await self.add_role(user, group_, 'Castigado')
+            await self.remove_role(user, group_, 'Persona')
+        except BadRoleError:
+            await user.original_object.timeout(multibot_constants.DISCORD_MAX_USER_TIMEOUT)
 
     async def _search_medias(
         self,
@@ -146,12 +147,13 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             pass
 
     async def _unpunish(self, user: int | str | User, group_: int | str | Chat | Message, message: Message = None):
-        user_id = self.get_user_id(user)
+        user = await self.get_user(user, group_)
+
         try:
-            await self.add_role(user_id, group_, 'Persona')
-            await self.remove_role(user_id, group_, 'Castigado')
-        except AttributeError:
-            raise BadRoleError(str(self._unpunish))
+            await self.add_role(user, group_, 'Persona')
+            await self.remove_role(user, group_, 'Castigado')
+        except BadRoleError:
+            await user.original_object.timeout(None)
 
     async def _upload_to_server(self, media: Media) -> str | None:
         form = aiohttp.FormData()
@@ -216,7 +218,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         for role in user.roles:
             try:
                 await self.add_role(user, member.guild.id, role.id)
-            except NotFoundError:
+            except BadRoleError:
                 pass
 
     async def _on_member_remove(self, member: discord.Member):
