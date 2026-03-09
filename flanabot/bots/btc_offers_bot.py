@@ -237,9 +237,6 @@ class BtcOffersBot(MultiBot, ABC):
                 f'<b>Id:</b> <code>{offer['id']}</code>'
             ]
 
-            if offer['author']:
-                offer_parts.append(f"<b>Autor:</b> <code>{offer['author']}</code>")
-
             payment_methods_text = ''.join(
                 f'\n    <code>{payment_method}</code>' for payment_method in offer['payment_methods']
             )
@@ -256,9 +253,19 @@ class BtcOffersBot(MultiBot, ABC):
             )
 
             if offer['description']:
-                offer_parts.append(
-                    f"<b>Descripción:</b>\n<code><code><code>{offer['description']}</code></code></code>"
-                )
+                offer_parts.append(f'<b>Descripción:</b>\n<blockquote>{offer['description']}</blockquote>')
+
+            if offer['author']:
+                offer_parts.append(f'<b>Autor:</b> <code>{offer['author']}</code>')
+
+            if offer['trades'] is not None:
+                offer_parts.append(f'<b>Nº de operaciones:</b> <code>{offer['trades']}</code>')
+
+            if offer['rating'] is not None:
+                offer_parts.append(f'<b>Valoración:</b> <code>{offer['rating'] * 100:.2f} %</code>')
+
+            if offer['url']:
+                offer_parts.append(f'<b>Url:</b> {offer['url']}')
 
             offers_parts.append(offer_parts)
 
@@ -284,7 +291,7 @@ class BtcOffersBot(MultiBot, ABC):
         await self.send(f'<b>💰💰💰 OFERTAS BTC 💰💰💰</b>{elapsed_time_description}', chat)
 
         for offer_parts in offers_parts:
-            await self.send('\n'.join(offer_parts), chat)
+            await self.send('\n'.join(offer_parts), chat, enable_link_previews=False)
 
         if notifications_disabled:
             await self.send(

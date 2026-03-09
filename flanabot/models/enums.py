@@ -26,10 +26,11 @@ class Exchange(FlanaEnum):
 
 
 class PaymentMethod(FlanaEnum):
-    CREDIT_CARD = 'Credit card'
     BIZUM = 'Bizum'
+    CREDIT_CARD = 'Credit card'
     HALCASH = 'HalCash'
+    INSTANT_SEPA = 'Instant SEPA'
     PAYPAL = 'PayPal'
     REVOLUT = 'Revolut'
     SEPA = 'SEPA'
-    SEPA_INSTANT = 'Instant SEPA'
+    WISE = 'Wise'

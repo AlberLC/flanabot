@@ -126,14 +126,15 @@ KEYWORDS = {
         Exchange.ROBOSATS: ('robosats',)
     },
     'btc_offers_payment_methods': {
+        PaymentMethod.BIZUM: ('bizum',),
         PaymentMethod.CREDIT_CARD: ('credit', 'credito'),
+        PaymentMethod.HALCASH: ('cajero', 'efectivo', 'halcash'),
+        PaymentMethod.INSTANT_SEPA: ('instant sepa', 'instantanea sepa', 'instantaneo sepa', 'sepa instant',
+                                     'sepa instantanea', 'sepa instantaneo'),  # check INSTANT_SEPA before SEPA
         PaymentMethod.PAYPAL: ('paypal',),
         PaymentMethod.REVOLUT: ('revolut',),
-        PaymentMethod.HALCASH: ('cajero', 'efectivo', 'halcash'),
-        PaymentMethod.BIZUM: ('bizum',),
-        PaymentMethod.SEPA_INSTANT: ('instant sepa', 'instantanea sepa', 'instantaneo sepa', 'sepa instant',
-                                     'sepa instantanea', 'sepa instantaneo'),
-        PaymentMethod.SEPA: ('sepa',)  # check SEPA after Instant SEPA
+        PaymentMethod.SEPA: ('sepa',),
+        PaymentMethod.WISE: ('wise',)
     },
     'choose': ('choose', 'elige', 'escoge'),
     'connect_4': (('conecta', 'connect', 'ralla', 'raya'), ('4', 'cuatro', 'four')),
