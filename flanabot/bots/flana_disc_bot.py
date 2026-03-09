@@ -172,6 +172,8 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 content_type = f'image/{media.extension}'
             case MediaType.VIDEO:
                 content_type = f'video/{media.extension}'
+            case _:
+                content_type = 'application/octet-stream'
 
         form.add_field('file', media.bytes_, content_type=content_type, filename=file_name)
         form.add_field('expires_in', str(constants.FLANASERVER_FILE_EXPIRATION_SECONDS))

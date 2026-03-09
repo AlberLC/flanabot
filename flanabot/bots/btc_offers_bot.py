@@ -233,8 +233,8 @@ class BtcOffersBot(MultiBot, ABC):
         for i, offer in enumerate(dated_offers.offers, start=1):
             offer_parts = [
                 f'<b>{i}.</b>',
-                f"<b>Plataforma:</b> <code>{offer['exchange']}</code>",
-                f"<b>Id:</b> <code>{offer['id']}</code>"
+                f'<b>Plataforma:</b> <code>{offer['exchange']}</code>',
+                f'<b>Id:</b> <code>{offer['id']}</code>'
             ]
 
             if offer['author']:
@@ -247,10 +247,10 @@ class BtcOffersBot(MultiBot, ABC):
             rounded_premium = round(offer['premium'], 2)
             offer_parts.extend(
                 (
-                    f"<b>Cantidad:</b> <code>{offer['amount']}</code>",
-                    f"<b>Precio (EUR):</b> <code>{offer['price_eur']:.2f} €</code>",
-                    f"<b>Precio (USD):</b> <code>{offer['price_usd']:.2f} $</code>",
-                    f"<b>Prima:</b> <code>{rounded_premium if rounded_premium else '0.00'} %</code>",
+                    f'<b>Cantidad:</b> <code>{offer['amount']}</code>',
+                    f'<b>Precio (EUR):</b> <code>{offer['price_eur']:.2f} €</code>',
+                    f'<b>Precio (USD):</b> <code>{offer['price_usd']:.2f} $</code>',
+                    f'<b>Prima:</b> <code>{rounded_premium if rounded_premium else '0.00'} %</code>',
                     f'<b>Métodos de pago:</b>{payment_methods_text}'
                 )
             )
@@ -288,7 +288,7 @@ class BtcOffersBot(MultiBot, ABC):
 
         if notifications_disabled:
             await self.send(
-                f"{'-' * 70}\n"
+                f'{'-' * 70}\n'
                 '<b>ℹ️ Los avisos de ofertas BTC se han eliminado. Si quieres volver a recibirlos, no dudes en pedírmelo.</b>',
                 chat
             )
