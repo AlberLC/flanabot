@@ -15,8 +15,8 @@ from multibot import MultiBot, constants as multibot_constants
 
 from flanabot import constants
 from flanabot.models import Chat, Message
+from models.dated_offers import DatedOffers
 from models.enums import Exchange, PaymentMethod
-from models.offers_data import OffersData
 
 
 # ---------------------------------------------------- #
@@ -227,10 +227,10 @@ class BtcOffersBot(MultiBot, ABC):
 
         await self.send(text, chat)
 
-    async def _send_offers(self, offers_data: OffersData, chat: Chat, notifications_disabled: bool = False) -> None:
+    async def _send_offers(self, dated_offers: DatedOffers, chat: Chat, notifications_disabled: bool = False) -> None:
         offers_parts = []
 
-        for i, offer in enumerate(offers_data.offers, start=1):
+        for i, offer in enumerate(dated_offers.offers, start=1):
             offer_parts = [
                 f'<b>{i}.</b>',
                 f"<b>Plataforma:</b> <code>{offer['exchange']}</code>",
@@ -262,8 +262,8 @@ class BtcOffersBot(MultiBot, ABC):
 
             offers_parts.append(offer_parts)
 
-        if offers_data.updated_at:
-            elapsed_time = datetime.datetime.now(datetime.UTC) - offers_data.updated_at
+        if dated_offers.updated_at:
+            elapsed_time = datetime.datetime.now(datetime.UTC) - dated_offers.updated_at
             elapsed_seconds = int(elapsed_time.total_seconds())
             elapsed_minutes = int(elapsed_seconds / 60)
             elapsed_hours = int(elapsed_minutes / 60)
@@ -308,7 +308,7 @@ class BtcOffersBot(MultiBot, ABC):
             chat.btc_offers['query'] = {}
             chat.save()
 
-            await self._send_offers(OffersData.from_dict(data['offers_data']), chat, notifications_disabled=True)
+            await self._send_offers(DatedOffers.from_dict(data['dated_offers']), chat, notifications_disabled=True)
 
     # ---------------------------------------------- #
     #                    HANDLERS                    #
@@ -352,13 +352,13 @@ class BtcOffersBot(MultiBot, ABC):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f'http://{self._btc_offers_api_endpoint}', params=query) as response:
-                    offers_data = OffersData.from_dict(await response.json())
+                    dated_offers = DatedOffers.from_dict(await response.json())
         except aiohttp.ClientConnectorError:
             await self.send_error('❌🌐 El servidor de ofertas BTC está desconectado.', bot_state_message, edit=True)
             return
 
-        if offers_data:
-            await self._send_offers(offers_data, message.chat)
+        if dated_offers:
+            await self._send_offers(dated_offers, message.chat)
             await self.delete_message(bot_state_message)
         else:
             await self.edit('ℹ️🔍 No hay ofertas BTC actualmente que cumplan esa condición.', bot_state_message)

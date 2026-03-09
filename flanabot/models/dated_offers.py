@@ -4,7 +4,7 @@ from typing import Any, Self
 
 
 @dataclass
-class OffersData:
+class DatedOffers:
     offers: list[dict[str, Any]]
     updated_at: datetime.datetime | None
 
