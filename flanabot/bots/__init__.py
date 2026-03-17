@@ -1,3 +1,4 @@
+from flanabot.bots.btc_offers_bot import *
 from flanabot.bots.connect_4_bot import *
 from flanabot.bots.flana_bot import *
 from flanabot.bots.flana_disc_bot import *
