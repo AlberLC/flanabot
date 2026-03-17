@@ -127,8 +127,10 @@ KEYWORDS = {
     },
     'btc_offers_payment_methods': {
         PaymentMethod.BIZUM: ('bizum',),
-        PaymentMethod.CREDIT_CARD: ('credit', 'credito'),
-        PaymentMethod.HALCASH: ('cajero', 'efectivo', 'halcash'),
+        PaymentMethod.CARDLESS_CASH: ('atm', 'cajero', 'cardless', 'cash machine', 'codigo', 'dimo',
+                                      'dinero instantaneo', 'dinero movil', 'efectivo movil', 'halcash',
+                                      'instant money', 'sin tarjeta'),
+        PaymentMethod.CREDIT_CARD: ('card', 'credit', 'credito', 'debit', 'debito', 'tarjeta'),
         PaymentMethod.INSTANT_SEPA: ('instant sepa', 'instantanea sepa', 'instantaneo sepa', 'sepa instant',
                                      'sepa instantanea', 'sepa instantaneo'),  # check INSTANT_SEPA before SEPA
         PaymentMethod.PAYPAL: ('paypal',),

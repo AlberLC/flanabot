@@ -6,6 +6,7 @@ import functools
 import json
 import os
 from abc import ABC
+from collections import defaultdict
 from collections.abc import Awaitable, Callable
 
 import aiohttp
@@ -113,6 +114,23 @@ class BtcOffersBot(MultiBot, ABC):
         self._btc_offers_lock = asyncio.Lock()
         self._btc_offers_notifications_task: asyncio.Task[None] | None = None
         self._btc_offers_websocket: websockets.ClientConnection | None = None
+        self._payment_method_keyword_max_words = 0
+        self._payment_methods_keywords_groups = {}
+
+        for payment_method, payment_method_keywords in constants.KEYWORDS['btc_offers_payment_methods'].items():
+            payment_method_keywords_groups = defaultdict(set)
+
+            for payment_method_keyword in payment_method_keywords:
+                keyword_words = payment_method_keyword.split()
+
+                if len(keyword_words) > self._payment_method_keyword_max_words:
+                    self._payment_method_keyword_max_words = len(keyword_words)
+
+                payment_method_keywords_groups[len(keyword_words)].add(payment_method_keyword)
+
+            self._payment_methods_keywords_groups[payment_method] = sorted(
+                payment_method_keywords_groups.items(), key=lambda item: -item[0]
+            )
 
     # -------------------------------------------------------- #
     # ------------------- PROTECTED METHODS ------------------ #
@@ -157,14 +175,11 @@ class BtcOffersBot(MultiBot, ABC):
         exchanges = []
         normalized_text = flanautils.remove_accents(text.lower())
 
-        for exchange, exchange_names in constants.KEYWORDS['btc_offers_exchanges'].items():
-            if exchange in exchanges:
-                continue
-
-            for exchange_name in exchange_names:
+        for exchange, exchange_keywords in constants.KEYWORDS['btc_offers_exchanges'].items():
+            for exchange_keyword in exchange_keywords:
                 if flanautils.cartesian_product_string_matching(
                     normalized_text,
-                    exchange_name,
+                    exchange_keyword,
                     multibot_constants.PARSER_MIN_SCORE_DEFAULT
                 ):
                     exchanges.append(exchange)
@@ -173,33 +188,50 @@ class BtcOffersBot(MultiBot, ABC):
         return exchanges
 
     @staticmethod
-    def _find_payment_methods(text: str) -> list[PaymentMethod]:
+    def _generate_ngrams(text: str, max_n: int) -> defaultdict[int, set[str]]:
+        ngrams = defaultdict(set)
+
+        words = text.split()
+
+        for n in range(1, max_n + 1):
+            n_ngrams = set()
+
+            for i in range(len(words) - n + 1):
+                n_ngrams.add(' '.join(words[i:i + n]))
+
+            if n_ngrams:
+                ngrams[n] = n_ngrams
+
+        return ngrams
+
+    @staticmethod
+    def _normalize_text(text: str) -> str:
+        return ' '.join(
+            ''.join(
+                character if character.isalnum() or character.isspace() else ' '
+                for character in flanautils.remove_accents(text.lower(), lazy=True)
+            ).split()
+        )
+
+    def _find_payment_methods(self, text: str) -> list[PaymentMethod]:
+        normalized_text = self._normalize_text(text)
+        text_ngrams = self._generate_ngrams(normalized_text, self._payment_method_keyword_max_words)
         payment_methods = []
-        normalized_text = flanautils.remove_accents(text.lower())
 
-        for payment_method, payment_method_names in constants.KEYWORDS['btc_offers_payment_methods'].items():
-            if payment_method in payment_methods:
-                continue
+        for payment_method, payment_method_keywords_groups in self._payment_methods_keywords_groups.items():
+            for group_word_count, payment_method_keywords_group in payment_method_keywords_groups:
+                for payment_method_keyword in payment_method_keywords_group:
+                    for text_ngram in text_ngrams[group_word_count]:
+                        if flanautils.cartesian_product_string_matching(
+                            (payment_method_keyword,),
+                            (text_ngram,),
+                            min_score=multibot_constants.PARSER_MIN_SCORE_DEFAULT
+                        ):
+                            if payment_method not in payment_methods:
+                                payment_methods.append(payment_method)
 
-            for payment_method_name in payment_method_names:
-                payment_method_name_words = payment_method_name.split()
-
-                if (
-                    (
-                        matches := flanautils.cartesian_product_string_matching(
-                            normalized_text,
-                            payment_method_name_words,
-                            multibot_constants.PARSER_MIN_SCORE_DEFAULT
-                        )
-                    )
-                    and
-                    len(matches) == len(payment_method_name_words)
-                ):
-                    for payment_method_name_word in payment_method_name_words:
-                        normalized_text = normalized_text.replace(payment_method_name_word, '', count=1)
-
-                    payment_methods.append(payment_method)
-                    break
+                            normalized_text = normalized_text.replace(text_ngram, '')
+                            text_ngrams = self._generate_ngrams(normalized_text, self._payment_method_keyword_max_words)
 
         return payment_methods
 
