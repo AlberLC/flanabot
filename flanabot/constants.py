@@ -9,6 +9,7 @@ AUDIT_LOG_AGE = datetime.timedelta(hours=1)
 AUDIT_LOG_LIMIT = 5
 AUTO_WEATHER_EVERY = datetime.timedelta(hours=6)
 BTC_OFFERS_DEFAULT_LIMIT = 5
+BTC_OFFERS_MAX_LIMIT = 10
 BTC_OFFERS_WEBSOCKET_RETRY_DELAY_SECONDS = datetime.timedelta(hours=1).total_seconds()
 CHECK_CLIENT_CONNECTIONS_EVERY_SECONDS = datetime.timedelta(minutes=1).total_seconds()
 CHECK_PUNISHMENTS_EVERY_SECONDS = datetime.timedelta(hours=1).total_seconds()
@@ -127,7 +128,7 @@ KEYWORDS = {
     },
     'btc_offers_payment_methods': {
         PaymentMethod.BIZUM: ('bizum',),
-        PaymentMethod.CARDLESS_CASH: ('atm', 'cajero', 'cardless', 'cash machine', 'codigo', 'dimo',
+        PaymentMethod.CARDLESS_CASH: ('atm', 'cajero', 'cardless', 'cash machine', 'code', 'codigo', 'dimo',
                                       'dinero instantaneo', 'dinero movil', 'efectivo movil', 'halcash',
                                       'instant money', 'sin tarjeta'),
         PaymentMethod.CREDIT_CARD: ('card', 'credit', 'credito', 'debit', 'debito', 'tarjeta'),

@@ -72,7 +72,7 @@ def preprocess_btc_offers(
             )
             return
 
-        parsed_number = flanautils.text_to_number(message.text)
+        parsed_number = flanautils.text_to_number(message.text, accept_comma=True)
 
         if not premium_mode and parsed_number < 0 or not flanautils.validate_mongodb_number(parsed_number):
             await self.send_error('❌ Por favor, introduce un número válido.', message)
@@ -88,12 +88,17 @@ def preprocess_btc_offers(
 
         if eur_mode:
             query['max_price_eur'] = parsed_number
+            query['limit'] = constants.BTC_OFFERS_MAX_LIMIT
         elif usd_mode:
             query['max_price_usd'] = parsed_number
+            query['limit'] = constants.BTC_OFFERS_MAX_LIMIT
         elif premium_mode:
             query['max_premium'] = parsed_number
+            query['limit'] = constants.BTC_OFFERS_MAX_LIMIT
+        elif parsed_number:
+            query['limit'] = min(parsed_number, constants.BTC_OFFERS_MAX_LIMIT)
         else:
-            query['limit'] = parsed_number if parsed_number else constants.BTC_OFFERS_DEFAULT_LIMIT
+            query['limit'] = constants.BTC_OFFERS_DEFAULT_LIMIT
 
         query['ignore_authors'] = message.chat.btc_offers['blocked_authors']
 
@@ -273,13 +278,12 @@ class BtcOffersBot(MultiBot, ABC):
                 f'\n    <code>{payment_method}</code>' for payment_method in offer['payment_methods']
             )
 
-            rounded_premium = round(offer['premium'], 2)
             offer_parts.extend(
                 (
                     f'<b>Cantidad:</b> <code>{offer['amount']}</code>',
                     f'<b>Precio (EUR):</b> <code>{offer['price_eur']:.2f} €</code>',
                     f'<b>Precio (USD):</b> <code>{offer['price_usd']:.2f} $</code>',
-                    f'<b>Prima:</b> <code>{rounded_premium if rounded_premium else '0.00'} %</code>',
+                    f'<b>Prima:</b> <code>{flanautils.format_decimal(offer['premium'], decimals=2)} %</code>',
                     f'<b>Métodos de pago:</b>{payment_methods_text}'
                 )
             )
@@ -294,7 +298,9 @@ class BtcOffersBot(MultiBot, ABC):
                 offer_parts.append(f'<b>Nº de operaciones:</b> <code>{offer['trades']}</code>')
 
             if offer['rating'] is not None:
-                offer_parts.append(f'<b>Valoración:</b> <code>{offer['rating'] * 100:.2f} %</code>')
+                offer_parts.append(
+                    f'<b>Valoración:</b> <code>{flanautils.format_decimal(offer['rating'] * 100, decimals=2)} %</code>'
+                )
 
             if offer['url']:
                 offer_parts.append(f'<b>Url:</b> {offer['url']}')
@@ -418,9 +424,9 @@ class BtcOffersBot(MultiBot, ABC):
             case {'max_price_usd': max_price_usd}:
                 options_parts.append(f'por {max_price_usd:.2f} $ o menos')
             case {'max_premium': max_premium}:
-                rounded_max_premium = round(max_premium, 2)
-                formatted_premium = rounded_max_premium if rounded_max_premium else '0.00'
-                options_parts.append(f'con una prima del {formatted_premium} % o menor')
+                options_parts.append(
+                    f'con una prima del {flanautils.format_decimal(max_premium, decimals=2)} % o menor'
+                )
             case _:
                 await self.send_error('❌ Especifica una cantidad para poder avisarte.', message)
                 return
