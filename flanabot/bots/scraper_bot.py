@@ -270,7 +270,7 @@ class ScraperBot(MultiBot, ABC):
         if full is None:
             full = bool(
                 self._parse_callbacks(
-                    message.text,
+                    message,
                     [
                         RegisteredCallback(..., keywords=(('sin',), ('timeout', 'limite'))),
                         RegisteredCallback(..., keywords=multibot_constants.KEYWORDS['all'])

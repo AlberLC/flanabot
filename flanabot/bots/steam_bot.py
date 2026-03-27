@@ -203,7 +203,7 @@ class SteamBot(MultiBot, ABC):
         if update_steam_regions is None:
             update_steam_regions = bool(
                 self._parse_callbacks(
-                    message.text,
+                    message,
                     [
                         RegisteredCallback(
                             ...,

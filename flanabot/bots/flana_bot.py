@@ -537,7 +537,7 @@ class FlanaBot(
             not self._tunnel_chat
             or
             self._parse_callbacks(
-                message.text,
+                message,
                 [
                     RegisteredCallback(..., keywords=(multibot_constants.KEYWORDS['activate'], constants.KEYWORDS['tunnel'])),
                     RegisteredCallback(..., keywords=(multibot_constants.KEYWORDS['deactivate'], constants.KEYWORDS['tunnel']))

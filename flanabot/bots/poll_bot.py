@@ -157,7 +157,7 @@ class PollBot(MultiBot, ABC):
         if (
             self._get_poll_message(message)
             and
-            self._parse_callbacks(message.text, [RegisteredCallback(..., keywords=multibot_constants.KEYWORDS['reset'])])
+            self._parse_callbacks(message, [RegisteredCallback(..., keywords=multibot_constants.KEYWORDS['reset'])])
         ):
             await self._on_delete_votes(message, all_=True)
             return
