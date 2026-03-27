@@ -5,6 +5,7 @@ import datetime
 import functools
 import json
 import os
+import urllib.parse
 from abc import ABC
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
@@ -28,7 +29,7 @@ def preprocess_btc_offers(
 ) -> Callable[[BtcOffersBot, Message], Awaitable[None]]:
     @functools.wraps(func)
     async def wrapper(self: BtcOffersBot, message: Message) -> None:
-        if message.chat.is_group and not self.is_bot_mentioned(message):
+        if not message.is_command and message.chat.is_group and not self.is_bot_mentioned(message):
             return
 
         eur_mode = (
@@ -100,7 +101,9 @@ def preprocess_btc_offers(
         else:
             query['limit'] = constants.BTC_OFFERS_DEFAULT_LIMIT
 
+        query['ignore_ids'] = message.chat.btc_offers['blocked_ids']
         query['ignore_authors'] = message.chat.btc_offers['blocked_authors']
+        query['ignore_descriptions'] = message.chat.btc_offers['blocked_descriptions']
 
         await func(self, message, query)
 
@@ -143,19 +146,16 @@ class BtcOffersBot(MultiBot, ABC):
     def _add_handlers(self) -> None:
         super()._add_handlers()
 
-        self.register(self._on_block_authors, keywords=(multibot_constants.KEYWORDS['block'], constants.KEYWORDS['offer']))
-        self.register(self._on_block_authors, keywords=(multibot_constants.KEYWORDS['block'], constants.KEYWORDS['money']))
-        self.register(self._on_block_authors, keywords=(multibot_constants.KEYWORDS['ignore'], constants.KEYWORDS['offer']))
-        self.register(self._on_block_authors, keywords=(multibot_constants.KEYWORDS['ignore'], constants.KEYWORDS['money']))
-        self.register(self._on_block_authors, extra_kwargs={'delete': True}, keywords=((*multibot_constants.KEYWORDS['deactivate'], *multibot_constants.KEYWORDS['delete']), multibot_constants.KEYWORDS['block'], constants.KEYWORDS['offer']))
-        self.register(self._on_block_authors, extra_kwargs={'delete': True}, keywords=((*multibot_constants.KEYWORDS['deactivate'], *multibot_constants.KEYWORDS['delete']), multibot_constants.KEYWORDS['block'], constants.KEYWORDS['money']))
-        self.register(self._on_block_authors, extra_kwargs={'delete': True}, keywords=((*multibot_constants.KEYWORDS['deactivate'], *multibot_constants.KEYWORDS['delete']), multibot_constants.KEYWORDS['ignore'], constants.KEYWORDS['offer']))
-        self.register(self._on_block_authors, extra_kwargs={'delete': True}, keywords=((*multibot_constants.KEYWORDS['deactivate'], *multibot_constants.KEYWORDS['delete']), multibot_constants.KEYWORDS['ignore'], constants.KEYWORDS['money']))
-        self.register(self._on_block_authors, extra_kwargs={'delete': True}, keywords=(multibot_constants.KEYWORDS['unblock'], constants.KEYWORDS['offer']))
-        self.register(self._on_block_authors, extra_kwargs={'delete': True}, keywords=(multibot_constants.KEYWORDS['unblock'], constants.KEYWORDS['money']))
-
-        self.register(self._on_btc_offers, keywords=constants.KEYWORDS['offer'])
-        self.register(self._on_btc_offers, keywords=constants.KEYWORDS['money'])
+        self.register(self._on_btc_offers, command_name='btc_offers', command_description='Obtiene las ofertas BTC', keywords=(*constants.KEYWORDS['offer'], *constants.KEYWORDS['money']))
+        self.register(self._on_notify_btc_offers, command_name='notify_btc_offers', command_description='Configura avisos de ofertas BTC')
+        self.register(self._on_block_btc_offer_ids, command_name='block_btc_offer_ids', command_description='Bloquea ofertas BTC por id')
+        self.register(self._on_block_btc_offer_authors, command_name='block_btc_offer_authors', command_description='Bloquea ofertas BTC por autor')
+        self.register(self._on_block_btc_offer_descriptions, command_name='block_btc_offer_description', command_description='Bloquea ofertas BTC cuya descripción contenga el texto especificado')
+        self.register(self._on_block_btc_offer_ids, extra_kwargs={'delete': True}, command_name='unblock_btc_offer_ids', command_description='Desbloquea ofertas BTC por id')
+        self.register(self._on_block_btc_offer_authors, extra_kwargs={'delete': True}, command_name='unblock_btc_offer_authors', command_description='Desbloquea ofertas BTC por autor')
+        self.register(self._on_block_btc_offer_descriptions, extra_kwargs={'delete': True}, command_name='unblock_btc_offer_description', command_description='Desbloquea ofertas BTC cuya descripción contenga el texto especificado')
+        self.register(self._send_blocked_btc_offer_elements, command_name='show_blocked_btc_offer_elements', command_description='Muestra los elementos de ofertas BTC bloqueados')
+        self.register(self._on_stop_btc_offers_notification, command_name='stop_btc_offers_notification', command_description='Elimina los avisos de ofertas BTC')
 
         self.register(self._on_notify_btc_offers, keywords=constants.KEYWORDS['notify'])
         self.register(self._on_notify_btc_offers, keywords=(constants.KEYWORDS['notify'], constants.KEYWORDS['offer']))
@@ -171,6 +171,23 @@ class BtcOffersBot(MultiBot, ABC):
         self.register(self._on_stop_btc_offers_notification, keywords=(multibot_constants.KEYWORDS['stop'], constants.KEYWORDS['notify']))
         self.register(self._on_stop_btc_offers_notification, keywords=(multibot_constants.KEYWORDS['stop'], constants.KEYWORDS['notify'], constants.KEYWORDS['offer']))
         self.register(self._on_stop_btc_offers_notification, keywords=(multibot_constants.KEYWORDS['stop'], constants.KEYWORDS['notify'], constants.KEYWORDS['money']))
+
+    async def _block_btc_offer_elements(
+        self,
+        chat: Chat,
+        elements: set[str],
+        elements_name: str,
+        delete: bool = False
+    ) -> None:
+        if elements := {element for element in elements if element}:
+            if delete:
+                chat.btc_offers[elements_name] = sorted(set(chat.btc_offers[elements_name]) - elements)
+            else:
+                chat.btc_offers[elements_name] = sorted(set(chat.btc_offers[elements_name]) | elements)
+
+            chat.save()
+
+        await self._send_blocked_btc_offer_elements(chat)
 
     async def _cancel_btc_offers_notifications_task(self) -> None:
         if self._btc_offers_notifications_task and not self._btc_offers_notifications_task.done():
@@ -245,6 +262,18 @@ class BtcOffersBot(MultiBot, ABC):
 
         return payment_methods
 
+    @staticmethod
+    def _format_blocked_btc_offer_elements_section(chat: Chat | Message, elements_name: str, title: str) -> str | None:
+        if not (elements := chat.btc_offers[elements_name]):
+            return
+
+        return '\n'.join(
+            (
+                f'<b>{title}</b>',
+                *(f'<b>{i}.</b> <code>{offer_id}</code>' for i, offer_id in enumerate(sorted(elements), start=1))
+            )
+        )
+
     def _is_websocket_connected(self) -> bool:
         return (
             self._btc_offers_websocket
@@ -252,20 +281,26 @@ class BtcOffersBot(MultiBot, ABC):
             self._btc_offers_websocket.state in {websockets.State.CONNECTING, websockets.State.OPEN}
         )
 
-    async def _send_blocked_authors(self, chat: Chat) -> None:
-        if chat.btc_offers['blocked_authors']:
-            text = '\n'.join(
-                (
-                    '<b>🚫 Autores de ofertas BTC bloqueados:</b>',
-                    '',
-                    *(
-                        f'<code>{i}. {author}</code>'
-                        for i, author in enumerate(sorted(chat.btc_offers['blocked_authors']), start=1)
-                    )
-                )
-            )
+    async def _send_blocked_btc_offer_elements(self, chat: Chat | Message) -> None:
+        match chat:
+            case self.Message() as message:
+                chat = message.chat
+
+        sections = []
+
+        if section := self._format_blocked_btc_offer_elements_section(chat, 'blocked_ids', 'Ids:'):
+            sections.append(section)
+
+        if section := self._format_blocked_btc_offer_elements_section(chat, 'blocked_authors', 'Autores:'):
+            sections.append(section)
+
+        if section := self._format_blocked_btc_offer_elements_section(chat, 'blocked_descriptions', 'Descripciones:'):
+            sections.append(section)
+
+        if sections:
+            text = '\n\n'.join(('<b>🚫 Elementos de ofertas BTC bloqueados:</b>', *sections))
         else:
-            text = '🟢 No hay autores de ofertas BTC bloqueados.'
+            text = '🟢 No hay elementos de ofertas BTC bloqueados.'
 
         await self.send(text, chat)
 
@@ -366,45 +401,41 @@ class BtcOffersBot(MultiBot, ABC):
             chat.btc_offers['query'] = {}
             chat.save()
 
-            await self._send_offers(DatedOffers.from_dict(data['dated_offers']), chat, notifications_disabled=True)
+            await self._send_btc_offers(DatedOffers.from_dict(data['dated_offers']), chat, notifications_disabled=True)
 
     # ---------------------------------------------- #
     #                    HANDLERS                    #
     # ---------------------------------------------- #
-    async def _on_block_authors(self, message: Message, delete: bool = False) -> None:
-        if message.chat.is_group and not self.is_bot_mentioned(message):
-            return
+    async def _on_block_btc_offer_authors(self, message: Message, delete: bool = False) -> None:
+        await self._block_btc_offer_elements(
+            message.chat,
+            set(message.command_text.split()),
+            elements_name='blocked_authors',
+            delete=delete
+        )
 
-        authors = {
-            word
-            for word in await self.filter_mention_ids(message.text, message, delete_names=True)
-            if not flanautils.cartesian_product_string_matching(
-                word.lower(),
-                (
-                    *multibot_constants.KEYWORDS['user'],
-                    *multibot_constants.KEYWORDS['block'],
-                    *multibot_constants.KEYWORDS['ignore'],
-                    *constants.KEYWORDS['offer'],
-                    *constants.KEYWORDS['money']
-                ),
-                multibot_constants.PARSER_MIN_SCORE_DEFAULT
-            )
-        }
+    async def _on_block_btc_offer_descriptions(self, message: Message, delete: bool = False) -> None:
+        await self._block_btc_offer_elements(
+            message.chat,
+            {message.command_text},
+            elements_name='blocked_descriptions',
+            delete=delete
+        )
 
-        chat = message.chat
-
-        if authors:
-            if delete:
-                chat.btc_offers['blocked_authors'] = tuple(set(chat.btc_offers['blocked_authors']) - authors)
-            else:
-                chat.btc_offers['blocked_authors'] = tuple(set(chat.btc_offers['blocked_authors']) | authors)
-
-            chat.save()
-
-        await self._send_blocked_authors(chat)
+    async def _on_block_btc_offer_ids(self, message: Message, delete: bool = False) -> None:
+        await self._block_btc_offer_elements(
+            message.chat,
+            set(message.command_text.split()),
+            elements_name='blocked_ids',
+            delete=delete
+        )
 
     @preprocess_btc_offers
     async def _on_btc_offers(self, message: Message, query: dict[str, float | list[str]]) -> None:
+        query['ignore_ids'] = [urllib.parse.quote(id) for id in query['ignore_ids']]
+        query['ignore_authors'] = [urllib.parse.quote(author) for author in query['ignore_authors']]
+        query['ignore_descriptions'] = [urllib.parse.quote(description) for description in query['ignore_descriptions']]
+
         bot_state_message = await self.send('Obteniendo ofertas BTC...', message)
 
         try:
@@ -416,7 +447,7 @@ class BtcOffersBot(MultiBot, ABC):
             return
 
         if dated_offers:
-            await self._send_offers(dated_offers, message.chat)
+            await self._send_btc_offers(dated_offers, message.chat)
             await self.delete_message(bot_state_message)
         else:
             await self.edit('ℹ️🔍 No hay ofertas BTC actualmente que cumplan esa condición.', bot_state_message)
@@ -457,7 +488,7 @@ class BtcOffersBot(MultiBot, ABC):
         asyncio.create_task(self.start_all_btc_offers_notifications())
 
     async def _on_stop_btc_offers_notification(self, message: Message) -> None:
-        if message.chat.is_group and not self.is_bot_mentioned(message):
+        if not message.is_command and message.chat.is_group and not self.is_bot_mentioned(message):
             return
 
         previous_btc_offers_query = message.chat.btc_offers['query']

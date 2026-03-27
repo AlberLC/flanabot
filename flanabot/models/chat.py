@@ -10,7 +10,9 @@ from multibot import Chat as MultiBotChat
 class Chat(MultiBotChat):
     btc_offers: dict[str, Any] = field(
         default_factory=lambda: {
+            'blocked_ids': [],
             'blocked_authors': [],
+            'blocked_descriptions': [],
             'query': {}
         }
     )
