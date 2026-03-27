@@ -172,6 +172,11 @@ class BtcOffersBot(MultiBot, ABC):
         self.register(self._on_stop_btc_offers_notification, keywords=(multibot_constants.KEYWORDS['stop'], constants.KEYWORDS['notify'], constants.KEYWORDS['offer']))
         self.register(self._on_stop_btc_offers_notification, keywords=(multibot_constants.KEYWORDS['stop'], constants.KEYWORDS['notify'], constants.KEYWORDS['money']))
 
+    async def _cancel_btc_offers_notifications_task(self) -> None:
+        if self._btc_offers_notifications_task and not self._btc_offers_notifications_task.done():
+            self._btc_offers_notifications_task.cancel()
+            await asyncio.sleep(0)
+
     def _find_chats_to_notify(self) -> list[Chat]:
         return self.Chat.find({'platform': self.platform.value, 'btc_offers.query': {'$exists': True, '$ne': {}}})
 
@@ -471,9 +476,8 @@ class BtcOffersBot(MultiBot, ABC):
         if chats := self._find_chats_to_notify():
             for chat in chats:
                 await self.start_btc_offers_notification(chat, chat.btc_offers['query'])
-        elif self._btc_offers_notifications_task and not self._btc_offers_notifications_task.done():
-            self._btc_offers_notifications_task.cancel()
-            await asyncio.sleep(0)
+        else:
+            await self._cancel_btc_offers_notifications_task()
 
     async def start_btc_offers_notification(self, chat: Chat, query: dict[str, float | list[str]]) -> None:
         async with self._btc_offers_lock:
@@ -498,6 +502,8 @@ class BtcOffersBot(MultiBot, ABC):
     async def stop_all_btc_offers_notification(self) -> None:
         for chat in self._find_chats_to_notify():
             await self.stop_btc_offers_notification(chat)
+
+        await self._cancel_btc_offers_notifications_task()
 
     async def stop_btc_offers_notification(self, chat: Chat) -> None:
         if self._is_websocket_connected():
