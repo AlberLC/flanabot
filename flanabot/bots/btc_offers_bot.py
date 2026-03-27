@@ -264,7 +264,12 @@ class BtcOffersBot(MultiBot, ABC):
 
         await self.send(text, chat)
 
-    async def _send_offers(self, dated_offers: DatedOffers, chat: Chat, notifications_disabled: bool = False) -> None:
+    async def _send_btc_offers(
+        self,
+        dated_offers: DatedOffers,
+        chat: Chat,
+        notifications_disabled: bool = False
+    ) -> None:
         offers_parts = []
 
         for i, offer in enumerate(dated_offers.offers, start=1):
@@ -288,9 +293,6 @@ class BtcOffersBot(MultiBot, ABC):
                 )
             )
 
-            if offer['description']:
-                offer_parts.append(f'<b>Descripción:</b>\n<blockquote>{offer['description']}</blockquote>')
-
             if offer['author']:
                 offer_parts.append(f'<b>Autor:</b> <code>{offer['author']}</code>')
 
@@ -304,6 +306,9 @@ class BtcOffersBot(MultiBot, ABC):
 
             if offer['url']:
                 offer_parts.append(f'<b>Url:</b> {offer['url']}')
+
+            if offer['description']:
+                offer_parts.append(f'<b>Descripción:</b>\n<blockquote>{offer['description']}</blockquote>')
 
             offers_parts.append(offer_parts)
 
