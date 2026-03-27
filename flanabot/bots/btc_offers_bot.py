@@ -412,7 +412,7 @@ class BtcOffersBot(MultiBot, ABC):
                 async with session.get(f'http://{self._btc_offers_api_endpoint}', params=query) as response:
                     dated_offers = DatedOffers.from_dict(await response.json())
         except aiohttp.ClientConnectorError:
-            await self.send_error('❌🌐 El servidor de ofertas BTC está desconectado.', bot_state_message, edit=True)
+            await self.send_error('❌🌐 El servidor de ofertas BTC no está disponible.', bot_state_message, edit=True)
             return
 
         if dated_offers:
@@ -480,6 +480,9 @@ class BtcOffersBot(MultiBot, ABC):
             await self._cancel_btc_offers_notifications_task()
 
     async def start_btc_offers_notification(self, chat: Chat, query: dict[str, float | list[str]]) -> None:
+        chat.btc_offers['query'] = query
+        chat.save()
+
         async with self._btc_offers_lock:
             if not self._is_websocket_connected():
                 while True:
@@ -495,8 +498,6 @@ class BtcOffersBot(MultiBot, ABC):
         if not self._btc_offers_notifications_task or self._btc_offers_notifications_task.done():
             self._btc_offers_notifications_task = asyncio.create_task(self._wait_btc_offers_notification())
 
-        chat.btc_offers['query'] = query
-        chat.save()
         await self._btc_offers_websocket.send(json.dumps({'action': 'start', 'chat_id': chat.id, 'query': query}))
 
     async def stop_all_btc_offers_notification(self) -> None:
