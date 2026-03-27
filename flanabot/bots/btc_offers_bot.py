@@ -331,16 +331,19 @@ class BtcOffersBot(MultiBot, ABC):
         else:
             elapsed_time_description = ''
 
-        await self.send(f'<b>💰💰💰 OFERTAS BTC 💰💰💰</b>{elapsed_time_description}', chat)
+        message_data = {'btc_offers': True}
+
+        await self.send(f'<b>💰💰💰 OFERTAS BTC 💰💰💰</b>{elapsed_time_description}', chat, data=message_data)
 
         for offer_parts in offers_parts:
-            await self.send('\n'.join(offer_parts), chat, enable_link_previews=False)
+            await self.send('\n'.join(offer_parts), chat, data=message_data, enable_link_previews=False)
 
         if notifications_disabled:
             await self.send(
                 f'{'-' * 70}\n'
                 '<b>ℹ️ Los avisos de ofertas BTC se han eliminado. Si quieres volver a recibirlos, no dudes en pedírmelo.</b>',
-                chat
+                chat,
+                data=message_data
             )
 
     async def _wait_btc_offers_notification(self) -> None:
