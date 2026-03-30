@@ -438,13 +438,13 @@ class BtcOffersBot(MultiBot, ABC):
 
         bot_state_message = await self.send('Obteniendo ofertas BTC...', message)
 
-        try:
-            async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession() as session:
+            try:
                 async with session.get(f'http://{self._btc_offers_api_endpoint}', params=query) as response:
                     dated_offers = DatedOffers.from_dict(await response.json())
-        except aiohttp.ClientConnectorError:
-            await self.send_error('❌🌐 El servidor de ofertas BTC no está disponible.', bot_state_message, edit=True)
-            return
+            except aiohttp.ClientConnectorError:
+                await self.send_error('❌🌐 El servidor de ofertas BTC no está disponible.', bot_state_message, edit=True)
+                return
 
         if dated_offers:
             await self._send_btc_offers(dated_offers, message.chat)
