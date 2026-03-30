@@ -33,4 +33,3 @@ class PaymentMethod(FlanaEnum):
     PAYPAL = 'PayPal'
     REVOLUT = 'Revolut'
     SEPA = 'SEPA'
-    WISE = 'Wise'

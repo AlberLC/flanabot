@@ -136,8 +136,7 @@ KEYWORDS = {
                                      'sepa instantanea', 'sepa instantaneo'),  # check INSTANT_SEPA before SEPA
         PaymentMethod.PAYPAL: ('paypal',),
         PaymentMethod.REVOLUT: ('revolut',),
-        PaymentMethod.SEPA: ('sepa',),
-        PaymentMethod.WISE: ('wise',)
+        PaymentMethod.SEPA: ('sepa',)
     },
     'choose': ('choose', 'elige', 'escoge'),
     'connect_4': (('conecta', 'connect', 'ralla', 'raya'), ('4', 'cuatro', 'four')),
