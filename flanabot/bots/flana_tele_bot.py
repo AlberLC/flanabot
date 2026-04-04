@@ -13,6 +13,7 @@ from multibot import RegisteredCallback, TelegramBot, find_message, use_user_cli
 
 from flanabot import constants
 from flanabot.bots.flana_bot import FlanaBot
+from flanabot.bots.lol_mythic_shop_bot import LolMythicShopBot
 from flanabot.models import Chat, Message
 
 
@@ -34,7 +35,7 @@ def whitelisted(func: Callable) -> Callable:
 # ---------------------------------------------------------------------------------------------------- #
 # ------------------------------------------ FLANA_TELE_BOT ------------------------------------------ #
 # ---------------------------------------------------------------------------------------------------- #
-class FlanaTeleBot(TelegramBot, FlanaBot):
+class FlanaTeleBot(TelegramBot, LolMythicShopBot, FlanaBot):
     def __init__(self):
         super().__init__(
             api_id=os.environ['TELEGRAM_API_ID'],
@@ -192,6 +193,8 @@ class FlanaTeleBot(TelegramBot, FlanaBot):
 
         if (await self.owner_chat).config['client_connection_notifications']:
             await self.start_client_connections_checker(await self.owner_chat)
+
+        await self._start_lol_mythic_shop_checker()
 
     # -------------------------------------------------------- #
     # -------------------- PUBLIC METHODS -------------------- #

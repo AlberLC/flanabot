@@ -1,5 +1,6 @@
 import datetime
 from collections import defaultdict
+from pathlib import Path
 
 from multibot import Platform
 
@@ -26,6 +27,16 @@ HEAT_PERIOD_SECONDS = datetime.timedelta(minutes=15).total_seconds()
 HELP_MINUTES_LIMIT = 1
 INSTAGRAM_BAN_SLEEP = datetime.timedelta(days=1)
 INSULT_PROBABILITY = 0.00166666667
+LOL_MYTHIC_SHOP_CHECK_EVERY_SECONDS = datetime.timedelta(hours=8).total_seconds()
+LOL_MYTHIC_SHOP_IMAGES = {
+    'okay': ('okay_1.png', 'okay_2.png', 'okay_3.png'),
+    'shell_shocked': ('shell_shocked_1.png', 'shell_shocked_2.png', 'shell_shocked_3.png')
+}
+LOL_MYTHIC_SHOP_IMAGES_PATH = Path('resources/lol_mythic_shop_images')
+LOL_MYTHIC_SHOP_URLS = (
+    'https://nitter.net/SkinSpotlights/rss',
+    'https://nitter.privacyredirect.com/SkinSpotlights/rss',
+)
 MAX_PLACE_QUERY_LENGTH = 50
 PUNISHMENT_INCREMENT_EXPONENT = 6
 PUNISHMENTS_RESET_TIME = datetime.timedelta(weeks=2)

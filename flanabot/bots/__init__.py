@@ -3,6 +3,7 @@ from flanabot.bots.connect_4_bot import *
 from flanabot.bots.flana_bot import *
 from flanabot.bots.flana_disc_bot import *
 from flanabot.bots.flana_tele_bot import *
+from flanabot.bots.lol_mythic_shop_bot import *
 from flanabot.bots.penalty_bot import *
 from flanabot.bots.poll_bot import *
 from flanabot.bots.scraper_bot import *
