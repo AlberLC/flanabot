@@ -325,7 +325,7 @@ class BtcOffersBot(MultiBot, ABC):
 
             offer_parts.extend(
                 (
-                    f'<b>Cantidad:</b> <code>{offer['amount']}</code>',
+                    f'<b>Cantidad:</b> <code>{offer['fiat_amount']}</code>',
                     f'<b>Precio (EUR):</b> <code>{offer['price_eur']:.2f} €</code>',
                     f'<b>Precio (USD):</b> <code>{offer['price_usd']:.2f} $</code>',
                     f'<b>Prima:</b> <code>{flanautils.format_decimal(offer['premium'], decimals=2)} %</code>',
