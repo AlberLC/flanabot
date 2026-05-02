@@ -133,16 +133,22 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
     ) -> OrderedSet[Media]:
         return await super()._search_medias(message, force, audio_only, timeout_for_media)
 
-    async def _send_media(self, media: Media, bot_state_message: Message, message: Message) -> Message | None:
+    async def _send_media(
+        self,
+        media: Media,
+        bot_state_message: Message,
+        message: Message,
+        data: dict | None = None
+    ) -> Message | None:
         # noinspection PyBroadException
         try:
-            return await self.send(media, message, reply_to=message.replied_message, raise_exceptions=True)
+            return await self.send(media, message, reply_to=message.replied_message, data=data, raise_exceptions=True)
         except LimitError:
             if bot_state_message:
                 await self.edit('No cabe porque Discord es una mierda. Subiendo a FlanaServer...', bot_state_message)
 
             if url := await self._upload_to_server(media):
-                return await self.send(url, message)
+                return await self.send(url, message, data=data)
         except Exception:
             pass
 

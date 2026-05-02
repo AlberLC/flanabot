@@ -233,8 +233,14 @@ class ScraperBot(MultiBot, ABC):
 
         return medias | gather_medias
 
-    async def _send_media(self, media: Media, bot_state_message: Message, message: Message) -> Message | None:
-        return await self.send(media, message, reply_to=message.replied_message)
+    async def _send_media(
+        self,
+        media: Media,
+        bot_state_message: Message,
+        message: Message,
+        data: dict | None = None
+    ) -> Message | None:
+        return await self.send(media, message, reply_to=message.replied_message, data=data)
 
     # ---------------------------------------------- #
     #                    HANDLERS                    #
@@ -321,7 +327,7 @@ class ScraperBot(MultiBot, ABC):
 
         if song_infos:
             for song_info in song_infos:
-                await self.send_song_info(song_info, message)
+                await self.send_song_info(song_info, message, data={'medias': True})
         elif message.chat.is_private or self.is_bot_mentioned(message):
             raise SendError('No hay información musical en ese mensaje.')
 
@@ -342,15 +348,16 @@ class ScraperBot(MultiBot, ABC):
 
         sended_media_messages = []
         fails = 0
+        message_data = {'medias': True}
         bot_state_message: Message | None = None
         sended_info_message: Message | None = None
         user_text_bot_message: Message | None = None
 
         if not message.is_inline:
-            bot_state_message: Message = await self.send('Enviando...', message)
+            bot_state_message: Message = await self.send('Enviando...', message, data=message_data)
 
         if message.chat.is_group:
-            sended_info_message = await self.send(f"{message.author.name.split('#')[0]} compartió{self._medias_sended_info(medias)}", message, reply_to=message.replied_message)
+            sended_info_message = await self.send(f"{message.author.name.split('#')[0]} compartió{self._medias_sended_info(medias)}", message, reply_to=message.replied_message, data=message_data)
             if (
                 send_user_context
                 and
@@ -367,7 +374,7 @@ class ScraperBot(MultiBot, ABC):
                      )]
                 ))
             ):
-                user_text_bot_message = await self.send(user_text, message, reply_to=message.replied_message)
+                user_text_bot_message = await self.send(user_text, message, reply_to=message.replied_message, data=message_data)
 
         for media in medias:
             if not media.content:
@@ -378,7 +385,7 @@ class ScraperBot(MultiBot, ABC):
                 message.song_infos.add(media.song_info)
                 message.save()
 
-            if bot_message := await self._send_media(media, bot_state_message, message):
+            if bot_message := await self._send_media(media, bot_state_message, message, data=message_data):
                 sended_media_messages.append(bot_message)
                 if media.song_info and bot_message:
                     bot_message.song_infos.add(media.song_info)
@@ -387,7 +394,7 @@ class ScraperBot(MultiBot, ABC):
                 fails += 1
 
             if send_song_info and media.song_info:
-                await self.send_song_info(media.song_info, message)
+                await self.send_song_info(media.song_info, message, message_data)
 
         if fails == len(medias):
             if sended_info_message:
@@ -401,13 +408,13 @@ class ScraperBot(MultiBot, ABC):
         return sended_media_messages, fails
 
     @return_if_first_empty(exclude_self_types='ScraperBot', globals_=globals())
-    async def send_song_info(self, song_info: Media, message: Message):
+    async def send_song_info(self, song_info: Media, message: Message, data: dict | None = None):
         attributes = (
             f'<b>Título:</b> {song_info.title}\n' if song_info.title else '',
             f'<b>Autor:</b> {song_info.author}\n' if song_info.author else '',
             f'<b>Álbum:</b> {song_info.album}\n' if song_info.album else '',
             f'<b>Previa:</b>'
         )
-        await self.send(''.join(attributes), message)
+        await self.send(''.join(attributes), message, data=data)
         if song_info:
             await self.send(song_info, message)

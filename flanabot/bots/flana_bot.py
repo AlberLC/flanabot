@@ -440,7 +440,7 @@ class FlanaBot(
             and
             message.replied_message.author.id == self.id
             and
-            (message.replied_message.medias or message.replied_message.data.get('btc_offers'))
+            any(message.replied_message.data.get(key) for key in ('btc_offers', 'medias'))
         ):
             whitelist_callbacks = (whitelist_callbacks or set()) | {
                 self._on_delete,
