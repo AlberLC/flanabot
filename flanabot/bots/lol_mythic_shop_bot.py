@@ -1,7 +1,9 @@
 __all__ = ['LolMythicShopBot']
 
 import asyncio
+import base64
 import hashlib
+import json
 import multiprocessing
 import re
 import xml.etree.ElementTree
@@ -101,6 +103,7 @@ class LolMythicShopBot(MultiBot, ABC):
             # noinspection PyUnboundLocalVariable
             if (image_hash := hashlib.sha256(image_bytes).digest()) in processed_image_hashes:
                 processed_image_urls.add(image_url)
+                cls._save_processed_image_urls(processed_image_urls)
                 continue
 
             try:
@@ -113,6 +116,8 @@ class LolMythicShopBot(MultiBot, ABC):
             else:
                 processed_image_urls.add(image_url)
                 processed_image_hashes.add(image_hash)
+                cls._save_processed_image_urls(processed_image_urls)
+                cls._save_processed_image_hashes(processed_image_hashes)
 
     @staticmethod
     async def _fetch_browser_image(url: str, browser_context: playwright.async_api.BrowserContext) -> bytes | None:
@@ -172,6 +177,36 @@ class LolMythicShopBot(MultiBot, ABC):
         except TimeoutError, aiohttp.ClientError:
             pass
 
+    @staticmethod
+    def _load_processed_image_hashes() -> FIFOCache[bytes]:
+        if not constants.LOL_MYTHIC_SHOP_PROCESSED_IMAGE_HASHES_PATH.is_file():
+            constants.LOL_MYTHIC_SHOP_PROCESSED_IMAGE_HASHES_PATH.write_text('[]')
+
+        return FIFOCache[bytes](
+            (
+                base64.b64decode(item)
+                for item in json.loads(constants.LOL_MYTHIC_SHOP_PROCESSED_IMAGE_HASHES_PATH.read_text())
+            ),
+            max_size=100
+        )
+
+    @staticmethod
+    def _load_processed_image_urls() -> FIFOCache[str]:
+        if not constants.LOL_MYTHIC_SHOP_PROCESSED_IMAGE_URLS_PATH.is_file():
+            constants.LOL_MYTHIC_SHOP_PROCESSED_IMAGE_URLS_PATH.write_text('[]')
+
+        return FIFOCache[str](json.loads(constants.LOL_MYTHIC_SHOP_PROCESSED_IMAGE_URLS_PATH.read_text()), max_size=100)
+
+    @staticmethod
+    def _save_processed_image_hashes(processed_image_hashes: FIFOCache[bytes]) -> None:
+        constants.LOL_MYTHIC_SHOP_PROCESSED_IMAGE_HASHES_PATH.write_text(
+            json.dumps(list(processed_image_hashes), default=lambda data: base64.b64encode(data).decode())
+        )
+
+    @staticmethod
+    def _save_processed_image_urls(processed_image_urls: FIFOCache[str]) -> None:
+        constants.LOL_MYTHIC_SHOP_PROCESSED_IMAGE_URLS_PATH.write_text(json.dumps(list(processed_image_urls)))
+
     async def _start_lol_mythic_shop_checker(self) -> Never:
         queue = multiprocessing.Queue()
 
@@ -200,8 +235,8 @@ class LolMythicShopBot(MultiBot, ABC):
     # -------------------------------------------------------- #
     @classmethod
     async def run_lol_mythic_shop_checker(cls, queue: multiprocessing.Queue) -> Never:
-        processed_image_urls = FIFOCache[str](max_size=100)
-        processed_image_hashes = FIFOCache[bytes](max_size=100)
+        processed_image_urls = cls._load_processed_image_urls()
+        processed_image_hashes = cls._load_processed_image_hashes()
 
         while True:
             async with (

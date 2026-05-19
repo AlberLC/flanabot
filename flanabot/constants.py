@@ -32,7 +32,10 @@ LOL_MYTHIC_SHOP_IMAGES = {
     'okay': ('okay_1.png', 'okay_2.png', 'okay_3.png'),
     'shell_shocked': ('shell_shocked_1.png', 'shell_shocked_2.png', 'shell_shocked_3.png')
 }
-LOL_MYTHIC_SHOP_IMAGES_PATH = Path('resources/lol_mythic_shop_images')
+LOL_MYTHIC_SHOP_PATH = Path('resources/lol_mythic_shop')
+LOL_MYTHIC_SHOP_IMAGES_PATH = LOL_MYTHIC_SHOP_PATH / 'images'
+LOL_MYTHIC_SHOP_PROCESSED_IMAGE_URLS_PATH = LOL_MYTHIC_SHOP_PATH / 'processed_image_urls.json'
+LOL_MYTHIC_SHOP_PROCESSED_IMAGE_HASHES_PATH = LOL_MYTHIC_SHOP_PATH / 'processed_image_hashes.json'
 LOL_MYTHIC_SHOP_URLS = (
     'https://nitter.net/SkinSpotlights/rss',
     'https://nitter.privacyredirect.com/SkinSpotlights/rss',
