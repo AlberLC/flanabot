@@ -3,6 +3,7 @@ __all__ = ['PenaltyBot']
 import asyncio
 import datetime
 from abc import ABC
+from collections import defaultdict
 
 import flanautils
 from flanautils import TimeUnits
@@ -87,10 +88,20 @@ class PenaltyBot(MultiBot, ABC):
             'platform': self.platform.value,
             'author': message.author.object_id,
             'date': {'$gte': datetime.datetime.now(datetime.timezone.utc) - constants.SPAM_TIME_RANGE},
+            'is_deleted': False
         })
         chats = {message.chat for message in spam_messages}
+
         if len(chats) <= constants.SPAM_CHANNELS_LIMIT:
-            return False
+            group_channel_count = defaultdict(int)
+
+            for chat in chats:
+                if group_channel_count[chat.group_id] == constants.SPAM_GROUP_CHANNELS_LIMIT:
+                    break
+
+                group_channel_count[chat.group_id] += 1
+            else:
+                return False
 
         await self.punish(message.author.id, message.chat.group_id)
 
