@@ -117,7 +117,7 @@ class BtcOffersBot(MultiBot, ABC):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._btc_offers_api_endpoint = (
-            f'{os.environ['BTC_OFFERS_API_HOST']}:{os.environ['BTC_OFFERS_API_PORT']}/offers'
+            f'{os.environ['BTC_OFFERS_API_HOST']}:{os.environ['BTC_OFFERS_API_PORT']}'
         )
         self._btc_offers_lock = asyncio.Lock()
         self._btc_offers_notifications_task: asyncio.Task[None] | None = None
@@ -440,7 +440,7 @@ class BtcOffersBot(MultiBot, ABC):
 
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.get(f'http://{self._btc_offers_api_endpoint}', params=query) as response:
+                async with session.get(f'http://{self._btc_offers_api_endpoint}/offers', params=query) as response:
                     dated_offers = DatedOffers.from_dict(await response.json())
             except aiohttp.ClientConnectorError:
                 await self.send_error('❌🌐 El servidor de ofertas BTC no está disponible.', bot_state_message, edit=True)
@@ -519,7 +519,7 @@ class BtcOffersBot(MultiBot, ABC):
                 while True:
                     try:
                         self._btc_offers_websocket = await websockets.connect(
-                            f'ws://{self._btc_offers_api_endpoint}/ws/notifications'
+                            f'ws://{self._btc_offers_api_endpoint}/ws/offers/notifications'
                         )
                     except ConnectionRefusedError:
                         await asyncio.sleep(constants.BTC_OFFERS_WEBSOCKET_RETRY_DELAY_SECONDS)

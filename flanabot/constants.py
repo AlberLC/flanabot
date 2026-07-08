@@ -18,7 +18,7 @@ CONNECT_4_AI_DELAY_SECONDS = 1
 CONNECT_4_CENTER_COLUMN_POINTS = 2
 CONNECT_4_N_COLUMNS = 7
 CONNECT_4_N_ROWS = 6
-FLANASERVER_BASE_URL = 'https://flanaserver.duckdns.org'
+FLANASERVER_API_BASE_URL = 'https://flanaserver.duckdns.org/api'
 FLANASERVER_FILE_EXPIRATION_SECONDS = datetime.timedelta(days=3).total_seconds()
 FLOOD_2s_LIMIT = 2
 FLOOD_7s_LIMIT = 4

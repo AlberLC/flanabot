@@ -186,9 +186,9 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
 
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.post(f'{self._flanaserver_api_base_url}/files', data=form) as response:
+                async with session.post(f'{self._flanaserver_api_local_base_url}/files', data=form) as response:
                     if response.status == 201:
-                        return f"{constants.FLANASERVER_BASE_URL}{(await response.json())['embed_url']}"
+                        return f"{constants.FLANASERVER_API_BASE_URL}{(await response.json())['embed_url']}"
             except aiohttp.ClientConnectorError:
                 pass
 

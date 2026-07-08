@@ -54,7 +54,7 @@ class FlanaTeleBot(TelegramBot, LolMythicShopBot, FlanaBot):
         session: aiohttp.ClientSession,
         latest_client_connections_endpoint: str,
         headers: dict[str, str],
-        latest_client_connection_id: str
+        latest_client_connection_id: str | None
     ) -> str | None:
         try:
             async with session.get(
@@ -100,7 +100,7 @@ class FlanaTeleBot(TelegramBot, LolMythicShopBot, FlanaBot):
             return await super()._handle_config_change(config_name, message)
 
     async def _run_client_connections_checker(self) -> None:
-        latest_client_connections_endpoint = f'{self._flanaserver_api_base_url}/flanacs/client-connections/latest'
+        latest_client_connections_endpoint = f'{self._flanaserver_api_local_base_url}/flanacs/client-connections/latest'
         headers = {'Authorization': f'Bearer {os.environ['FLANASERVER_API_TOKEN']}'}
 
         async with aiohttp.ClientSession() as session:
