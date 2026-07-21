@@ -7,7 +7,7 @@ from collections import defaultdict
 from typing import Iterable
 
 import flanautils
-from flanaapis import RedditMediaNotFoundError, reddit, tiktok, yt_dlp_wrapper
+from flanaapis import tiktok, yt_dlp_wrapper
 from flanautils import Media, MediaType, OrderedSet, return_if_first_empty
 from multibot import MultiBot, RegisteredCallback, SendError, constants as multibot_constants, reply
 
@@ -38,7 +38,7 @@ class ScraperBot(MultiBot, ABC):
 
     @staticmethod
     async def _find_ids(text: str) -> tuple[OrderedSet[str], ...]:
-        return await reddit.find_ids(text), await tiktok.find_users_and_ids(text), tiktok.find_download_urls(text)
+        return await tiktok.find_users_and_ids(text), tiktok.find_download_urls(text)
 
     @staticmethod
     def _get_keywords(delete=True, force=False, full=False, audio_only=False) -> list[str]:
@@ -194,31 +194,7 @@ class ScraperBot(MultiBot, ABC):
 
         bot_state_message = await self.send(random.choice(constants.SCRAPING_PHRASES), message)
 
-        reddit_ids, tiktok_users_and_ids, tiktok_download_urls = ids
-
-        try:
-            reddit_medias = await reddit.get_medias(reddit_ids, preferred_video_codec, preferred_extension, force, audio_only, timeout_for_media)
-        except RedditMediaNotFoundError as e:
-            exceptions.append(e)
-            reddit_medias = ()
-
-        reddit_urls = []
-        for reddit_media in reddit_medias:
-            if reddit_media.source:
-                medias.add(reddit_media)
-            else:
-                reddit_urls.append(reddit_media.url)
-
-        if force:
-            media_urls.extend(reddit_urls)
-        else:
-            for reddit_url in reddit_urls:
-                for domain in multibot_constants.GIF_DOMAINS:
-                    if domain.lower() in reddit_url:
-                        medias.add(Media(reddit_url, MediaType.GIF, source=domain))
-                        break
-                else:
-                    media_urls.append(reddit_url)
+        tiktok_users_and_ids, tiktok_download_urls = ids
 
         gather_results = await asyncio.gather(
             tiktok.get_medias(tiktok_users_and_ids, tiktok_download_urls, preferred_video_codec, preferred_extension, force, audio_only, timeout_for_media),
