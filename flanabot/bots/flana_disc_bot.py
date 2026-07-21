@@ -2,6 +2,7 @@ __all__ = ['FlanaDiscBot']
 
 import asyncio
 import datetime
+import hashlib
 import math
 import os
 import random
@@ -20,6 +21,7 @@ from flanabot import constants
 from flanabot.bots.flana_bot import FlanaBot
 from flanabot.models import Chat, Message, Punishment
 from flanabot.models.heating_context import ChannelData, HeatingContext
+from models.create_upload_response import CreateUploadResponse
 
 
 # ---------------------------------------------------------------------------------------------------- #
@@ -46,6 +48,39 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         group_roles = await self.get_group_roles(group_)
         group_id = self.get_group_id(group_)
         return [role for role in group_roles if role.id in constants.CHANGEABLE_ROLES[Platform.DISCORD][group_id]]
+
+    async def _complete_upload(self, upload_id: str, session: aiohttp.ClientSession) -> str:
+        async with session.post(
+            f'{self._flanaserver_api_local_base_url}/files/uploads/{upload_id}/complete'
+        ) as response:
+            return f'{constants.FLANASERVER_API_BASE_URL}{(await response.json())['embed_url']}'
+
+    async def _create_upload(self, media: Media, session: aiohttp.ClientSession) -> CreateUploadResponse:
+        file_name = urllib.parse.unquote(media.title or media.url and Path(media.url).name or uuid.uuid7().hex)
+
+        if media.extension and not file_name.endswith(media.extension):
+            file_name = f'{file_name}.{media.extension}'
+
+        match media.type_:
+            case MediaType.AUDIO:
+                file_mime_type = f"audio/{'mpeg' if media.extension == 'mp3' else media.extension}"
+            case MediaType.GIF:
+                file_mime_type = 'image/gif'
+            case MediaType.IMAGE:
+                file_mime_type = f'image/{media.extension}'
+            case MediaType.VIDEO:
+                file_mime_type = f'video/{media.extension}'
+            case _:
+                file_mime_type = 'application/octet-stream'
+
+        data = {
+            'file_name': file_name,
+            'file_size': len(media.bytes_),
+            'file_mime_type': file_mime_type,
+            'expires_in': constants.FLANASERVER_FILE_EXPIRATION_SECONDS
+        }
+        async with session.post(f'{self._flanaserver_api_local_base_url}/files/uploads', json=data) as response:
+            return CreateUploadResponse(**await response.json())
 
     async def _heat_channel(self, channel: discord.VoiceChannel):
         async def set_fire_to(channel_key: str, depends_on: str, firewall=0):
@@ -162,33 +197,42 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             await user.original_object.timeout(None)
 
     async def _upload_to_server(self, media: Media) -> str | None:
-        form = aiohttp.FormData()
+        async def worker() -> None:
+            nonlocal chunk_index
 
-        file_name = urllib.parse.unquote(media.title or media.url and Path(media.url).name or uuid.uuid4().hex)
+            while True:
+                current_chunk, chunk_index = chunk_index, chunk_index + 1
 
-        if media.extension and not file_name.endswith(media.extension):
-            file_name = f'{file_name}.{media.extension}'
+                if current_chunk >= total_chunks:
+                    return
 
-        match media.type_:
-            case MediaType.AUDIO:
-                content_type = f"audio/{'mpeg' if media.extension == 'mp3' else media.extension}"
-            case MediaType.GIF:
-                content_type = 'image/gif'
-            case MediaType.IMAGE:
-                content_type = f'image/{media.extension}'
-            case MediaType.VIDEO:
-                content_type = f'video/{media.extension}'
-            case _:
-                content_type = 'application/octet-stream'
+                start = current_chunk * chunk_size
+                chunk_bytes = file_bytes[start:start + chunk_size]
 
-        form.add_field('file', media.bytes_, content_type=content_type, filename=file_name)
-        form.add_field('expires_in', str(constants.FLANASERVER_FILE_EXPIRATION_SECONDS))
+                headers = {'Chunk-Index': str(current_chunk), 'Chunk-Checksum': hashlib.sha256(chunk_bytes).hexdigest()}
+                async with session.patch(
+                    f'{self._flanaserver_api_local_base_url}/files/uploads/{upload_id}/chunks',
+                    data=chunk_bytes,
+                    headers=headers
+                ):
+                    pass
+
+        file_bytes = memoryview(media.bytes_)
+        chunk_index = 0
 
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.post(f'{self._flanaserver_api_local_base_url}/files', data=form) as response:
-                    if response.status == 201:
-                        return f"{constants.FLANASERVER_API_BASE_URL}{(await response.json())['embed_url']}"
+                create_file_upload_response = await self._create_upload(media, session)
+
+                upload_id = create_file_upload_response.id
+                chunk_size = create_file_upload_response.chunk_size
+                total_chunks = math.ceil(len(media.bytes_) / chunk_size)
+
+                await asyncio.gather(
+                    *(worker() for _ in range(min(constants.MAX_CONCURRENT_CHUNK_UPLOADS, total_chunks)))
+                )
+
+                return await self._complete_upload(upload_id, session)
             except aiohttp.ClientConnectorError:
                 pass
 

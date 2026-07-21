@@ -40,6 +40,7 @@ LOL_MYTHIC_SHOP_URLS = (
     'https://nitter.net/SkinSpotlights/rss',
     'https://nitter.privacyredirect.com/SkinSpotlights/rss',
 )
+MAX_CONCURRENT_CHUNK_UPLOADS = 5
 MAX_PLACE_QUERY_LENGTH = 50
 PUNISHMENT_INCREMENT_EXPONENT = 6
 PUNISHMENTS_RESET_TIME = datetime.timedelta(weeks=2)
