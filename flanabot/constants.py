@@ -28,10 +28,6 @@ HELP_MINUTES_LIMIT = 1
 INSTAGRAM_BAN_SLEEP = datetime.timedelta(days=1)
 INSULT_PROBABILITY = 0.00166666667
 LOL_MYTHIC_SHOP_CHECK_EVERY_SECONDS = datetime.timedelta(hours=8).total_seconds()
-LOL_MYTHIC_SHOP_IMAGES = {
-    'okay': ('okay_1.png', 'okay_2.png', 'okay_3.png'),
-    'shell_shocked': ('shell_shocked_1.png', 'shell_shocked_2.png', 'shell_shocked_3.png')
-}
 LOL_MYTHIC_SHOP_PATH = Path('resources/lol_mythic_shop')
 LOL_MYTHIC_SHOP_IMAGES_PATH = LOL_MYTHIC_SHOP_PATH / 'images'
 LOL_MYTHIC_SHOP_PROCESSED_IMAGE_URLS_PATH = LOL_MYTHIC_SHOP_PATH / 'processed_image_urls.json'

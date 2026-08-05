@@ -63,21 +63,24 @@ class LolMythicShopBot(MultiBot, ABC):
     @classmethod
     def _check_lol_mythic_shop_images(cls, image: str | Path | numpy.ndarray, queue: multiprocessing.Queue) -> None:
         image_text = pytesseract.image_to_string(flanautils.to_ndarray(image))
+        image_bytes = cv2.imencode('.png', cv2.cvtColor(image, cv2.COLOR_BGR2RGB))[1].tobytes()
+        previous_emote_image_index = None
 
-        for emote_name, emote_image_names in constants.LOL_MYTHIC_SHOP_IMAGES.items():
-            first_emote_image_path = constants.LOL_MYTHIC_SHOP_IMAGES_PATH / emote_image_names[0]
-            first_emote_image_path_str = str(first_emote_image_path)
-            image_bytes = cv2.imencode('.png', cv2.cvtColor(image, cv2.COLOR_BGR2RGB))[1].tobytes()
+        for emote_image_path in constants.LOL_MYTHIC_SHOP_IMAGES_PATH.iterdir():
+            emote_image_index = emote_image_path.stem.rsplit('_', maxsplit=1)[0]
 
-            if cls._check_image_text(emote_name, image_text):
-                queue.put(first_emote_image_path_str)
-                queue.put(image_bytes)
+            if emote_image_index != previous_emote_image_index:
+                previous_emote_image_index = emote_image_index
+                first_emote_image_path_str = str(emote_image_path)
 
-            for emote_image_name in emote_image_names:
-                if cls._check_is_image_in_image(constants.LOL_MYTHIC_SHOP_IMAGES_PATH / emote_image_name, image):
+                if cls._check_image_text(emote_image_index, image_text):
                     queue.put(first_emote_image_path_str)
                     queue.put(image_bytes)
-                    break
+
+            if cls._check_is_image_in_image(emote_image_path, image):
+                queue.put(first_emote_image_path_str)
+                queue.put(image_bytes)
+                break
 
     @classmethod
     async def _check_nitter_urls(
