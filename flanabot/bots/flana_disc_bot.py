@@ -77,7 +77,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             'file_name': file_name,
             'file_size': len(media.bytes_),
             'file_mime_type': file_mime_type,
-            'expires_in': constants.FLANASERVER_FILE_EXPIRATION_SECONDS
+            'file_expires_in': constants.FLANASERVER_FILE_EXPIRATION_SECONDS
         }
         async with session.post(f'{self._flanaserver_api_local_base_url}/files/uploads', json=data) as response:
             return CreateUploadResponse(**await response.json())
