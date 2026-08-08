@@ -157,3 +157,6 @@ private.key
 
 # Telethon sessions
 *.session*
+
+# Resources
+flanabot/resources/lol_mythic_shop
