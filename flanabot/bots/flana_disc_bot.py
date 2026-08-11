@@ -14,7 +14,7 @@ from pathlib import Path
 import aiohttp
 import discord
 import pytz
-from flanautils import Media, MediaType, OrderedSet
+from flanautils import Media, OrderedSet
 from multibot import BadRoleError, DiscordBot, LimitError, Platform, Role, User, admin, bot_mentioned, constants as multibot_constants, group
 
 from flanabot import constants
@@ -61,22 +61,9 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         if media.extension and not file_name.endswith(media.extension):
             file_name = f'{file_name}.{media.extension}'
 
-        match media.type_:
-            case MediaType.AUDIO:
-                file_mime_type = f"audio/{'mpeg' if media.extension == 'mp3' else media.extension}"
-            case MediaType.GIF:
-                file_mime_type = 'image/gif'
-            case MediaType.IMAGE:
-                file_mime_type = f'image/{media.extension}'
-            case MediaType.VIDEO:
-                file_mime_type = f'video/{media.extension}'
-            case _:
-                file_mime_type = 'application/octet-stream'
-
         data = {
             'file_name': file_name,
             'file_size': len(media.bytes_),
-            'file_mime_type': file_mime_type,
             'file_expires_in': constants.FLANASERVER_FILE_EXPIRATION_SECONDS
         }
         async with session.post(f'{self._flanaserver_api_local_base_url}/files/uploads', json=data) as response:
