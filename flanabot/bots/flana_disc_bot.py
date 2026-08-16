@@ -49,13 +49,19 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
         group_id = self.get_group_id(group_)
         return [role for role in group_roles if role.id in constants.CHANGEABLE_ROLES[Platform.DISCORD][group_id]]
 
-    async def _complete_upload(self, upload_id: str, session: aiohttp.ClientSession) -> str:
+    async def _complete_upload(self, upload_id: str, headers: dict[str, str], session: aiohttp.ClientSession) -> str:
         async with session.post(
-            f'{self._flanaserver_api_local_base_url}/files/uploads/{upload_id}/complete'
+            f'{self._flanaserver_api_local_base_url}/files/uploads/{upload_id}/complete',
+            headers=headers
         ) as response:
             return f'{constants.FLANASERVER_API_BASE_URL}{(await response.json())['embed_url']}'
 
-    async def _create_upload(self, media: Media, session: aiohttp.ClientSession) -> CreateUploadResponse:
+    async def _create_upload(
+        self,
+        media: Media,
+        headers: dict[str, str],
+        session: aiohttp.ClientSession
+    ) -> CreateUploadResponse:
         file_name = urllib.parse.unquote(media.title or media.url and Path(media.url).name or uuid.uuid7().hex)
 
         if media.extension and not file_name.endswith(media.extension):
@@ -66,7 +72,11 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
             'file_size': len(media.bytes_),
             'file_expires_in': constants.FLANASERVER_FILE_EXPIRATION_SECONDS
         }
-        async with session.post(f'{self._flanaserver_api_local_base_url}/files/uploads', json=data) as response:
+        async with session.post(
+            f'{self._flanaserver_api_local_base_url}/files/uploads',
+            json=data,
+            headers=headers
+        ) as response:
             return CreateUploadResponse(**await response.json())
 
     async def _heat_channel(self, channel: discord.VoiceChannel):
@@ -196,20 +206,23 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                 start = current_chunk * chunk_size
                 chunk_bytes = file_bytes[start:start + chunk_size]
 
-                headers = {'Chunk-Index': str(current_chunk), 'Chunk-Checksum': hashlib.sha256(chunk_bytes).hexdigest()}
+                worker_headers = headers | {
+                    'Chunk-Index': str(current_chunk), 'Chunk-Checksum': hashlib.sha256(chunk_bytes).hexdigest()
+                }
                 async with session.patch(
                     f'{self._flanaserver_api_local_base_url}/files/uploads/{upload_id}/chunks',
                     data=chunk_bytes,
-                    headers=headers
+                    headers=worker_headers
                 ):
                     pass
 
+        headers = {'Authorization': f'Bearer {os.environ['FLANASERVER_API_ACCESS_TOKEN']}'}
         file_bytes = memoryview(media.bytes_)
         chunk_index = 0
 
         async with aiohttp.ClientSession() as session:
             try:
-                create_file_upload_response = await self._create_upload(media, session)
+                create_file_upload_response = await self._create_upload(media, headers, session)
 
                 upload_id = create_file_upload_response.id
                 chunk_size = create_file_upload_response.chunk_size
@@ -219,7 +232,7 @@ class FlanaDiscBot(DiscordBot, FlanaBot):
                     *(worker() for _ in range(min(constants.MAX_CONCURRENT_CHUNK_UPLOADS, total_chunks)))
                 )
 
-                return await self._complete_upload(upload_id, session)
+                return await self._complete_upload(upload_id, headers, session)
             except aiohttp.ClientConnectorError:
                 pass
 
