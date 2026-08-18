@@ -69,7 +69,7 @@ class FlanaTeleBot(TelegramBot, LolMythicShopBot, FlanaBot):
         else:
             if client_connections:
                 await self._send_client_connections(client_connections)
-                return client_connections[0]['_id']
+                return client_connections[0]['id']
 
         return latest_client_connection_id
 
@@ -113,7 +113,7 @@ class FlanaTeleBot(TelegramBot, LolMythicShopBot, FlanaBot):
                     ) as response:
                         if response.ok:
                             if latest_client_connections := await response.json():
-                                latest_client_connection_id = latest_client_connections[0]['_id']
+                                latest_client_connection_id = latest_client_connections[0]['id']
                             else:
                                 latest_client_connection_id = None
 
