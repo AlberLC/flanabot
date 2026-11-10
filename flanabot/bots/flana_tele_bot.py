@@ -148,7 +148,7 @@ class FlanaTeleBot(TelegramBot, LolMythicShopBot, FlanaBot):
             ip_geolocation_data = client_connection.get('ip_geolocation') or {}
 
             await self.send(
-                '<b>FlanaCS client connection:</b>\n'
+                f'<b>{client_connection.get('app_name')} client connection:</b>\n'
                 '\n'
                 f'<b>username:</b> <code>{client_connection.get('username')}</code>\n'
                 f'<b>hostname:</b> <code>{client_connection.get('hostname')}</code>\n'
